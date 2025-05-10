@@ -1,0 +1,215 @@
+\documentclass{article}
+\usepackage{tabularx}
+\usepackage{graphicx}
+\usepackage{dirtytalk}
+\usepackage{pgfplotstable}
+\usepackage{pgfplots}
+\usepackage{datatool}
+\usepackage{siunitx}
+\usepackage[hyphens]{url}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{float}
+\usepackage[style=ieee]{biblatex}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{amsmath,amssymb}
+\usepackage{comment}
+\usepackage[normalem]{ulem}
+\usepackage[margin=1in]{geometry}
+\usepackage{titling}
+
+\setlength{\droptitle}{-1in}
+\useunder{\uline}{\ul}{}
+
+% Point this to your .bib file
+\addbibresource{main.bib}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=blue,      
+    urlcolor=blue,
+    citecolor=blue,
+}
+
+\pgfplotsset{compat=1.18}
+
+\title{MSc Degree Project Proposal\\Computer Science}
+\author{Name: Casper Ove Kristiansson\\Email: Casperkr@kth.se}
+\date{\today}
+
+\begin{document}
+
+\setlength\parindent{0pt}
+\maketitle
+
+\begin{comment}
+DEGREE PROJECT PROPOSAL
+
+NAME AND E-MAIL ADDRESS OF THE STUDENT:
+
+THESIS TITLE:
+[Provide a preliminary title, which indicates what the
+degree project will be about]
+
+BACKGROUND:
+[Name and briefly describe the research area within which the project
+is being carried out. Describe how the project is connected to current
+research or development. Describe why the project is of interest and
+to whom, and in particular explain the interest of the organization or
+company within which the project is carried out.]
+
+RESEARCH QUESTION:
+[A degree project must investigate a specific research/technical
+question. Provisionally state the question that the project will
+target.]
+
+HYPOTHESIS:
+[What is the expected outcome of the investigation?]
+
+RESEARCH METHOD:
+[What method will be used for answering the research question, e.g.,
+how will observations be collected and conclusions drawn?]
+
+BACKGROUND OF THE STUDENT:
+[Describe the knowledge (courses and/or experiences) you have that
+makes this an appropriate project for you.]
+
+
+SUPERVISION AT THE COMPANY/EXTERNAL ORGANIZATION:
+[Note: Only for degree projects at companies/external organizations]
+[Give the name of the company/organization hosting the degree project.
+List the person/s who will supervise you at the company. 
+Describe how the supervision will be provided. For example, "The work will be
+performed at the premises of the company, with daily supervision opportunities."]
+
+
+SUGGESTED EXAMINER AT KTH:
+[You may suggest an examiner at KTH. State if you have been in contact
+with the examiner and received a preliminary expression of interest to
+serve as examiner.]
+
+SUGGESTED SUPERVISOR AT KTH:
+[You may suggest a supervisor at KTH. State if you have been in
+contact with the supervisor and received a preliminary expression of
+interest to serve as supervisor.]
+
+RESOURCES:
+[What is already available at the company (or other host institution)
+in the form of previous projects, software, expertise, etc. that the
+project can build on?]
+
+ELIGIBILITY:
+[Verify that you are eligible to start your degree project, that is,
+that you fulfill the basic requirements of starting the project, and
+also have completed all the courses that are relevant to the
+project.]
+
+STUDY PLANNING:
+[List all the courses that you will need to complete during or after
+the degree project, and describe how and when you plan to complete
+those courses. This is aimed at ensuring that the thesis is one
+of the last elements of your education.]
+\end{comment}
+
+\section{Background and Literature Review}
+
+Modern synchrotron and neutron facilities face issues with data handling where experiments can produce terabytes of data per day, which has overwhelmed traditional storage and analysis methods \cite{wang2018synchrotron}. Over the last decade, numerous strategies have emerged to optimize data storage, management, and access for these large-scale scientific datasets. This thesis will investigate and prototype certain cloud-based solutions (particularly on AWS) to handle large volumes of experimental data. Below is a review of the relevant literature and approaches from approximately the past ten years.
+
+\subsection{Automated Data Archiving \& Management Systems}
+A common approach involves platforms that automatically capture raw data, metadata, and even preliminary results, ensuring minimal data loss and efficient sharing. For example, the Australian Synchrotron developed \emph{Store.Synchrotron}, a cloud-based archive for X-ray diffraction data \cite{meyer2014store}. In its first 9 months, it archived about 22.4\,TB (about 1.7 million images) of beamline data, providing researchers with real-time online access to a fully redundant, secure storage system \cite{meyer2014store}. Additionally, a key theme in such systems is \emph{cost-aware storage policies}. Storing petascale datasets fully online in commercial clouds (e.g., Amazon AWS) can become expensive for \emph{actively accessed} data.
+
+\subsection{Cloud-Based Solutions (AWS) for Large-Scale Experiments}
+As cloud technologies have matured, many facilities began integrating public clouds to help or replace on-premises resources.
+
+\begin{itemize}
+    \item \textbf{AWS for Remote Data Portals:} The Materials \& Life Science Facility (MLF) at J-PARC (Japan) leverages AWS to allow users to remotely monitor and analyze neutron scattering data without physically transporting terabytes of raw files \cite{moriyama2019public}. Their system uses Amazon S3 for storage and AWS Lambda for serverless triggers \cite{moriyama2019public}.
+
+    \item \textbf{Hybrid HPC \& Cloud Archival:} KEK, a research organization in Japan, adopted a hybrid approach to extend on-premises HPC resources into AWS. This enables “burst” capacity for beamtime while lowering costs in the off-season \cite{kek2021aws}. When experiments are not running, the cloud resources can be turned off, avoiding ongoing charges.
+\end{itemize}
+
+\subsection{Scalable Storage Architecture and Performance Optimizations}
+Data volume alone does not capture the challenge; performance for reading, writing, and retrieving partial datasets is often the true bottleneck.
+
+\begin{itemize}
+    \item \textbf{Tiered and Distributed Storage:} Large facilities typically adopt tiered storage architectures (fast parallel file systems for immediate processing, tape or high-capacity disk arrays for archival), sometimes also integrated with a cloud backend \cite{meyer2014store}.
+    \item \textbf{High-Performance I/O and Data Reduction:} Oak Ridge National Lab’s neutron sources (SNS and HFIR) handle around 1.2\,TB of raw data per day, employing new I/O optimization strategies that can reduce processing time by 11--30\% \cite{godoy2021efficient}. Techniques like in-memory metadata indexing, chunked file formats, or streaming data pipelines (e.g., ADIOS2) are highly relevant to modern HPC scenarios.
+\end{itemize}
+
+\subsection{Synthesis for This Project}
+The last decade of work highlights the need for:
+\begin{enumerate}
+    \item Automated ingestion and management platforms to ensure data is captured seamlessly with rich metadata.
+    \item Hierarchical or hybrid storage solutions to balance cost, performance, and scalability, often combining disk, tape, and cloud.
+    \item Software-level optimizations (e.g., chunked storage, advanced data formats) to handle partial reads efficiently.
+\end{enumerate}
+This thesis intends to \emph{compare} multiple AWS-oriented storage approaches (HDF5, Zarr, Parquet, and DynamoDB) using real-world synchrotron/neutron datasets. The goal is to characterize performance (latency, throughput), cost, and ease-of-integration for partial retrieval or queries—key operations in beamline and scattering experiments.
+
+\section{Thesis Title}
+\textbf{From Experiment to Insight: A Comparative Study of Storage Approaches for Large-Scale Synchrotron and Neutron Scattering Data on AWS}
+
+\section{Research Question}
+\textbf{How do HDF5, Zarr, Parquet, and a NoSQL store compare in terms of performance, scalability, and cost when storing large-scale synchrotron and neutron scattering data on AWS, particularly for partial row or column retrieval?}
+
+\section{Hypothesis}
+\begin{enumerate}
+    \item \textbf{Columnar Advantage (Parquet):} Columnar storage (Parquet) should excel for queries involving partial-column reads, reducing I/O overhead.
+    \item \textbf{Chunked Object Storage (Zarr):} Zarr’s chunk-based design may outperform HDF5 for parallel reads/writes in a purely cloud-native (object store) environment.
+    \item \textbf{HDF5 Familiarity:} HDF5 may remain favorable for certain multidimensional access patterns or for legacy HPC-style workflows.
+    \item \textbf{NoSQL (DynamoDB) Trade-offs:} DynamoDB may be beneficial for extremely high concurrency, but less suitable for large-scale partial scans (e.g., retrieving entire columns or slices of data).
+\end{enumerate}
+
+\section{Method}
+\begin{enumerate}
+    \item \textbf{Requirements \& Literature Review:} 
+    Collect typical data requirements for scattering experiments, referencing the approaches in \cite{wang2018synchrotron, meyer2014store, moriyama2019public, kek2021aws, godoy2021efficient} and other HPC data management projects.
+
+    \item \textbf{Prototype Implementation:}
+    \begin{itemize}
+        \item Create a consistent dataset in HDF5, Zarr, Parquet, and DynamoDB (using AWS S3 or AWS native services).
+        \item Apply consistent chunking/partitioning logic, so each approach handles partial reads comparably.
+    \end{itemize}
+
+    \item \textbf{Testing and Metrics:}
+    \begin{itemize}
+        \item \emph{Dataset Volume:} Terabytes of realistic scattering data.
+        \item \emph{Performance Metrics:} Read/write latency, throughput under parallel access, storage cost (S3 usage, DynamoDB R/W units, data egress), partial retrieval overhead.
+        \item \emph{Scalability Testing:} Evaluate each approach as the dataset size and number of concurrent users grows.
+    \end{itemize}
+
+    \item \textbf{Analysis:}
+    \begin{itemize}
+        \item Compare trade-offs in cost, performance, and complexity. 
+        \item Provide recommendations on when each approach (HDF5, Zarr, Parquet, DynamoDB) is most appropriate for large-scale facility data.
+    \end{itemize}
+\end{enumerate}
+
+\section{Relevance / Who Cares?}
+\begin{itemize}
+    \item \textbf{Scientific Facilities:} Synchrotrons, neutron sources, and other big-science labs need robust, future-proof strategies.
+    \item \textbf{Industrial Partners:} Companies analyzing materials data at scale can adopt more efficient workflows, reducing time-to-insight and costs.
+    \item \textbf{Data Management Community:} Expands best-practices on HPC-cloud integration, partial reads, and cost-optimized big-data solutions.
+\end{itemize}
+
+\section{Background of the Student}
+I am completing an MSc in Computer Science at KTH with coursework in \emph{Data-Intensive Computing, Data Storage Paradigms, Advanced Algorithms}, and significant experience (2,000+ hours) as a Full Stack Developer at Scatterin AB building AWS-based platforms for scientific data. My prior Bachelor’s thesis on cloud computing pricing complements the cost analysis in this project.
+
+\section{Supervision \& Resources}
+\begin{itemize}
+    \item \textbf{Scatterin AB:} Hosting the project, providing real experimental data and existing AWS infrastructure.
+    \item \textbf{Supervisor:} Dr.~Ahmet Bahadır Yıldız, KTH Royal Institute of Technology (SwedNess).
+    \item \textbf{Additional Expertise:} Prof.~Peter Hedström (Scatterin AB, KTH).
+    \item \textbf{Location:} Work carried out primarily at Scatterin AB’s KTH campus office, with daily supervision opportunities.
+\end{itemize}
+
+\section{Eligibility}
+I have verified that I'm eligible to start my degree project, that I fulfill the basic requirements of starting the project and that all relevant courses are already completed for the project.
+
+\section{Study Planning}
+Currently, the only remaining course I need to complete for my Master of Science in Computer Science is the Program Integrating Course in Computer Science (DD2300), which will run in parallel with the degree project. Additionally, I was enrolled in Scalable Software Development with Functional Programming (DD2489) during the most recent period, which ended one week ago. I have completed a substantial portion of the course requirements and am currently in discussion with the instructor to finalize the remaining components.
+
+\printbibliography
+
+\end{document}
