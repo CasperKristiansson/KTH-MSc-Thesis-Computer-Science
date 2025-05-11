@@ -1,0 +1,229 @@
+\documentclass{article}
+\usepackage{tabularx}
+\usepackage{graphicx}
+\usepackage{dirtytalk}
+\usepackage{pgfplotstable}
+\usepackage{pgfplots}
+\usepackage{datatool}
+\usepackage{siunitx}
+\usepackage[hyphens]{url}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{float}
+\usepackage[style=ieee]{biblatex}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{amsmath,amssymb}
+\usepackage{comment}
+\usepackage[normalem]{ulem}
+\usepackage[
+  left=2.5cm,    % 1 cm left margin
+  right=2.5cm,   % 1 cm right margin
+  top=2cm,     % (you can leave top/bottom alone or shrink them too)
+  bottom=2cm
+]{geometry}
+\usepackage{titling}
+\usepackage{booktabs}
+
+\setlength{\droptitle}{-1in}
+\useunder{\uline}{\ul}{}
+
+\addbibresource{main.bib}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=blue,      
+    urlcolor=blue,
+    citecolor=blue,
+}
+
+\pgfplotsset{compat=1.18}
+
+\title{Individual Plan Master's Thesis}
+\author{Name: Casper Ove Kristiansson\\Email: Casperkr@kth.se}
+\date{\today}
+
+\begin{document}
+
+\setlength\parindent{0pt}
+\maketitle
+
+\section{Project Information}
+\begin{itemize}
+  \item \textbf{Preliminary Title:} From Experiment to Insight: A Comparative Study of Storage Approaches for Large-Scale Synchrotron and Neutron Scattering Data on AWS
+  \item \textbf{Examiner (KTH):} Prof.\ Mats Nordahl
+  \item \textbf{Supervisor (KTH):} Prof.\ Sebastian Dalleiger
+  \item \textbf{Industry/External Supervisor:} Dr.\ Ahmet Bahadır Yıldız (Scatterin AB) — \texttt{ahmet@scatterin.com}
+  \item \textbf{Keywords:} Synchrotron data; Neutron scattering; Cloud storage; AWS; HDF5; Zarr; Parquet; DynamoDB; Big-data management; Scientific workflows
+\end{itemize}
+
+
+
+
+\section{Background \& Objective}
+\subsection{Scientific / Societal Context}
+Modern synchrotron and neutron facilities face issues with data handling where experiments can produce terabytes of data per day, which has overwhelmed traditional storage and analysis methods \cite{wang2018synchrotron}. During the last decade, numerous strategies have emerged to optimize data storage, management, and access for these large-scale scientific datasets. This thesis will investigate and prototype certain cloud-based solutions (particularly on Amazon Web Services) to handle large volumes of experimental data.
+
+\subsection{Interest of Organization (Scatterin AB)}
+Scatterin AB currently has a commercial platform that provides materials data analytics. With this platform, the current infrastructure has quite a few drawbacks regarding how it is set up and handles large-scale data sets.
+
+\subsection{High-Level Objective}
+This thesis intends to \emph{compare} multiple AWS-oriented storage approaches (HDF5, Zarr, Parquet, and DynamoDB) using real-world synchrotron/neutron datasets. The goal is to characterize the performance (latency, throughput), cost, and ease of integration for partial retrieval or queries, as well as key operations in beamline and scattering experiments.
+
+\subsection{Required Background Knowledge}
+I am completing an MSc in Computer Science at KTH with coursework in \emph{Data-Intensive Computing, Data Storage Paradigms, Advanced Algorithms}, and significant experience (2,000+ hours) as a Full-Stack Developer at Scatterin AB, building AWS-based platforms for scientific data.
+
+
+
+
+
+
+\section{Research Question \& Method}
+
+\subsection{Research Question}
+How do HDF5, Zarr, Parquet, and a NoSQL store compare in terms of performance, scalability, and cost when storing large-scale synchrotron and neutron scattering data on AWS, particularly for partial row or column retrieval?
+
+
+\subsection{Hypothesis}
+\begin{enumerate}
+    \item \textbf{Columnar Advantage (Parquet):} Columnar storage (Parquet) should excel for queries involving partial-column reads, reducing I/O overhead.
+    \item \textbf{Chunked Object Storage (Zarr):} Zarr’s chunk-based design may outperform HDF5 for parallel reads/writes in a purely cloud-native (object store) environment.
+    \item \textbf{HDF5 Familiarity:} HDF5 may remain favorable for certain multidimensional access patterns or legacy HPC-style workflows.
+    \item \textbf{NoSQL (DynamoDB) Trade-offs:} DynamoDB may be beneficial for extremely high concurrency, but less suitable for large-scale partial scans (e.g., retrieving entire columns or slices of data).
+\end{enumerate}
+
+\subsection{Objectives}
+\begin{enumerate}
+    \item Build 4 equivalent prototypes ingesting $\sim$ 1 TB of real beamline data
+    \item Produce metrics under 1–64-client parallel workloads
+    \item Compute month-long TCO scenarios for hot/warm/cold access tiers
+    \item Produce a concise decision matrix that highlights trade-offs and recommends when to choose each storage approach.
+\end{enumerate}
+
+\subsection{Tasks \& Challenges}
+\begin{enumerate}
+    \item \textbf{Requirements \& Literature Review:} 
+    Collect typical data requirements for scattering experiments, referencing the approaches in \cite{wang2018synchrotron, meyer2014store, moriyama2019public, kek2021aws, godoy2021efficient} and other HPC data management projects. To further improve my knowledge within statistical analysis, I will read a few chapters of the book \textit{All of Statistics: A Concise Course in Statistical Inference}. 
+    \item \textbf{Prototype Implementation:}
+        \begin{itemize}
+            \item Create a consistent dataset in HDF5, Zarr, Parquet, and DynamoDB (using AWS S3 or AWS native services).
+            \item Apply consistent chunking/partitioning logic, so each approach handles partial reads comparably.
+        \end{itemize}
+    \item \textbf{Testing and Metrics:}
+        \begin{itemize}
+            \item \emph{Dataset Volume:} Terabytes of realistic scattering data.
+            \item \emph{Performance Metrics:} Read/write latency, throughput under parallel access, storage cost (S3 usage, DynamoDB R/W units, data egress), partial retrieval overhead.
+            \item \emph{Scalability Testing:} Evaluate each approach as the dataset size and number of concurrent users grow.
+        \end{itemize}
+    \item \textbf{Analysis:}
+        \begin{itemize}
+            \item Compare trade-offs in cost, performance, and complexity. 
+            \item Provide recommendations on when each approach (HDF5, Zarr, Parquet, DynamoDB) is most appropriate for large-scale facility data.
+        \end{itemize}
+\end{enumerate}
+
+\subsection{Method}
+The methodology framework will be a combination of \emph{experimental benchmarking} with a \emph{design–science research} segment and lastly utilizing \emph{statistical analysis}.
+
+\subsubsection{Experimental benchmarking}
+Four functionally equivalent storage back-ends—HDF5, Zarr, Parquet (columnar files on S3), and DynamoDB (NoSQL), which will have the same ingest the same $\sim$1 TB synchrotron/neutron dataset, with the results of the experiments. Then each experiment will be run using different concurrency levels $\{1,2,4,8,16,32,64\}$.
+
+\subsubsection{Design–science research cycle}
+We adopt an iterative build–evaluate–refine process: each prototype is implemented, measured against our performance and reliability targets, and then adjusted based on the results. Insights from one iteration directly inform the design of the next, ensuring continuous improvement.
+
+\subsubsection{Statistical analysis}
+We use one-way ANOVA to compare mean values of our key metrics (read/write latency, throughput, cost) across the four storage approaches. If the data violate normality or equal-variance assumptions, we apply a Kruskal–Wallis test instead. We report p-values and 95 \% confidence intervals for each comparison.
+
+
+
+\subsection{Ethics \& Sustainability}
+One of the big things is data privacy. I need to ensure that the data that will be used in the experiments is something that can be published. Regarding sustainability, we need to discuss energy usage when utilizing cloud environments and compare it to on-premises solutions, and how it affects the carbon footprint.
+
+\subsection{Limitations}
+This thesis will only focus on AWS, meaning that no other cloud providers will be used to compare. We also don't compare with on-premises solutions using different storage solutions, such as tape.
+
+\subsection{Risks \& Mitigations}
+A few risk scenarios are AWS budget over usage, which can be mitigated using cost alerts and ensuring we can utilize AWS credits. Insufficient data volumes can be mitigated by using synthetic data generation as an alternative method. Another big risk is deviation from the schedule, which can be mitigated by always referring back to the plan and having meetings with both the host company and the supervisor to discuss solutions. 
+
+
+
+\section{Evaluation \& News Value}
+
+\subsection{Evaluation Metrics}
+\begin{itemize}
+    \item \emph{Performance Metrics:} Read/write latency, throughput under parallel access, storage cost (S3 usage, DynamoDB R/W units, data egress), partial retrieval overhead.
+    \item \emph{Scalability Testing:} Evaluate each approach as the size of the dataset and the number of concurrent users increase.
+\end{itemize}
+
+
+\subsection{Scientific Relevance}
+\textbf{Scientific Facilities:} Synchrotrons, neutron sources, and other big-science labs need robust, future-proof strategies.
+
+
+\subsection{Innovation / News Value}
+\textbf{Data Management Community:} Expands best practices on HPC-cloud integration, partial reads, and cost-optimized big-data solutions, especially in the synchrotron/neutron community.
+
+
+
+
+
+
+\section{Pre-Study}
+
+\subsection{Literature Review Focus}
+Collect typical data requirements for scattering experiments, referencing the approaches in \cite{wang2018synchrotron, meyer2014store, moriyama2019public, kek2021aws, godoy2021efficient} and other HPC data management projects. Will survey around 30 sources, which will be grouped into five different areas: Synchrotron and neutron big‐data architectures, Cloud‐based beamline portals and remote workflows, HPC I/O libraries and object-storage formats, Cost-aware cloud storage and economics, and lastly, Benchmarking and statistical foundations.
+
+
+
+
+\section{Conditions \& Schedule}
+
+\subsection{Resources Needed}
+Three areas: AWS credits (which can be utilized across AWS products), Software and tools (Python, PyArrow, h5py, zarr-python, AWS SDK), Real beamline datasets (provided by Scatterin AB) + synthetic generator.
+
+\subsection{External Supervisor Involvement}
+\textbf{Location:} Work carried out primarily at Scatterin AB’s KTH campus office, with daily supervision opportunities.
+
+\subsection{Timeline}
+\begin{center}
+\begingroup
+\setlength{\tabcolsep}{8pt}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Task} & \textbf{Start} & \textbf{End} \\
+\midrule
+\multicolumn{3}{l}{\textbf{Pre}} \\
+Kickoff \& detailed schedule & 2025-05-05 & 2025-05-11 \\
+Literature survey \& related work & 2025-05-05 & 2025-05-25 \\
+Define thesis scope \& research questions & 2025-05-12 & 2025-05-18 \\
+Experimental plan \& metric design & 2025-05-19 & 2025-05-25 \\
+Dataset acquisition \& preparation & 2025-05-26 & 2025-06-01 \\
+Draft Introduction \& Background & 2025-05-26 & 2025-06-08 \\
+Consolidate pre-study package for supervisor & 2025-06-02 & 2025-06-08 \\
+\midrule
+\multicolumn{3}{l}{\textbf{Main}} \\
+Prototype implementation (HDF5, Zarr, Parquet, DynamoDB) & 2025-06-16 & 2025-06-29 \\
+Data ingestion \& validation & 2025-06-23 & 2025-06-29 \\
+Benchmarking framework \& Methods draft & 2025-06-30 & 2025-07-06 \\
+Self-driven experiments \& drafting (no external feedback) & 2025-07-01 & 2025-08-31 \\
+\midrule
+\multicolumn{3}{l}{\textbf{Wrap up}} \\
+Cost modelling \& TCO analysis & 2025-07-28 & 2025-08-17 \\
+Statistical analysis \& visualisation & 2025-08-04 & 2025-08-10 \\
+Draft Results \& Decision matrix & 2025-08-11 & 2025-08-17 \\
+Draft Discussion \& Conclusions & 2025-09-01 & 2025-09-07 \\
+Self-review \& internal revision & 2025-09-01 & 2025-09-07 \\
+Final formatting \& proofreading & 2025-09-08 & 2025-09-21 \\
+\bottomrule
+\end{tabular}
+\endgroup
+\end{center}
+
+
+
+\printbibliography
+
+\end{document}
