@@ -134,7 +134,7 @@ Four functionally equivalent storage back-ends—HDF5, Zarr, Parquet (columnar f
 We adopt an iterative build–evaluate–refine process: each prototype is implemented, measured against our performance and reliability targets, and then adjusted based on the results. Insights from one iteration directly inform the design of the next, ensuring continuous improvement.
 
 \subsubsection{Statistical analysis}
-We use one-way ANOVA to compare mean values of our key metrics (read/write latency, throughput, cost) across the four storage approaches. If the data violate normality or equal-variance assumptions, we apply a Kruskal–Wallis test instead. We report p-values and 95 \% confidence intervals for each comparison.
+We use one-way ANOVA to compare mean values of our key metrics (read/write latency, throughput, cost) across the four storage approaches. If the data violate normality or equal-variance assumptions, we apply a Kruskal–Wallis test instead.
 
 
 
