@@ -18,9 +18,9 @@
 \usepackage{comment}
 \usepackage[normalem]{ulem}
 \usepackage[
-  left=2.5cm,
-  right=2.5cm,
-  top=2cm,
+  left=2.2cm,
+  right=2.2cm,
+  top=1.5cm,
   bottom=2cm
 ]{geometry}
 \usepackage{titling}
@@ -66,15 +66,11 @@
 \subsection{Scientific / Societal Context}
 Modern synchrotron and neutron facilities face issues with data handling where experiments can produce terabytes of data per day, which has overwhelmed traditional storage and analysis methods \cite{wang2018synchrotron}. During the last decade, numerous strategies have emerged to optimize data storage, management, and access for these large-scale scientific datasets. This thesis will investigate and prototype certain cloud-based solutions (particularly on Amazon Web Services) to handle large volumes of experimental data.
 
-\subsection{Interest of Organization (Scatterin AB)}
-Scatterin AB currently has a commercial platform that provides materials data analytics. With this platform, the current infrastructure has quite a few drawbacks regarding how it is set up and handles large-scale data sets.
+\subsection{Interest of Organization (Scatterin AB) \& Required Background Knowledge}
+Scatterin AB currently has a commercial platform that provides materials data analytics. With this platform, the current infrastructure has quite a few drawbacks regarding how it is set up and handles large-scale data sets. I am completing an MSc in Computer Science at KTH with coursework in \emph{Data-Intensive Computing, Data Storage Paradigms, Advanced Algorithms}, and significant experience (2,000+ hours) as a Full-Stack Developer at Scatterin AB, building AWS-based platforms for scientific data.
 
 \subsection{High-Level Objective}
 This thesis intends to \emph{compare} multiple AWS-oriented storage approaches (HDF5, Zarr, Parquet, Arrow/Feather, ROOT, and DynamoDB) using real-world synchrotron/neutron datasets. The goal is to characterize the performance (latency, throughput, compression efficiency), cost, and ease of integration for partial retrieval or queries, basic remote append/delete operations, as well as key operations in beamline and scattering experiments.
-
-
-\subsection{Required Background Knowledge}
-I am completing an MSc in Computer Science at KTH with coursework in \emph{Data-Intensive Computing, Data Storage Paradigms, Advanced Algorithms}, and significant experience (2,000+ hours) as a Full-Stack Developer at Scatterin AB, building AWS-based platforms for scientific data.
 
 
 
@@ -131,6 +127,18 @@ How do six candidate formats HDF5, Zarr, Parquet, Arrow/Feather, ROOT, and Dynam
 \subsection{Method}
 The methodology framework will be a combination of \emph{experimental benchmarking} with a \emph{design–science research} segment and lastly utilizing \emph{statistical analysis}.
 
+\subsubsection{Scientific method framework}
+\begin{itemize}
+  \item \textbf{Variables \& hypotheses:}  
+    Independent variable: storage format (six approaches). Dependent variables: latency, throughput, compression ratio, cost. For each metric and each pair of formats, whether their mean values are equal (no difference) or not, using a 5 \% significance level.
+  \item \textbf{Design \& data:}  
+    $n=50$ randomized runs per format on an EC2 instance, both on a RAM-disk (no swapping) and via AWS S3.
+  \item \textbf{Analysis \& decision rule:}  
+    Shapiro–Wilk for normality; if satisfied, one-way ANOVA + Tukey HSD, otherwise Kruskal–Wallis + Dunn (Holm correction).  
+    Report effect sizes; reject when lower than a 5 \% significance level.
+\end{itemize}
+
+
 \subsubsection{Experimental benchmarking}
 Six functionally equivalent storage backends, HDF5, Zarr, Parquet, Arrow/Feather, ROOT, and DynamoDB, will ingest the same $\sim$1 TB synchrotron/neutron dataset. Each experiment is repeated with and without the three selected compression schemes.
 
@@ -160,8 +168,6 @@ Will assess each storage approach using concise, single-threaded benchmarks. Rea
 
 
 \section{Pre-Study}
-
-\subsection{Literature Review Focus}
 Collect typical data requirements for scattering experiments, referencing the approaches in \cite{wang2018synchrotron, meyer2014store, moriyama2019public, godoy2021efficient} and other HPC data management projects. Will survey around 30 sources, which will be grouped into five different areas: Synchrotron and neutron big‐data architectures, Cloud‐based beamline portals and remote workflows, HPC I/O libraries and object-storage formats, Cost-aware cloud storage and economics, and lastly, Benchmarking and statistical foundations.
 
 
@@ -170,7 +176,7 @@ Collect typical data requirements for scattering experiments, referencing the ap
 \section{Conditions \& Schedule}
 
 \subsection{Resources Needed and External Supervisor Involvement}
-Three areas: AWS credits (which can be utilized across AWS products), Software and tools (Python, PyArrow, h5py, zarr-python, AWS SDK), Real beamline datasets (provided by Scatterin AB) + synthetic generator. \textbf{Location:} Work carried out primarily at Scatterin AB’s KTH campus office, with daily supervision opportunities.
+Three areas: AWS credits (which can be utilized across AWS products), Software and tools (Python, PyArrow, h5py, zarr-python, AWS SDK), Real beamline datasets (provided by Scatterin AB) + synthetic generator. Work carried out primarily at Scatterin AB’s KTH campus office, with daily supervision opportunities.
 
 \subsection{Timeline}
 \begin{center}
@@ -191,7 +197,7 @@ Three areas: AWS credits (which can be utilized across AWS products), Software a
             Consolidate pre-study package for supervisor & 2025-06-02 & 2025-06-08 \\
             \midrule
             \multicolumn{3}{l}{\textbf{Main}} \\
-            Prototype implementation (HDF5, Zarr, Parquet, DynamoDB) & 2025-06-16 & 2025-06-29 \\
+            Prototype implementation (six different approaches) & 2025-06-16 & 2025-06-29 \\
             Data ingestion \& validation & 2025-06-23 & 2025-06-29 \\
             Benchmarking framework \& Methods draft & 2025-06-30 & 2025-07-06 \\
             Self-driven experiments \& drafting (no external feedback) & 2025-07-01 & 2025-08-31 \\
