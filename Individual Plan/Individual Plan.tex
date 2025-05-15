@@ -101,7 +101,7 @@ How do six candidate formats HDF5, Zarr, Parquet, Arrow/Feather, ROOT, and Dynam
 \subsection{Objectives}
 \begin{enumerate}
     \item Build prototypes for six storage formats (HDF5, Zarr, Parquet, Arrow/Feather, ROOT, DynamoDB) ingesting $\sim$1 TB of two data types, tabular (1 M×20) and dense (x,y) arrays where each tested with and without \{zstd, LZ4, gzip\}.
-    \item Produce performance and compression metrics (latency, throughput, compression ratio, CPU overhead) under 1–64 client parallel workloads.
+    \item Produce performance and compression metrics (latency, throughput, compression ratio, CPU overhead).
     \item Compute month-long TCO scenarios for hot/warm/cold access tiers
     \item Produce a concise decision matrix that highlights trade-offs and recommends when to choose each storage approach.
 \end{enumerate}
@@ -132,30 +132,26 @@ How do six candidate formats HDF5, Zarr, Parquet, Arrow/Feather, ROOT, and Dynam
 The methodology framework will be a combination of \emph{experimental benchmarking} with a \emph{design–science research} segment and lastly utilizing \emph{statistical analysis}.
 
 \subsubsection{Experimental benchmarking}
-Six functionally equivalent storage backends, HDF5, Zarr, Parquet, Arrow/Feather, ROOT, and DynamoDB will ingest the same $\sim$1 TB synchrotron/neutron dataset. Each experiment runs at concurrency levels $\{1,2,4,8,16,32,64\}$ and is repeated with and without the three selected compression schemes.
+Six functionally equivalent storage backends, HDF5, Zarr, Parquet, Arrow/Feather, ROOT, and DynamoDB, will ingest the same $\sim$1 TB synchrotron/neutron dataset. Each experiment is repeated with and without the three selected compression schemes.
 
 
 \subsubsection{Design–science research cycle \& Statistical analysis}
-We adopt an iterative build–evaluate–refine process: each prototype is implemented, measured against our performance and reliability targets, and then adjusted based on the results. Insights from one iteration directly inform the design of the next, ensuring continuous improvement. We use one-way ANOVA to compare mean values of our key metrics (read/write latency, throughput, cost) across the four storage approaches. If the data violate normality or equal-variance assumptions, we apply a Kruskal–Wallis test instead.
+Will adopt an iterative build–evaluate–refine process: each prototype is implemented, measured against our performance and reliability targets, and then adjusted based on the results. Insights from one iteration directly inform the design of the next, ensuring continuous improvement. Will use one-way ANOVA to compare mean values of our key metrics (read/write latency, throughput, cost) across the four storage approaches. If the data violate normality or equal-variance assumptions and apply a Kruskal–Wallis test instead.
 
 
 
 \subsection{Ethics \& Sustainability}
-One of the big things is data privacy. I need to ensure that the data that will be used in the experiments is something that can be published. Regarding sustainability, we need to discuss energy usage when utilizing cloud environments and compare it to on-premises solutions, and how it affects the carbon footprint.
+One of the big things is data privacy. I need to ensure that the data that will be used in the experiments is something that can be published. Regarding sustainability, I will need to discuss energy usage when utilizing cloud environments and compare it to on-premises solutions, and how it affects the carbon footprint.
 
 \subsection{Limitations \& Risks \& Mitigations}
-This thesis will only focus on AWS, meaning that no other cloud providers will be used to compare. We also don't compare with on-premises solutions using different storage solutions, such as tape. A few risk scenarios are AWS budget over usage, which can be mitigated using cost alerts and ensuring we can utilize AWS credits. Insufficient data volumes can be mitigated by using synthetic data generation as an alternative method. Another big risk is deviation from the schedule, which can be mitigated by always referring back to the plan and having meetings with both the host company and the supervisor to discuss solutions. 
+This thesis will only focus on AWS, meaning that no other cloud providers will be used to compare. I also don't compare with on-premises solutions using different storage solutions, such as tape. A few risk scenarios are AWS budget over usage, which can be mitigated using cost alerts and ensuring I can utilize AWS credits. Insufficient data volumes can be mitigated by using synthetic data generation as an alternative method. Another big risk is deviation from the schedule, which can be mitigated by always referring back to the plan and having meetings with both the host company and the supervisor to discuss solutions. 
 
 
 
 \section{Evaluation \& News Value}
 
 \subsection{Evaluation Metrics}
-\begin{itemize}
-    \item \emph{Performance Metrics:} Read/write latency, throughput under parallel access, storage cost (S3 usage, DynamoDB R/W units, data egress), partial retrieval overhead.
-    \item \emph{Scalability Testing:} Evaluate each approach as the size of the dataset and the number of concurrent users increase.
-\end{itemize}
-
+Will assess each storage approach using concise, single-threaded benchmarks. Read and write latency will be measured by the median and 95\% percentile. Compression efficiency combines the compression ratio with CPU time per GiB for zstd, LZ4, and gzip. Cost analysis models a one-month total cost of ownership for a 1 TB dataset in AWS hot, warm, and cold tiers. Finally, partial retrieval overhead is quantified by measuring end-to-end access times for small slices of tabular and dense array data. 
 
 \subsection{Scientific Relevance \& Innovation / News Value}
 \textbf{Scientific Facilities:} Synchrotrons, neutron sources, and other big-science labs need robust, future-proof strategies. \textbf{Data Management Community:} Expands best practices on HPC-cloud integration, partial reads, and cost-optimized big-data solutions, especially in the synchrotron/neutron community.
