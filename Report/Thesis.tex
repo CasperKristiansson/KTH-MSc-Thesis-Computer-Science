@@ -18,10 +18,10 @@
 
 \makeatletter
 \newcommand{\disablepackage}[2]{
-  \disable@package@load{#1}{#2}
+ \disable@package@load{#1}{#2}
 }
 \newcommand{\reenablepackage}[1]{
-  \reenable@package@load{#1}
+ \reenable@package@load{#1}
 }
 \makeatother
 \ifxeorlua
@@ -30,7 +30,7 @@
 
 \documentclass[nomenclature, english, bibtex]{kththesis}
 
-\newcommand*{\generalExpl}[1]{\todo[inline]{#1}}                
+\newcommand*{\generalExpl}[1]{\todo[inline]{#1}}        
 
 \newcommand*{\engExpl}[1]{\todo[inline, backgroundcolor=kth-lightgreen40]{#1}}
 \newcommand*{\sweExpl}[1]{\todo[inline, backgroundcolor=kth-lightblue40]{#1}}
@@ -38,10 +38,10 @@
 \newcommand*{\warningExpl}[1]{\todo[inline, backgroundcolor=kth-lightred40]{#1}}
 
 \ifbiblatex
-    \usepackage[style=ieee,citestyle=numeric-comp]{biblatex}
-    \addbibresource{references.bib}
+  \usepackage[style=ieee,citestyle=numeric-comp]{biblatex}
+  \addbibresource{references.bib}
 \else
-    \bibliographystyle{bibstyle/myIEEEtran}
+  \bibliographystyle{bibstyle/myIEEEtran}
 \fi
 
 
@@ -61,19 +61,19 @@
 
 
 \lstnewenvironment{verbatimsc}
-    {
-    \lstset{
-        basicstyle=\ttfamily\tiny,
-        backgroundcolor=\color{white},
-        columns=[l]fixed,
-        language=[LaTeX]TeX,
-        keywordstyle=\color{red},
-        breaklines=true,
-        breakatwhitespace=true,
-        breakindent=0em,
-        frame=none,
-        postbreak={}
-    }
+  {
+  \lstset{
+    basicstyle=\ttfamily\tiny,
+    backgroundcolor=\color{white},
+    columns=[l]fixed,
+    language=[LaTeX]TeX,
+    keywordstyle=\color{red},
+    breaklines=true,
+    breakatwhitespace=true,
+    breakindent=0em,
+    frame=none,
+    postbreak={}
+  }
 }{}
 
 \lstdefinestyle{[LaTeX]TeX}{
@@ -88,32 +88,32 @@ morekeywords={begin, todo, textbf, textit, texttt}
 \newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}p{#1}}
 
 \ifbiblatex
-    \usepackage[plainpages=false]{hyperref}
+  \usepackage[plainpages=false]{hyperref}
 \else
-    \usepackage[
-    backref=page,
-    pagebackref=false,
-    plainpages=false,
-    unicode=true,
-    bookmarks=true,
-    bookmarksopen=false,
-    pdfpagemode=UseNone,
-    destlabel,
-    pdfencoding=auto,
-    ]{hyperref}
-    \makeatletter
-    \ltx@ifpackageloaded{attachfile2}{
-    }
-    {\usepackage{backref}
-    \renewcommand*{\backref}[1]{}
-    \renewcommand*{\backrefalt}[4]{
-    \ifcase #1
-          \or [Page~#2.]
-          \else [Pages~#2.]
-    \fi
-    }
-    }
-    \makeatother
+  \usepackage[
+  backref=page,
+  pagebackref=false,
+  plainpages=false,
+  unicode=true,
+  bookmarks=true,
+  bookmarksopen=false,
+  pdfpagemode=UseNone,
+  destlabel,
+  pdfencoding=auto,
+  ]{hyperref}
+  \makeatletter
+  \ltx@ifpackageloaded{attachfile2}{
+  }
+  {\usepackage{backref}
+  \renewcommand*{\backref}[1]{}
+  \renewcommand*{\backrefalt}[4]{
+  \ifcase #1
+     \or [Page~#2.]
+     \else [Pages~#2.]
+  \fi
+  }
+  }
+  \makeatother
 
 \fi
 \usepackage[all]{hypcap}
@@ -147,8 +147,8 @@ nopostdot]{glossaries}
 \alttitle{Från experiment till insikt: En jämförande studie av lagringsmetoder för storskaliga synkrotron- och neutronstrålningsdata på AWS}
 \altsubtitle{-Undertitle-}
 
-\EnglishKeywords{Synchrotron data; Neutron scattering; Cloud storage; AWS; HDF5; Zarr; Parquet;  DynamoDB;  Scientific workflows Arrow/Feather; ROOT; Compression;}
-\SwedishKeywords{Synkrotrondata; Neutronspridning; Molnlagring; AWS; HDF5; Zarr; Parquet; DynamoDB; Vetenskapliga arbetsflöden; Arrow/Feather; ROOT; Komprimering;}
+\EnglishKeywords{Synchrotron data; Neutron scattering; Cloud storage; AWS; HDF5; Zarr; Parquet; Scientific workflows Arrow/Feather; ROOT; Compression;}
+\SwedishKeywords{Synkrotrondata; Neutronspridning; Molnlagring; AWS; HDF5; Zarr; Parquet; Vetenskapliga arbetsflöden; Arrow/Feather; ROOT; Komprimering;}
 
 \presentationDateAndTimeISO{2022-03-15 13:00}
 \presentationLanguage{eng}
@@ -163,11 +163,11 @@ nopostdot]{glossaries}
 \input{lib/pdf_related_includes}
  
 \hypersetup{
-	colorlinks  = true,
-	breaklinks  = true,
-	linkcolor   = \linkscolor,
-	urlcolor    = \urlscolor,
-	citecolor   = \refscolor,
+	colorlinks = true,
+	breaklinks = true,
+	linkcolor  = \linkscolor,
+	urlcolor  = \urlscolor,
+	citecolor  = \refscolor,
 	anchorcolor = black
 }
 
@@ -185,53 +185,53 @@ nopostdot]{glossaries}
 \definecolor{string}{RGB}{0, 0, 0}
 
 \lstdefinelanguage{json}{
-    numbers=none,
-    numberstyle=\small,
-    frame=none,
-    rulecolor=\color{black},
-    showspaces=false,
-    showtabs=false,
-    breaklines=true,
-    postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\color{gray}\hookrightarrow\space}},
-    breakatwhitespace=true,
-    basicstyle=\ttfamily\small,
-    extendedchars=false,
-    upquote=true,
-    morestring=[b]",
-    stringstyle=\color{string},
-    literate=
-     *{0}{{{\color{numb}0}}}{1}
-      {1}{{{\color{numb}1}}}{1}
-      {2}{{{\color{numb}2}}}{1}
-      {3}{{{\color{numb}3}}}{1}
-      {4}{{{\color{numb}4}}}{1}
-      {5}{{{\color{numb}5}}}{1}
-      {6}{{{\color{numb}6}}}{1}
-      {7}{{{\color{numb}7}}}{1}
-      {8}{{{\color{numb}8}}}{1}
-      {9}{{{\color{numb}9}}}{1}
-      {:}{{{\color{punct}{:}}}}{1}
-      {,}{{{\color{punct}{,}}}}{1}
-      {\{}{{{\color{delim}{\{}}}}{1}
-      {\}}{{{\color{delim}{\}}}}}{1}
-      {[}{{{\color{delim}{[}}}}{1}
-      {]}{{{\color{delim}{]}}}}{1}
-      {’}{{\char13}}1,
+  numbers=none,
+  numberstyle=\small,
+  frame=none,
+  rulecolor=\color{black},
+  showspaces=false,
+  showtabs=false,
+  breaklines=true,
+  postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\color{gray}\hookrightarrow\space}},
+  breakatwhitespace=true,
+  basicstyle=\ttfamily\small,
+  extendedchars=false,
+  upquote=true,
+  morestring=[b]",
+  stringstyle=\color{string},
+  literate=
+   *{0}{{{\color{numb}0}}}{1}
+   {1}{{{\color{numb}1}}}{1}
+   {2}{{{\color{numb}2}}}{1}
+   {3}{{{\color{numb}3}}}{1}
+   {4}{{{\color{numb}4}}}{1}
+   {5}{{{\color{numb}5}}}{1}
+   {6}{{{\color{numb}6}}}{1}
+   {7}{{{\color{numb}7}}}{1}
+   {8}{{{\color{numb}8}}}{1}
+   {9}{{{\color{numb}9}}}{1}
+   {:}{{{\color{punct}{:}}}}{1}
+   {,}{{{\color{punct}{,}}}}{1}
+   {\{}{{{\color{delim}{\{}}}}{1}
+   {\}}{{{\color{delim}{\}}}}}{1}
+   {[}{{{\color{delim}{[}}}}{1}
+   {]}{{{\color{delim}{]}}}}{1}
+   {’}{{\char13}}1,
 }
 
 \lstdefinelanguage{XML}
 {
-  basicstyle=\ttfamily\color{blue}\bfseries\small,
-  morestring=[b]",
-  morestring=[s]{>}{<},
-  morecomment=[s]{<?}{?>},
-  stringstyle=\color{black},
-  identifierstyle=\color{blue},
-  keywordstyle=\color{cyan},
-  breaklines=true,
-  postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\color{gray}\hookrightarrow\space}},
-  breakatwhitespace=true,
-  morekeywords={xmlns,version,type}
+ basicstyle=\ttfamily\color{blue}\bfseries\small,
+ morestring=[b]",
+ morestring=[s]{>}{<},
+ morecomment=[s]{<?}{?>},
+ stringstyle=\color{black},
+ identifierstyle=\color{blue},
+ keywordstyle=\color{cyan},
+ breaklines=true,
+ postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\color{gray}\hookrightarrow\space}},
+ breakatwhitespace=true,
+ morekeywords={xmlns,version,type}
 }
 
 \makeatletter
@@ -247,15 +247,15 @@ nopostdot]{glossaries}
 
 \begin{comment}
 \usepackage[
-    type={CC},
-    %modifier={by-nc-nd},
-    %version={4.0},
-    modifier={by-nc},
-    imagemodifier={-eu-88x31},  % to get Euro symbol rather than Dollar sign
-    hyphenation={RaggedRight},
-    version={4.0},
-    %modifier={zero},
-    %version={1.0},
+  type={CC},
+  %modifier={by-nc-nd},
+  %version={4.0},
+  modifier={by-nc},
+  imagemodifier={-eu-88x31}, % to get Euro symbol rather than Dollar sign
+  hyphenation={RaggedRight},
+  version={4.0},
+  %modifier={zero},
+  %version={1.0},
 ]{doclicense}
 \end{comment}
 
@@ -272,7 +272,7 @@ nopostdot]{glossaries}
 \frontmatter
 \setcounter{page}{1}
 \begin{abstract}
-  \markboth{\abstractname}{}
+ \markboth{\abstractname}{}
 \begin{scontents}[store-env=lang]
 eng
 \end{scontents}
@@ -299,7 +299,7 @@ eng
 \fancypagestyle{plain}{}
 \renewcommand{\chaptermark}[1]{ \markboth{#1}{}} 
 \tableofcontents
-  \markboth{\contentsname}{}
+ \markboth{\contentsname}{}
 
 \cleardoublepage
 \listoffigures
@@ -312,16 +312,16 @@ eng
 
 
 \newglossarystyle{mylong}{
-  \setglossarystyle{long}
-  \renewenvironment{theglossary}
-     {\begin{longtable}[l]{@{}p{\dimexpr 2cm-\tabcolsep}p{0.8\hsize}}}
-     {\end{longtable}}
+ \setglossarystyle{long}
+ \renewenvironment{theglossary}
+   {\begin{longtable}[l]{@{}p{\dimexpr 2cm-\tabcolsep}p{0.8\hsize}}}
+   {\end{longtable}}
  }
 \printglossary[style=mylong, type=\acronymtype, title={List of acronyms and abbreviations}]
 
 \ifnomenclature
-    \cleardoublepage
-    \printnomenclature
+  \cleardoublepage
+  \printnomenclature
 \fi
 
 \label{pg:lastPageofPreface}
@@ -343,43 +343,152 @@ eng
 
 \chapter{Introduction}
 \label{ch:introduction}
+Modern synchrotron and neutron scattering facilities have dramatically increased data output, generating up to 7.7 GB per second \cite{celcer2018gigafrost}. Traditional HPC storage stacks, parallel file systems like Lustre or GPFS, are optimized for large, contiguous transfers but falter when users demand rapid, on‐beamline feedback via small, partial reads. At the same time, collaborating teams often face network-mounted filesystem bottlenecks and the escalating capital costs of maintaining on-premises systems.
 
+Cloud object storage (e.g., AWS S3) offers a compelling alternative with unlimited capacity, global accessibility, and pay‐as‐you‐go economic models. However, naively mapping monolithic formats such as HDF5 or NeXus onto S3 leads to thousands of range‐GETs for minor chunk accesses, inefficient metadata lookups, and unpredictable request fees \cite{durbin2020cloud}. In response, a new ecosystem of cloud‐native storage models has emerged: chunked arrays (Zarr), columnar layouts (Parquet), zero‐copy IPC (Arrow/Feather), tree‐based event stores (ROOT/RNTuple), each promising different trade‐offs in latency, throughput, compression, CPU overhead, and cost \cite{ambatipudi2023comparisonhdf5zarrnetcdf4,zeng2023empiricalevaluationcolumnarstorage,Lopez_Gomez_2023}.
+
+Despite growing adoption, there remains no unified, experimental comparison of these five approaches on realistic, terabyte‐scale scattering datasets in AWS. Therefore, This thesis implements and benchmarks each format across compression and access patterns to build a decision matrix that guides beamline scientists and data‐intensive computing engineers.
 
 \section{Background}
-\label{sec:background}
+As synchrotron and neutron facilities have evolved, detector technologies and beamline instrumentation have driven data generation rates from megabytes to multiple gigabytes per second. Modern experiments frequently combine multiple detectors and scan axes, such as energy, angle, or polarization, resulting in multidimensional datasets that can reach terabyte scales within a single experimental run \cite{celcer2018gigafrost}.
+
+\subsection{Limitations of Traditional HPC Storage}
+Researchers historically stored beamline data on parallel file systems like Lustre or GPFS and accessed it using MPI-IO or batch-oriented workflows. These systems work great for large‐block I/O operations but have high overhead when serving thousands of small, random reads, typical of exploratory data slices or metadata queries \cite{narayan2010characterization}. Furthermore, maintaining on‐premises HPC arrays entails significant capital and operational expenditures and network‐mount complexity for geographically distributed collaborators (usually seen because experiments happen in only key parts of the world).
+
+\subsection{Emergence of Cloud-Native Storage Models}
+Cloud object storage, most notably Amazon S3, has emerged as an attractive alternative in recent years. Object stores provide virtually unlimited, durable storage, global namespace access, and a pay‐as‐you‐go billing model that shifts capital costs to operational expenses. However, monolithic scientific formats such as HDF5 or NeXus for POSIX-style filesystems and storing them naively on S3 generate hundreds or thousands of HTTP range-GET requests per small read, plus extra LIST/HEAD operations for metadata traversal \cite{durbin2020cloud}.
+
+Researchers have introduced a new generation of cloud-native data models to address these shortcomings. Zarr and similar chunked array formats expose each multidimensional chunk as an independent object, enabling massive parallel GET/PUT operations and delivering aggregate bandwidths comparable to HPC filesystems when chunks are set to a few megabytes each. \cite{moore2023ome}. Columnar storage formats such as Apache Parquet organize data in row groups and column stripes, pruning unneeded fields to reduce I/O usage \cite{ivanov2020impact}. Apache Arrow delivers zero‐copy, in‐memory serialization that minimizes CPU overhead and achieves sub‐millisecond data transfer \cite{10.1145/3527199.3527264}. In parallel, the high‐energy physics community has extended ROOT’s TTree and RNTuple abstractions to object‐store backends, preserving branch‐level selective reads while retaining local filesystem performance characteristics \cite{DBLP:journals/corr/abs-2107-07304}.
+
+Each approach offers distinct trade‐offs in latency, throughput, compression efficiency, CPU overhead, and cost. Although individual formats have been benchmarked in isolation or within specific domains, there is no comprehensive, side‐by‐side evaluation of realistic, terabyte‐scale scattering datasets in AWS. Addressing this gap will inform both beamline scientists, seeking responsive, cost‐effective data access, and data‐intensive computing engineers, designing next‐generation, cloud‐native scientific platforms.
 
 
 \section{Problem}
 \label{sec:problem}
+Handling large-scale scattering datasets on AWS S3 reveals several limitations in current data platforms. First, partial reads of beamline slices, such as retrieving a single detector channel or angular data segment, can result in high latency due to the need to perform hundreds, if not thousands, of GET operations and metadata lookups, leading to delayed experimental feedback. Secondly, existing prototype implementations have demonstrated performance only up to several hundred gigabytes; scaling these workflows to terabyte-scale (1 TB+) experiments exposes unresolved bottlenecks in data ingestion and resource usage. Thirdly, the interaction between storage formats and compression algorithms (e.g., zstd, LZ4, gzip) has not been systematically evaluated, making it unclear which format codec combinations best optimize latency, throughput, and cost for large-scale S3‐based workflows.
+
+These industrial challenges raise questions for the data-intensive computing community: How can we systematically leverage and compare different storage backends to generate guidance for scientific users? Which combinations of performance, cost, and integration trade-offs matter most when designing cloud-native workflows for interactive, partial-retrieval use cases? \emph{How do five candidate formats (HDF5, Zarr, Parquet, Arrow/Feather, ROOT) compare on AWS regarding performance, scalability, cost, and compression efficiency for partial-retrieval workloads on large-scale scattering datasets?} Answering this question will enable the development of best practices for data handling at synchrotron and neutron facilities and provide transferable insights to other big-data science domains, improving experimental productivity and resource efficiency, especially in cloud computing.
+
+\subsection{Original problem and definition}
+This thesis defines the original industrial problem as optimizing the retrieval of small, targeted data slices (e.g., a single angle’s worth of diffraction frames) from multi-terabyte scattering datasets stored on AWS S3. “Partial retrieval” refers to reading only the necessary object segments by byte range or object key rather than downloading entire files. This scope excludes batch transfers or on-premises filesystem solutions; it focuses solely on cloud-native, object-store-based workflows.
 
 
-\subsection{{some subsection}}
-\label{sec:researchQuestion}
+\subsection{Scientific and engineering issues}
+Generalizing beyond the narrow industrial case leads to several key research questions:
 
+\begin{itemize}
+ \item Which access patterns (e.g., small random reads vs.\ large sequential scans) stress each format’s architecture the most?
+ \item How do different compression algorithms (zstd, LZ4, gzip) interact with object-stored data, and how does it affect end-to-end latency and throughput?
+\end{itemize}
 
-\subsection{{some subsection}}
+These questions are directly relevant to ongoing research in HPC and data-intensive computing, where cloud adoption continues to challenge traditional storage paradigms.
 
 
 
 
 \section{Purpose}
+The purpose of this thesis is twofold. First, this study seeks to advance the scientific and engineering understanding of cloud‐native storage paradigms within the data‐intensive computing community. Drawing on design–science research methodologies \cite{hevner2004design}, it will experimentally quantify the trade‐offs among compression efficiency (zstd, LZ4, gzip), performance of retrieval, and economic metrics (request fees, egress charges) for terabyte‐scale, multidimensional datasets. The decision matrix and best‐practice recommendations will inform beamline scientists seeking rapid feedback during experiments and guide platform architects in building next‐generation, cloud‐optimized scientific workflows.
+
+Secondly, it aims to provide Scatterin AB with a practical, evidence-based framework to optimize its cloud-based data platform for large‐scale synchrotron and neutron scattering experiments. By implementing and benchmarking five distinct storage approaches (HDF5/HSDS, Zarr, Parquet, Arrow/Feather, ROOT/RNTuple) on AWS S3, this work will deliver concrete guidance on how to minimize latency for partial‐read use cases, maximize throughput, and control pay‐as‐you‐go costs under varying access patterns.
 
 
 
 \section{Goals}
+This paper aims to develop a comprehensive, experimentally validated decision framework that guides the selection and configuration of cloud‐native storage solutions for large‐scale AWS synchrotron and neutron scattering datasets. To achieve this, the following sub‐goals are defined:
+
+\begin{enumerate}
+  \item \textbf{Prototype Development.}
+    \begin{itemize}
+      \item Ingest a representative $\sim$1 TB dataset (tabular metadata and dense multidimensional arrays) into each of five storage backends: HDF5/HSDS, Zarr, Parquet, Arrow/Feather, ROOT/RNTuple.
+      \item Implement consistent chunking and compression (zstd, LZ4, gzip) to ensure fair comparisons across formats.
+    \end{itemize}
+
+  \item \textbf{Quantitative Benchmarking.}
+    \begin{itemize}
+      \item Measure read and write latency for both partial‐slice and full‐scan workloads.
+      \item Evaluate compression efficiency (size reduction vs.\ CPU time) for each algorithm.
+      \item Compute the one‐month total cost of ownership (TCO) in AWS hot, warm, and cold storage tiers, incorporating request fees and egress charges.
+    \end{itemize}
+
+  \item \textbf{Decision Matrix and Guidelines.}
+    \begin{itemize}
+      \item Synthesize results into a matrix correlating workload patterns (partial vs.\ bulk reads, concurrency, compression) with format‐specific performance, cost, and ease of integration.
+      \item Formulate best‐practice recommendations for beamline scientists and data‐intensive computing engineers.
+    \end{itemize}
+\end{enumerate}
+
 
 
 
 \section{Research Methodology}
 
+This study adopts an \emph{experimental benchmarking} approach within a design–science framework to evaluate five storage backends on AWS. Our methodology comprises four main components:
+
+\begin{enumerate}
+  \item \textbf{Data ingestion and environment setup.}
+  \begin{itemize}
+    \item Acquire two $\sim$1 TB datasets representative of synchrotron and neutron experiments: a tabular dataset (1 M × 20) and a dense 3D array.
+    \item Provision EC2 instances with both RAM‐disk and S3‐backed configurations, using Terraform for reproducible infrastructure \cite{hashicorp2025terraform}.
+    \item Implement ingestion pipelines for HDF5, Zarr, Parquet, Arrow/Feather, ROOT/RNTuple, mapped over compression algorithms (zstd, LZ4, gzip).
+  \end{itemize}
+
+  \item \textbf{Performance testing.}
+  \begin{itemize}
+    \item Define two access patterns: \emph{small‐slice reads} (4–8 MB chunks) and \emph{bulk scans} (full dataset sequential read).
+    \item Execute $n=50$ randomized runs per format, per pattern, on both RAM‐disk and S3, measuring median and 95th‐percentile latency, throughput (MB/s), compression ratio, and CPU utilization.
+  \end{itemize}
+
+  \item \textbf{Scientific method framework}
+  \begin{itemize}
+    \item \textbf{Variables \& hypotheses:}  
+    Independent variable: storage format (five approaches). Dependent variables: latency, throughput, compression ratio, cost. For each metric and each pair of formats, whether their mean values are equal (no difference) or not, using a 5 \% significance level.
+    \item \textbf{Design \& data:}  
+    $n=50$ randomized runs per format on an EC2 instance, both on a RAM-disk and via AWS S3.
+    \item \textbf{Analysis \& decision rule:}  
+    Shapiro–Wilk for normality; if satisfied, one-way ANOVA + Tukey HSD, otherwise Kruskal–Wallis + Dunn (Holm correction).  
+    Report effect sizes; reject when lower than a 5 \% significance level.
+  \end{itemize}
+
+  \item \textbf{Cost modeling.}
+  \begin{itemize}
+    \item AWS Pricing to compute a one-month TCO scenario for hot (S3 Standard), warm (Infrequent Access), and cold (Glacier) tiers, including request and egress fees.
+  \end{itemize}
+\end{enumerate}
+
+The code and infrastructure are versioned and configured in a public Git repository. Benchmark parameters and raw measurements will be archived and made available alongside the thesis. This rigorous methodology lets us derive statistically sound, actionable guidelines for selecting cloud-native storage formats in large-scale scientific workflows.
+
 
 
 \section{Delimitations}
+
+This thesis focuses exclusively on cloud-native, object-store–based workflows within the Amazon Web Services (AWS) ecosystem. Specifically, five storage backends are evaluated, HDF5, Zarr, Parquet, Arrow/Feather, and ROOT/RNTuple, by ingesting and benchmarking two representative 1 TB datasets (tabular and dense arrays) on EC2 instances with S3 storage. The following boundaries apply:
+
+\begin{itemize}
+	\item \textbf{Cloud provider scope:} Only AWS services (S3, EC2) are considered. No experiments involve Azure, Google Cloud, or on-premises HPC clusters.
+ 	\item \textbf{Storage formats:} The study is limited to the five specified formats. Other emerging or domain-specific formats (e.g., Avro, ORC, CBF, NeXus variants) fall outside the scope.
+ 	\item \textbf{Workload types:} Benchmarks cover two data sets of scattering data: a 1 M × 20 tabular dataset and a 3D dense array.
+ 	\item \textbf{Access patterns:} Evaluation targets small-chunk partial reads (4–8 MB) and full-dataset scans. This study excludes other patterns (e.g., random single-element lookups and real-time streaming ingestion).
+ 	\item \textbf{Compression algorithms:} Only three widely used algorithms, zstd, LZ4, and gzip, are applied. The analysis applies only three widely used compression algorithms: zstd, LZ4, and gzip.
+\end{itemize}
+
+These delimitations ensure a focused, reproducible comparison of core performance and cost trade-offs for large-scale scientific data storage in AWS.
 
 
 
 \section{Structure of the thesis}
 
+This thesis is organized into seven main chapters, followed by appendices:
+
+\begin{description}
+  \item[Chapter 1: Introduction] Presents the motivation, scope, research question, methodology overview, delimitations, and outlines the thesis structure.
+  \item[Chapter 2: Background] Reviews scientific data challenges in synchrotron and neutron facilities, surveys traditional HPC I/O and emerging cloud‐native formats (HDF5/HSDS, Zarr, Parquet, Arrow/Feather, ROOT/RNTuple), and identifies gaps in existing benchmarks.
+  \item[Chapter 3: Research Methodology] Details the experimental design: dataset selection, AWS infrastructure setup, ingestion pipelines, access patterns, performance metrics, statistical tests, and cost/sustainability modeling.
+  \item[Chapter 4: Implementation] Describes prototype implementations for each storage backend, reproducible chunking and compression, and automation of ingestion and test workflows.
+  \item[Chapter 5: Results \& Analysis] Presents quantitative results, latency distributions, throughput curves, compression ratios, and TCO estimates, followed by statistical comparisons and effect‐size interpretations.
+  \item[Chapter 6: Decision Matrix \& Discussion] Synthesizes findings into a format‐selection matrix, discusses trade‐offs, integration complexity, and sustainability implications, and provides guidelines for beamline scientists and data engineers.
+  \item[Chapter 7: Conclusions \& Future Work] Summarizes key contributions, reflects on limitations, and proposes directions for extending the study (e.g., \ multi‐cloud comparisons, additional compression algorithms, real‐time streaming ingestion).
+  \item[Appendices] Include detailed benchmark logs, AWS Terraform templates, code snippets, and supplementary figures.
+\end{description}
 
 
 
@@ -397,42 +506,77 @@ eng
 
 
 
-…
 
 \cleardoublepage
 \chapter{Background}
 \label{ch:background}
 
 
-\section{Major background area 1}
+\section{Scientific-Data Context}
 
 
-\subsection{Subarea 1.1}
+\subsection{Synchrotron & neutron facilities}
 
 
-\subsection{Subarea 1.1.2}
-
-
-\subsection{Subarea 1.1.3}
+\subsection{Experimental workflows & feedback loops}
 
 
 
-\section{Major background area 2}
+\section{Traditional HPC Storage Paradigms}
 
 
-\section{Related work area}
+\subsection{Parallel file systems (Lustre, GPFS, BeeGFS)}
 
 
-\subsection{Major related work 1}
+\subsection{POSIX-centric scientific formats}
 
 
-\subsection{Major related work n}
+\section{Cloud Object Storage Fundamentals}
 
 
 
 
-\section{Summary}
+\section{Cloud-Native Storage Models Examined in This Thesis}
 
+
+\subsection{HDF5 + HSDS}
+
+
+\subsection{Zarr}
+
+
+\subsection{Apache Parquet}
+
+
+\subsection{Apache Arrow / Feather V2}
+
+
+\subsection{ROOT / RNTuple}
+
+
+\section{Compression Algorithms Reviewed}
+
+
+\subsection{gzip}
+
+
+\subsection{LZ4}
+
+
+\subsection{zstd}
+
+
+\section{Access Patterns in Scattering Analysis}
+
+
+\section{Cost-Modeling Fundamentals for AWS Storage}
+
+
+
+\section{Related Work \& Benchmark Landscape}
+
+
+\section{Summary \& Link to Problem Statement}
 
 
 
@@ -687,11 +831,11 @@ eng
 
 
 \ifbiblatex
-    \printbibliography[heading=bibintoc]
+  \printbibliography[heading=bibintoc]
 \else
-    \phantomsection
-    \addcontentsline{toc}{chapter}{References}
-    \bibliography{references}
+  \phantomsection
+  \addcontentsline{toc}{chapter}{References}
+  \bibliography{references}
 \fi
 
 
