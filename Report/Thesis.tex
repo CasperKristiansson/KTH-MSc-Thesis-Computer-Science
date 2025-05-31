@@ -28,6 +28,7 @@
 \disablepackage{transparent}{}
 \fi
 
+
 \documentclass[nomenclature, english, bibtex]{kththesis}
 
 \newcommand*{\generalExpl}[1]{\todo[inline]{#1}}        
@@ -532,10 +533,15 @@ First, this chapter will survey how modern beamlines generate and consume data, 
 
 \section{Scientific-Data Context}
 \label{sec:scientific-data-context}
-Synchrotron light sources and spallation/continuous‐beam neutron facilities have evolved into “mega‐pixel movies” of matter that stream raw images at gigabytes per second speeds. This section sets the stage for the storage challenge by (i) outlining how modern beamlines generate multi-TB/day data, (ii) describing the acquisition hardware that drives these rates, and (iii) giving a concrete, industry-flavored example that shows why fast, selective read-back of that data matters in practice.
+Synchrotron light sources and spallation/continuous‐beam neutron facilities have evolved into “mega‐pixel movies” of matter that stream raw images at gigabytes per second speeds. This section sets the stage for the storage challenge by outlining how modern beamlines generate multi-TB/day data, describing the acquisition hardware that drives these rates, and giving a concrete, industry example that shows why fast, selective read-back of that data matters in practice.
 
 \subsection{Synchrotron \& Neutron Facilities}
 \label{sec:synchrotron-neutron-facilities}
+
+Giant accelerator-based light and neutron sources act as kilometer-scale microscopes that let us “see through’’ centimeters of steel, polymers, or living tissue at kilohertz frame rates. By storing ultra-low-emittance electrons (or moderating proton-driven neutrons), the machines deliver beams that are \(\sim10^{10}\!-\!10^{12}\) times brighter than laboratory instruments, unlocking 3-D imaging and diffraction of virtually any material \cite{eriksson2014diffraction}. Each pulse is immediately converted into multi-megapixel images by high-speed area detectors, hybrid photon counters, CMOS cameras, or time-pix neutron imagers. Capturing these data allows a single experiment to exceed 10 GB s \(^{-1}\) of raw data.
+
+The industrial impact is tangible. At the European Synchrotron Radiation Facility, X-ray tomography has revealed how expanded-polypropylene crash foams used in car bumpers collapse under load, informing design rules for next-generation impact absorbers \cite{carnegie2024uninterrupted}. Neutron radiography visualizes sub-second water build-up that strangles polymer-electrolyte fuel cells during winter cold starts, guiding stack architecture and heating strategies for fuel-cell vehicles \cite{yoshimune2024neutron}.
+
 
 \subsubsection{Typical beamline architecture}
 Synchrotron and spallation neutron facilities generate intense, tightly focused beams of X-rays or neutrons that travel down a specialized experimental “beamline.” First, the beam passes through a set of front-end optics mirrors, slits, and monochromators, to shape its size, divergence, energy, and flux. Next, a precision sample stage (multi-axis translation stage) positions the specimen with sub-micrometer accuracy and may rotate it to capture different orientations. Immediately downstream, a high-speed detector records two- or three-dimensional diffraction or imaging data at rates up to thousands of frames per second.
@@ -559,7 +565,7 @@ Indexing a single 2-D detector frame using varied experimental coordinates durin
   \item \textbf{Energy or wavelength: } spectro-microscopy and EXAFS experiments, the microscope continuously sweeps the X-ray energy across an absorption edge. At the same time, a fast detector captures a rapid series of images. This procedure produces hyperspectral cubes with $\sim$10–$10^{2}$ energy points per angle or time step \cite{Briois:uc5005}.
 \end{itemize}
 
-When these axes are combined, experiments routinely generate 5-D or 6-D datasets; for example, a $2048\times2048$ detector recording 1800 rotation angles, 50 energy points, and 20-time delays already contains $\sim$150\times10$^{9}$ pixels ($\approx$\,300\, GB at 16-bit depth). Such “data objects’’ are significant for multivariate analyses (e.g., \ correlating oxidation state with 3-D morphology over time) but place extreme demands on storage systems. Some beamlines further append polarization, external field strength, or environmental parameters (temperature, pressure, electrochemical potential), pushing data dimensionality and storage complexity even higher.
+When these axes are combined, experiments routinely generate 5-D or 6-D datasets; for example, a $2048\times2048$ detector recording 1800 rotation angles, 50 energy points, and 20-time delays already contains $\sim150\times10^{9}$ pixels ($\approx$\,300\, GB at 16-bit depth). Such “data objects’’ are significant for multivariate analyses (e.g., \ correlating oxidation state with 3-D morphology over time) but place extreme demands on storage systems. Some beamlines further append polarization, external field strength, or environmental parameters (temperature, pressure, electrochemical potential), pushing data dimensionality and storage complexity even higher.
 
 \subsubsection{Real-world automotive example}  
 The auto industry increasingly deploys neutron radiography to visualize water and ice formation inside polymer-electrolyte fuel-cell stacks during rapid cold starts. The study used an operational neutron imaging system to map liquid distribution in a Toyota single cell down to sub-second time scales, informing design tweaks that mitigate performance losses \cite{yoshimune2024neutron}.
@@ -567,16 +573,59 @@ The auto industry increasingly deploys neutron radiography to visualize water an
 
 \subsection{Experimental Workflows \& Feedback Loops}
 \label{sec:experimental-workflows-feedback-loops}
+Beam time at synchrotron and neutron facilities is hard to get and expensive. Experiments must, therefore, include a \emph{closed data loop} in which raw detector frames are reconstructed, inspected, and, if necessary, used to steer the scan while the sample is still in the beam. There have been multiple ways in which studies have tried to come up with a good solution with real-time feedback to combat this. A study showed that streaming projections from the beamline to an HPC cluster could deliver slice reconstructions within seconds, enabling autonomous adjustment of exposure, angle range, or focus during tomography scans \cite{Bicer2017RealTime}.
+
+Shanghai Synchrotron Radiation Facility pushes this concept further: automated pipelines tied into the metadata catalog issue progress notifications and interactive dashboards to users, allowing real-time feedback \cite{wang2024accelerating}.
+
+\subsubsection{Implications for the storage stack.}
+\begin{itemize}
+  \item \textbf{Latency}: scientists often request slices of data (quick-look radiographs or azimuthal-integrated diffraction rings). Data retrieval times must stay in the sub-second regime to keep up with the experiments.
+  \item \textbf{Throughput}: full 3-D reconstruction or machine-learning inference may pull hundreds of contiguous gigabytes at the end of a scan often includes burst bandwidths of \(\ge\!10\) GB\,s\(^{-1}\).
+  \item \textbf{Scalability \& concurrency}: remote teams viewing the same dataset and automated QC pipelines will often need simultaneous small-read streams. This often penalizes monolithic file formats that require entire files to be downloaded or incur seek-heavy range requests.
+  \item \textbf{Online analysis}: real-time processing pipelines (e.g., streaming reconstruction, AI-driven feature extraction) consume data as it arrives. Storage must support continuous, low-overhead partial reads and write-through metadata indexing to feed live analytics without waiting for scan completion.
+\end{itemize}
+
+These workflow pressures dictate the performance metrics used later in this thesis and motivate the evaluation of cloud-native, chunk-addressable storage formats that promise millisecond-scale partial retrieval.
 
 
 \section{Traditional HPC Storage Paradigms}
 \label{sec:traditional-hpc-storage-paradigms}
+For the past decades, scientific supercomputers have relied on
+\emph{parallel file systems}, where Lustre and IBM’s General
+Parallel File System (GPFS) has stood out. These systems have allowed pushing checkpoint files and simulation outputs across hundreds of disks at tens of GB s$^{-1}$ aggregate bandwidth \cite{schwan2003lustre,schmuck2002gpfs}. By stripping data over many objects, storage targets and coordinating access via distributed locks became perfect workloads that wrote multi-gigabyte files in large, contiguous chunks.
+
+Those design assumptions unravel when the I/O profile flips from “few huge checkpoints” to many tiny look-ups and interactive slices. A study from the Summit and Cori supercomputers shows that small transfers (< 1 MB) still account for the overwhelming majority of read and write calls at both the file and process levels. At the same time, in large-scale HPC deployments, metadata operations alone can account for more than half of all file-system requests, often saturating the metadata servers and emerging as a primary scalability bottleneck \cite{bez2022access}. As beamlines, AI workflows, and remote collaborators pile on, the gap between traditional parallel-file-system design and real-time, small-slice demands only widens.
+
+The remainder of this section revisits how parallel file systems achieve their impressive bulk throughput and why those mechanisms falter under modern, latency-sensitive access patterns. Thus, it motivates the cloud-native alternatives examined later in this chapter.
+
 
 \subsection{Parallel File Systems (Lustre, GPFS, BeeGFS)}
 \label{sec:parallel-file-systems}
 
+Lustre, IBM GPFS (now Spectrum Scale), and BeeGFS have dominated supercomputing storage for over two decades, consistently delivering hundreds of gigabytes per second of throughput. Their impressive numbers come from a standard blueprint, aggressive striping across many disks, and a separate metadata tier tuned for large, sequential writes. The same system, however, reveals hidden costs once workloads pivot to small, random reads or remote, WAN-mounted access.
+
+\subsubsection{Architecture and striping model}
+Classic HPC file systems split responsibility between \emph{metadata servers} (MDS) and many \emph{object/data servers} (OSS in Lustre, NSD servers in GPFS, storage targets in BeeGFS). Files are \emph{striped} across a few to hundreds of disks in multi-megabyte chunks. Doing this allows a single sequential read or write to optimize the bandwidth of an entire system. PFS uses token-based distributed locking to keep POSIX consistency on a shared-disk SAN \cite{schmuck2002gpfs}. BeeGFS achieves similar semantics over Ethernet / InfiniBand by separating data and metadata and scaling out the service.
+
+\subsubsection{Bulk Sequential I/O: High Throughput on Parallel File Systems}
+Parallel file systems shine whenever an application issues long, contiguous transfers, checkpoints/restarts, volumes, and snapshots. NASA’s \emph{Pleiades} cluster still sustains, \(\sim\!1\) GB s$^{-1}$ from disk for a single 512-rank IOR stream and bursts to 9 GB s$^{-1}$ when the same data are serviced out of the page cache \cite{6507507}. Modern flagships go far beyond that where Los Alamos’ \textit{Trinity} Sonexion Lustre tops out near 1.6 TB s$^{-1}$ for a 78 PB pool \cite{osti_1367056}. Even a single E1000 OSS inside NERSC’s \textit{Perlmutter} can saturate 41 GB s$^{-1}$ read and 27 GB s$^{-1}$ write to one OST \cite{lockwood2024architecture}. These traits explain why parallel file systems remain the choice for bulk sequential scans and multi‐terabyte tomography stacks.
+
+\subsubsection{Weaknesses for many-small reads}
+Parallel file systems raise aggregate bandwidth by slicing every file across many Object Storage Targets (OSTs/NSDs). When workloads flip from multi-GB checkpoints to thousands of $4$–$64$\,\si{\kilo\byte} reads the same striping logic backfires when workloads issue thousands of sub-megabyte reads. Intel’s LUG-2018 “Small File I/O” report shows that files smaller than the DoM threshold generate disproportionately more RPCs per MiB, leading to significantly reduced bandwidth on multi-OST Lustre systems \cite{gmitter2018smallfile}.
+
+Even in a namespace-sharded file system like Lustre’s DNE, a camera‐style “one-file-per-frame” workflow still concentrates its create/unlink traffic on one hot directory subtree. Production traces from 60 HPC systems show that 64 \% of files are smaller than 64 KB. When a system gets flushed with thousands of tiny HDF5 or JPEG files, the operations on the metadata will increase exponentially. Based on these 60 different HPC systems, research shows that metadata operations can account for up to 80\% of total file system operations \cite{9768784}.
+
 \subsection{POSIX-Centric Scientific Formats}
 \label{sec:posix-centric-formats}
+Most HPC codes write \textit{monolithic containers}, a single POSIX-seekable file that includes raw arrays and metadata. HDF5 popularised this approach, while NeXus adopts the same file structure with beamline-specific naming conventions. The design is perfect for bulk, sequential, local parallel file systems scans. However, the need to seek through super-blocks and B-trees for every small slice makes it poorly suited to cloud object stores and interactive, many-small-read workflows, motivating the chunk-per-object formats.
+
+\subsubsection{Monolithic container philosophy}
+The Hierarchical Data Format~5 (HDF5) stores every dataset, chunk, and attribute in a single byte‐addressable file whose internal super-block, B-trees, and heap tables, with the help of POSIX, seek for navigation \cite{howison2010tuning}. Nexus, the de facto standard at many photon and neutron sources, layers a domain system on top of the same HDF5 container, retaining identical I/O semantics while prescribing beamline-specific group names and units \cite{konnecke2015nexus}. This “all-in-one” layout simplifies the file management, but couples performance to the underlying file-system block size and how well metadata caches handle random seeks.
+
+\subsubsection{Serial and MPI-IO access}
+Out-of-the-box HDF5 (used via h5py, MATLAB, etc.) issues are independent of POSIX. Each rank that samples a 4–8~MB slice generates dozens of tiny\,<64~kB reads, leading to many metadata lookups. Performance tuning guides from the HDF Group note that such traffic can result in many minor accesses and that parallel file systems do not do well with small I/O \cite{Breitenfeld2022Parallel}. Parallel HDF5 wraps the same container in MPI-IO so that all processes participate collectively. Doing so when users provide non-contiguous selections, ROMIO gathers them into a single larger request (data sieving and collective buffering).
+
+Even when using collective metadata I/O, each HDF5 read still must fetch the superblock and descriptive metadata before reading the raw data. In the CCGrid’21 benchmarks on Summit and Cori, metadata I/O alone accounted for as much as ~58\% of the total read time \cite{9499420}. HDF5/NeXus excel for large, sequential scans and single-node post-processing. However, their single-file, POSIX heritage makes interactive, many-small-read workloads vulnerable to metadata hot spots. These limitations motivate the chunk-per-object designs of Zarr, Parquet, and the other cloud-native formats evaluated in this report.
 
 
 \section{Cloud Object Storage Fundamentals}
