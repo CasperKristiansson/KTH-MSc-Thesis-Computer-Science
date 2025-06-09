@@ -31,7 +31,7 @@
 
 \documentclass[nomenclature, english, bibtex]{kththesis}
 
-\newcommand*{\generalExpl}[1]{\todo[inline]{#1}}        
+\newcommand*{\generalExpl}[1]{\todo[inline]{#1}}
 
 \newcommand*{\engExpl}[1]{\todo[inline, backgroundcolor=kth-lightgreen40]{#1}}
 \newcommand*{\sweExpl}[1]{\todo[inline, backgroundcolor=kth-lightblue40]{#1}}
@@ -164,7 +164,7 @@ nopostdot]{glossaries}
 \trita{TRITA -- EECS-EX}{2024:0000}
 
 \input{lib/pdf_related_includes}
- 
+
 \hypersetup{
 	colorlinks = true,
 	breaklinks = true,
@@ -302,7 +302,7 @@ eng
 \acknowlegmentssignature
 
 \fancypagestyle{plain}{}
-\renewcommand{\chaptermark}[1]{ \markboth{#1}{}} 
+\renewcommand{\chaptermark}[1]{ \markboth{#1}{}}
 \tableofcontents
  \markboth{\contentsname}{}
 
@@ -450,17 +450,17 @@ This study adopts an \emph{experimental benchmarking} approach within a design�
     \item \textbf{Design and data:} $n=50$ randomized runs per format on EC2 (both RAM-disk and S3). We justified the sample size by performing a preliminary power analysis to achieve 80\% power to detect a medium effect (Cohen’s $f=0.25$).
     \item \textbf{Analysis and decision rule:}
     \begin{enumerate}
-      \item \textbf{Assumption checks:}  
+      \item \textbf{Assumption checks:}
         \begin{itemize}
-          \item Normality of residuals: Shapiro–Wilk test \emph{plus} Q–Q plots (since Shapiro–Wilk can flag minor deviations at $n>50$).  
+          \item Normality of residuals: Shapiro–Wilk test \emph{plus} Q–Q plots (since Shapiro–Wilk can flag minor deviations at $n>50$).
           \item Homogeneity of variance: Levene’s test.
         \end{itemize}
-      \item \textbf{Primary test:}  
+      \item \textbf{Primary test:}
       \begin{itemize}
         \item If normality and homogeneity hold: one-way ANOVA $\to$ Tukey HSD post-hoc.
         \item Otherwise: Kruskal–Wallis test $\to$ Dunn’s post-hoc with Holm correction.
       \end{itemize}
-      \item \textbf{Reporting:}  
+      \item \textbf{Reporting:}
       Effect sizes (e.g., \ $\eta^2$ for ANOVA or Cliff’s $\delta$ for nonparametric) and 95\% confidence intervals.
     \end{enumerate}
   \end{itemize}
@@ -554,7 +554,7 @@ To handle this torrent of data, a dedicated data-acquisition (DAQ) server sits b
   \centering
   \includegraphics[width=\linewidth]{figures/beamline_data_journey.jpg}
   \caption{
-    End-to-end data journey at a modern synchrotron beamline.  
+    End-to-end data journey at a modern synchrotron beamline.
     Photons are shaped by optics, interact with a sample on a multi-axis goniometer, and are converted to megapixel frames by a high-speed detector. A DAQ burst-buffer server transforms the raw stream into a data cube, which then follows two divergent paths: (\textit{i}) low-latency ingestion into an on-premises parallel file system (Lustre/GPFS) for traditional HPC workflows, or (\textit{ii}) upload to an S3-compatible object store where cloud-native formats such as Zarr/HSDS, Parquet/Arrow, and ROOT RNTuple enable slice-level access and long-term archival.
   }
   \label{fig:beamline-journey}
@@ -598,7 +598,7 @@ Modern beamlines already saturate local networks with sustained data streams of 
 Indexing a single 2-D detector frame by additional experimental coordinates collected during beamtime turns it into a \emph{genuinely higher-dimensional data object}. Figure \ref{fig:data-cube} makes this concrete: each 2-D image becomes one colour-coded slice in a stacked data cube, while the depth axis stores a third coordinate such as rotation angle, energy, or time. From this perspective, every pixel expands into a voxel that contains its spectrum, angular position, or temporal history, laying the foundation for true 4-D and 5-D analyses. Because modern beamlines routinely vary at least three independent axes, the raw $(x,y)$ detector image is naturally in higher dimensions, such as a 4-D (or higher-D) array:
 
 \begin{itemize}
-  \item \textbf{Rotation or scan angle:} a full tomographic or serial-crystallography scan may step the sample (or detector) through $10^{2}$–$10^{4}$ projections to reconstruct 3-D real-space structure or space intensity maps (\emph{rotation} $\times$ \emph{energy} $\times$ \emph{time}) \cite{app11198868}.  
+  \item \textbf{Rotation or scan angle:} a full tomographic or serial-crystallography scan may step the sample (or detector) through $10^{2}$–$10^{4}$ projections to reconstruct 3-D real-space structure or space intensity maps (\emph{rotation} $\times$ \emph{energy} $\times$ \emph{time}) \cite{app11198868}.
   \item \textbf{Energy or wavelength: } spectro-microscopy and EXAFS experiments, the microscope continuously sweeps the X-ray energy across an absorption edge. At the same time, a fast detector captures a rapid series of images. This procedure produces hyperspectral cubes with $\sim$10–$10^{2}$ energy points per angle or time step \cite{Briois:uc5005}.
 \end{itemize}
 
@@ -614,7 +614,7 @@ Indexing a single 2-D detector frame by additional experimental coordinates coll
 
 When these axes are combined, experiments routinely generate 5-D or 6-D datasets; for example, a $2048\times2048$ detector recording 1800 rotation angles, 50 energy points, and 20-time delays already contains $\sim150\times10^{9}$ pixels ($\approx$\,300\, GB at 16-bit depth). Such “data objects’’ are significant for multivariate analyses (e.g., \ correlating oxidation state with 3-D morphology over time) but place extreme demands on storage systems. Some beamlines further append polarization, external field strength, or environmental parameters (temperature, pressure, electrochemical potential), pushing data dimensionality and storage complexity even higher.
 
-\subsubsection{Real-world automotive example}  
+\subsubsection{Real-world automotive example}
 The auto industry increasingly deploys neutron radiography to visualize water and ice formation inside polymer-electrolyte fuel-cell stacks during rapid cold starts. The study used an operational neutron imaging system to map liquid distribution in a Toyota single cell down to sub-second time scales, informing design tweaks that mitigate performance losses \cite{yoshimune2024neutron}.
 
 
@@ -734,16 +734,16 @@ The remainder of this section surveys five representative approaches: HDF5 serve
 \label{sec:hdf5-hsds}
 The HDF5 ecosystem represents the most mature and widely adopted solution for storing complex scientific data, spanning disciplines from climate modeling to synchrotron beamline acquisition \cite{10.1145/1966895.1966900}. However, developers designed the format for low-latency, parallel file systems. When migrated naively to cloud object stores, its monolithic layout magnifies request latency and per-operation costs. To preserve HDF5’s rich data model while overcoming these cloud-specific bottlenecks, the Highly Scalable Data Service (HSDS) was created as a stateless REST layer that shards chunks and metadata into individually addressable objects \cite{readey2020hsds}.
 
-\subsubsection{HDF5 fundamentals}  
+\subsubsection{HDF5 fundamentals}
 Hierarchical Data Format~5 (HDF5) is an open-source container, data model, and I/O library designed to efficiently store extensive, multidimensional scientific data \cite{10.1145/1966895.1966900}. An HDF5 file consists of \emph{datasets} (n-dimensional arrays) organized in a POSIX-style hierarchy of groups. Datasets may be either \emph{contiguously} or as fixed-size \emph{chunks}. Chunking enables transparent filter pipelines (e.g., gzip, lz4, zstd) and independent partial reads/writes. At the same time, the library’s MPI-IO pathway lets thousands of compute nodes access different chunks concurrently \cite{hdf5_chunking}. These strengths made HDF5 the standard library/system used at X-ray, neutron, and electron facilities.
 
-\subsubsection{Cloud usage}  
+\subsubsection{Cloud usage}
 Placing a monolithic HDF5 file on Amazon S3 causes each POSIX \emph{read()} call to issue a separate HTTP Range GET. Therefore, a single 1 MB slice triggers two network round-trips (metadata + data), amplifying latency and incurring request fee costs that traditional HPC deployments never experience \cite{hdf5_ros3}. Moreover, the file's internal B-tree indices are optimized for low-latency block storage, not for the 10-ms (or higher) object-store round-trip typical of Amazon S3.
 
-\subsubsection{HSDS: a layered service}  
+\subsubsection{HSDS: a layered service}
 The \emph{Highly Scalable Data Service} (HSDS) re-implements the HDF5 abstraction as a stateless REST API \cite{readey2020hsds}. Internally, HSDS maps every chunk and metadata into separate objects (S3, Azure Blob, MinIO, or POSIX) and maintains a small JSON document that maps logical dataset coordinates to object keys. This approach allows traversing the HDF5 “groups” and “datasets.” With HSDS, reading or writing array slices and modifying attributes through standard HTTP requests is possible.
 
-\subsubsection{Operational experience}  
+\subsubsection{Operational experience}
 Production HSDS clusters are now back multi-hundred-terabyte public archives, for instance, NREL’s 500 TB Wind Toolkit Long-Term Ensemble dataset, which users can subset without downloading entire files \cite{draxl2024wtkled}. HSDS retains HDF5’s rich ecosystem yet promises proper cloud-native capabilities.
 
 \subsection{Zarr}
@@ -751,10 +751,10 @@ Production HSDS clusters are now back multi-hundred-terabyte public archives, fo
 
 Zarr is an open-source system that builds on the fundamentals of storing chunked, compressed $n$-dimensional arrays in a directory-type layout of small objects \cite{zarrspecv3}. The system partitions each array into regular \emph{chunks} and stores every chunk as an independent object (e.g., a file in a POSIX system, a key in Amazon S3). Zarr supports compression with popular codecs such as gzip, lz4, or zstd and utilizes JSON metadata files. The format requires no central server, making it attractive for cloud object stores where high-latency, high-throughput parallel access dominates.
 
-\subsubsection{Cloud-native performance}  
+\subsubsection{Cloud-native performance}
 Because each chunk maps to an S3 key, thousands of range-GETs can execute in parallel, achieving high bandwidth \cite{aws2023zarr}. Latency for interactive slice retrieval falls to the low milliseconds. Write throughput scales similarly via thousands of concurrent PUTs (one per chunk), enabling real-time ingestion at modern beamlines without seeing too many performance drawbacks.
 
-\subsubsection{Growing ecosystem}  
+\subsubsection{Growing ecosystem}
 Researchers across various fields have adopted Zarr; GDAL provides a native driver for geospatial rasters \cite{gdal2024zarr} while the bioimaging community standardized on OME-Zarr for petabyte-scale microscopy archives \cite{moore2023ome}. A NumFOCUS-backed governance model and a public Zarr-specs RFC process ensure long-term stability in the system \cite{zarrspecv3}.
 
 Zarr’s chunk-per-object design aligns perfectly with the partial-read workloads studied in this report. However, its performance depends on chunk size, sharding, and metadata unification.
@@ -763,7 +763,7 @@ Zarr’s chunk-per-object design aligns perfectly with the partial-read workload
 \label{sec:apache-parquet}
 Apache Parquet is an open, columnar storage format originally developed at Twitter and Cloudera to bring Google Dremel–style analytics to the Hadoop ecosystem. The Parquet format organizes a file into one or more \emph{row groups} where, within each row group, every column is stored contiguously as a \emph{column chunk} and encoded with lightweight compression and a dictionary encoding scheme. Because the system only reads the required columns and the row groups that satisfy a filter predicate, Parquet dramatically reduces I/O volume for wide, sparse tables. Parquet supports several compression codecs, such as Snappy, GZIP, deflate, and BZIP2 \cite{vohra2016apache}. Within each row group, Parquet applies column-specific encodings—such as dictionary or run-length encoding—and independent compression, further shrinking the on-disk footprint and amplifying the format’s I/O-reduction advantage.
 
-\subsubsection{Cloud-native performance}  
+\subsubsection{Cloud-native performance}
 On Amazon S3, each row group is laid out as a large (typically 64–256 MB) contiguous byte range, allowing clients such as Apache Arrow’s vectorized reader or AWS Athena to fetch gigabyte-scale slices with a single Range GET. The AWS Athena pricing page states that converting data to compressed, columnar formats like Parquet “can save up to 90 \% per query and improve performance” compared with raw CSV \cite{aws_athena_pricing}.
 
 \subsubsection{Ecosystem adoption}
@@ -800,7 +800,7 @@ This architecture thus provides high-throughput, scalable, and selective access 
 
 \section{Compression Algorithms Reviewed}
 \label{sec:compression-algorithms}
-Lossless compression is a first-order lever for both performance and cost in cloud object–store workflows. Smaller chunks reduce S3 egress and request fees, while faster codecs shorten the latency that dominates interactive partial reads in synchrotron experiments. 
+Lossless compression is a first-order lever for both performance and cost in cloud object–store workflows. Smaller chunks reduce S3 egress and request fees, while faster codecs shorten the latency that dominates interactive partial reads in synchrotron experiments.
 
 We therefore focus on three open-source codecs that form a spectrum of trade-offs: \emph{gzip/DEFLATE} (high ratio, high CPU), \emph{LZ4} (low ratio, ultra-low latency), and \emph{Zstandard} (\emph{zstd}, balanced). HDF5, Zarr, Parquet, and Arrow natively support all of them, remain patent-free, and offer mature implementations on every central platform, which is critical for reproducible HPC benchmarking.
 
@@ -809,7 +809,7 @@ We therefore focus on three open-source codecs that form a spectrum of trade-off
 GNU \emph{gzip} has been the default lossless compressor on Unix‐like systems since 1992. RFC 1952 formalizes gzip’s file format and header/trailer structure, and those specifications have remained patent-free and backward-compatible across three decades of scientific workflows \cite{deutsch1996rfc1952}.
 
 \subsubsection{Algorithmic design}
-The compressor implements the \emph{DEFLATE} scheme, a cascade of LZ77 sliding-window substitution followed by static/dynamic Huffman coding tunable via nine quality levels that trade compression time for ratio. Level 6 is the GNU default, while level 1 sacrifices a \(\approx\) 30\% ratio to gain 3–4× speed \cite{deutsch1996rfc1952}.  
+The compressor implements the \emph{DEFLATE} scheme, a cascade of LZ77 sliding-window substitution followed by static/dynamic Huffman coding tunable via nine quality levels that trade compression time for ratio. Level 6 is the GNU default, while level 1 sacrifices a \(\approx\) 30\% ratio to gain 3–4× speed \cite{deutsch1996rfc1952}.
 
 \subsubsection{Performance on scientific data}
 Benchmarks on floating-point climate and remote-sensing datasets stored in netCDF-4/HDF5 show typical space savings of 1.6–2.2× at levels 4–6. However, this did show that with compression, the CPU costs were 2–5× higher than LZ4, and decompression throughput that saturates a single 10 Gb s$^{-1}$ core around 500 MB s$^{-1}$ \cite{delaunay2019evaluation,chen2023fcbench}.
@@ -821,14 +821,14 @@ Gzip has native support in the five different backends we will test: HDF5, netCD
 \label{sec:compression-lz4}
 LZ4 emerged in 2011 as a lightweight derivative of the Lempel–Ziv (LZ77) family, designed to maximize streaming throughput while keeping memory overhead to a minimum. Its open-source framing format defines a compact header, provides optional block and content checksums, and employs a skippable frame mechanism, allowing adding new features without breaking older decoders. These attributes have led to widespread adoption in operating systems, high-performance storage engines, and scientific data formats where sub-millisecond decode latency is critical.
 
-\subsubsection{Algorithmic profile} 
+\subsubsection{Algorithmic profile}
 The codec emphasizes extremely fast byte-wise parsing and a greedy match-finder that limits back-references to 64 kB. Because of this, the compression runs at $>$500 MB s$^{-1}$ per core while decompression routinely exceeds 2–3 GB s$^{-1}$, albeit with modest ratios (1.2–1.7× on floating-point data) \cite{lz42025,7440278}. A high-compression variant \texttt{lz4hc} improves the ratio by $\sim$15 \% at 3–5× the CPU cost.
 
 \subsubsection{Empirical results on scientific workloads}
 Almeida \emph{et al.} compared LZ4 with ZLIB on ROOT HEP and climate grids, reporting 1.0–1.2 GB s$^{-1}$ decompression (versus 120 MB s$^{-1}$ for ZLIB) at the expense of only a 5–10 \% ratio loss \cite{almeida2014two}. The VLDB’24 “FCBench” study recently measured the CPU variant bitshuffle with LZ4 across 33 floating-point datasets. The study showed that it sustained 0.9 GB s$^{-1}$ compression and 1.2 GB s$^{-1}$ decompression on 64 kB blocks while achieving a median compression ratio of 1.43 \cite{chen2023fcbench}.
 
 \subsubsection{Integration in storage formats}
-LZ4 filters are first-class options in HDF5 (\texttt{H5Z\_LZ4}), Zarr v3, Parquet, and Arrow IPC. Because the LZ4 64 kB match window limits cross-chunk redundancy, chunk sizes above 1–2 MB yield diminishing returns, which for this study will align well with S3 request-cost sweet spots.  
+LZ4 filters are first-class options in HDF5 (\texttt{H5Z\_LZ4}), Zarr v3, Parquet, and Arrow IPC. Because the LZ4 64 kB match window limits cross-chunk redundancy, chunk sizes above 1–2 MB yield diminishing returns, which for this study will align well with S3 request-cost sweet spots.
 
 LZ4 represents the “low-latency, low-CPU”, serving as the low-latency reference with gzip and zstd in our benchmarks. The study will quantify how much compression ratio we can trade for sub-second partial reads without materially increasing monthly S3 storage costs.
 
@@ -1009,9 +1009,9 @@ The data‐collection plan for this thesis centers on two \emph{synthetically ge
 
 \subsection{Data Sources}
 \begin{itemize}
-  \item \textbf{Dense 3-D array ($\sim$1 TB)}  
+  \item \textbf{Dense 3-D array ($\sim$1 TB)}
         A $4148\times4362\times13{,}800$ int32 volume that mimics the axial resolution, noise spectrum, and grey-level histograms of the EIGER2 X 16M \cite{dectris_eiger2xe16m}. Voxels are synthesized with a mixed Poisson–Gaussian detector model followed by ring-artifact modulation.
-  \item \textbf{Tabular ($10^{6}\!\times\!20$ rows)}  
+  \item \textbf{Tabular ($10^{6}\!\times\!20$ rows)}
         A synthetic data‐generation pipeline is implemented that draws each of the 20 columns, such as motor positions, beam energy, exposure time, temperature, stress, strain, etc.
 \end{itemize}
 
@@ -1058,9 +1058,9 @@ For each performance metric, median latency, 95$^{\text{th}}$-percentile latency
 \subsection{Primary Hypothesis Tests}
 
 \begin{itemize}
-    \item If assumptions hold, a \textbf{one-way ANOVA} will be performed separately for each access pattern, treating \emph{storage format} (five levels) as the independent factor.  
-    \item If either assumption fails, the non-parametric \textbf{Kruskal–Wallis} test will replace ANOVA.  
-    \item The global null \(H_{0}:\mu_{M,A}=\mu_{M,B}\;\forall\,A,B\) will be rejected at \(\alpha = 0.05\).  
+    \item If assumptions hold, a \textbf{one-way ANOVA} will be performed separately for each access pattern, treating \emph{storage format} (five levels) as the independent factor.
+    \item If either assumption fails, the non-parametric \textbf{Kruskal–Wallis} test will replace ANOVA.
+    \item The global null \(H_{0}:\mu_{M,A}=\mu_{M,B}\;\forall\,A,B\) will be rejected at \(\alpha = 0.05\).
 \end{itemize}
 
 \subsection{Post-Hoc Comparisons}
@@ -1068,8 +1068,8 @@ For each performance metric, median latency, 95$^{\text{th}}$-percentile latency
 Significant omnibus results will trigger pairwise contrasts:
 
 \begin{itemize}
-  \item \emph{Parametric branch}: Tukey HSD with family-wise error control.  
-  \item \emph{Non-parametric branch}: Dunn’s test with Holm adjustment.  
+  \item \emph{Parametric branch}: Tukey HSD with family-wise error control.
+  \item \emph{Non-parametric branch}: Dunn’s test with Holm adjustment.
 \end{itemize}
 
 Effect sizes will accompany $p$-values: \(\eta^{2}\) for ANOVA and Cliff’s \(\delta\) for Kruskal–Wallis pairs, providing practical significance alongside statistical significance \cite{cohen2013statistical}.
@@ -1079,7 +1079,7 @@ Effect sizes will accompany $p$-values: \(\eta^{2}\) for ANOVA and Cliff’s \(\
 The evaluation framework operationalizes the thesis goal of delivering \emph{actionable guidance} to beamline scientists and data engineers by translating raw benchmark results into a transparent, multi-criteria scorecard.
 
 \begin{enumerate}[label=\textbf{F\arabic*.}, leftmargin=*, itemsep=0.2em]
-  \item \textbf{Performance}  
+  \item \textbf{Performance}
         \begin{enumerate}[label=\alph*)]
           \item Median slice-read latency
           \item 95$^{\text{th}}$-percentile latency
