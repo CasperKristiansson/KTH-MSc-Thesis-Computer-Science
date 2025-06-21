@@ -1,0 +1,52 @@
+/* synthetic_beamline.instr – powder rings visible, no external beam-stop  */
+
+DEFINE INSTRUMENT Synthetic4096Beamline(
+    double lambda           = 1.8,
+    double dlambda_rel      = 0.10,
+    double source_radius    = 0.03,
+    double collimation      = 0.010,
+    double L1               = 2.0,
+    double L2               = 1.5,
+    double L3               = 1.0,
+    string reflections_file = "Al.laz",
+    double sample_radius    = 0.010,
+    double sample_height    = 0.015
+)
+
+TRACE
+  COMPONENT prog = Progress_bar() AT (0,0,0) ABSOLUTE
+
+  /* source */
+  COMPONENT src = Source_simple(
+      radius   = source_radius,
+      dist     = L1 + L2,
+      focus_xw = collimation*2,
+      focus_yh = collimation*2,
+      lambda0  = lambda,
+      dlambda  = dlambda_rel*lambda)
+    AT (0,0,0) RELATIVE prog
+
+  /* slit */
+  COMPONENT slit = Slit(
+      xwidth  = collimation*2,
+      yheight = collimation*2)
+    AT (0,0,L1) RELATIVE prog
+
+  /* sample – every neutron forced to scatter */
+  COMPONENT sample = PowderN(
+      reflections = reflections_file,
+      radius      = sample_radius,
+      yheight     = sample_height,
+      pack        = 1,
+      p_interact  = 1)
+    AT (0,0,L1+L2) RELATIVE prog
+
+  /* detector – log scale, 4096 × 4096 bins */
+  COMPONENT det = Monitor_nD(
+      xwidth  = 0.50,
+      yheight = 0.50,
+      options = "x y, log, bins=4096x4096, auto limits",
+      filename = "frame",
+      restore_neutron = 1)
+    AT (0,0,L1+L2+L3) RELATIVE prog
+END
