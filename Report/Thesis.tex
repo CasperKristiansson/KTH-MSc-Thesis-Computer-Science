@@ -388,7 +388,7 @@ Generalizing beyond the narrow industrial case leads to several key research que
  \item How do different compression algorithms (zstd, LZ4, gzip) interact with object-stored data, and how does it affect end-to-end latency and throughput?
 \end{itemize}
 
-These questions are directly relevant to ongoing research in HPC and data-intensive computing, where cloud adoption continues to challenge traditional storage paradigms.
+These questions are directly relevant to ongoing research in \acrfull{HPC} and data-intensive computing, where cloud adoption continues to challenge traditional storage paradigms.
 
 
 
@@ -396,12 +396,12 @@ These questions are directly relevant to ongoing research in HPC and data-intens
 \section{Purpose}
 The purpose of this thesis is twofold. First, this study seeks to advance the scientific and engineering understanding of cloud‐native storage paradigms within the data‐intensive computing community. Drawing on design–science research methodologies \cite{hevner2004design}, it will experimentally quantify the trade‐offs among compression efficiency (zstd, LZ4, gzip), performance of retrieval, and economic metrics (request fees, egress charges) for terabyte‐scale, multidimensional datasets. The decision matrix and best‐practice recommendations will inform beamline scientists seeking rapid feedback during experiments and guide platform architects in building next‐generation, cloud‐optimized scientific workflows.
 
-Secondly, it aims to provide Scatterin AB with a practical, evidence-based framework to optimize its cloud-based data platform for large‐scale synchrotron and neutron scattering experiments. By implementing and benchmarking five distinct storage approaches (HDF5/HSDS, Zarr, Parquet, Arrow/Feather, ROOT/RNTuple) on AWS S3, this work will deliver concrete guidance on how to minimize latency for partial‐read use cases, maximize throughput, and control pay‐as‐you‐go costs under varying access patterns.
+Secondly, it aims to provide Scatterin AB with a practical, evidence-based framework to optimize its cloud-based data platform for large‐scale synchrotron and neutron scattering experiments. By implementing and benchmarking five distinct storage approaches (\acrfull{HDFfive}/\acrfull{HSDS}, Zarr, Parquet, Arrow/Feather, \acrfull{ROOT}/\acrfull{RNTuple}) on \acrfull{AWS} \acrfull{SThree}, this work will deliver concrete guidance on how to minimize latency for partial‐read use cases, maximize throughput, and control pay‐as‐you‐go costs under varying access patterns.
 
 
 
 \section{Goals}
-This paper aims to develop a comprehensive, experimentally validated decision framework that guides the selection and configuration of cloud‐native storage solutions for large‐scale AWS synchrotron and neutron scattering datasets. To achieve this, the following sub‐goals are defined:
+This paper aims to develop a comprehensive, experimentally validated decision framework that guides the selection and configuration of cloud‐native storage solutions for large‐scale \acrshort{AWS} synchrotron and neutron scattering datasets. To achieve this, the following sub‐goals are defined:
 
 \begin{enumerate}
   \item \textbf{Prototype Development}
@@ -413,8 +413,8 @@ This paper aims to develop a comprehensive, experimentally validated decision fr
   \item \textbf{Quantitative Benchmarking}
   \begin{itemize}
     \item Measure read and write latency for both partial‐slice and full‐scan workloads.
-    \item Evaluate compression efficiency (size reduction vs.\ CPU time) for each algorithm.
-    \item Compute cost in AWS, incorporating request fees and egress charges.
+    \item Evaluate compression efficiency (size reduction vs.\ \acrshort{CPU} time) for each algorithm.
+    \item Compute cost in \acrshort{AWS}, incorporating request fees and egress charges.
   \end{itemize}
 
   \item \textbf{Decision Matrix and Guidelines}
@@ -429,27 +429,27 @@ This paper aims to develop a comprehensive, experimentally validated decision fr
 
 \section{Research Methodology}
 
-This study adopts an \emph{experimental benchmarking} approach within a design–science framework to evaluate five storage backends on AWS. Our methodology comprises four main components:
+This study adopts an \emph{experimental benchmarking} approach within a design–science framework to evaluate five storage backends on \acrshort{AWS}. Our methodology comprises four main components:
 
 \begin{enumerate}
   \item \textbf{Data ingestion and environment setup}
   \begin{itemize}
     \item Acquire two datasets representative of synchrotron and neutron experiments: a tabular dataset (1 M \(\times\) 20) and a dense 3D array ($\sim$1 TB).
-    \item Provision EC2 instances with both RAM‐disk and S3‐backed configurations, using Terraform for reproducible infrastructure \cite{hashicorp2025terraform}.
-    \item Implement ingestion pipelines for HDF5, Zarr, Parquet, Arrow/Feather, ROOT/RNTuple, mapped over compression algorithms (zstd, LZ4, gzip).
+    \item Provision \acrfull{ECtwo} instances with both RAM‐disk and \acrshort{SThree}-backed configurations, using Terraform for reproducible infrastructure \cite{hashicorp2025terraform}.
+    \item Implement ingestion pipelines for \acrshort{HDFfive}, Zarr, Parquet, Arrow/Feather, \acrshort{ROOT}/\acrshort{RNTuple}, mapped over compression algorithms (zstd, LZ4, gzip).
   \end{itemize}
 
   \item \textbf{Performance testing}
   \begin{itemize}
     \item Define two access patterns: \emph{small‐slice reads} (\SIrange{4}{8}{\mega\byte} chunks) and \emph{bulk scans} (full dataset sequential read).
-    \item Execute $n=50$ randomized runs per format, per pattern, on both RAM‐disk and S3, measuring median and 95th‐percentile latency, throughput (\si{\mega\byte\per\second}), compression ratio, and CPU utilization.
+    \item Execute $n=50$ randomized runs per format, per pattern, on both RAM‐disk and \acrshort{SThree}, measuring median and 95th‐percentile latency, throughput (\si{\mega\byte\per\second}), compression ratio, and \acrshort{CPU} utilization.
   \end{itemize}
 
   \item \textbf{Scientific method framework}
   \begin{itemize}
     \item \textbf{Variables and hypotheses:} Independent variable: storage format (five approaches). Dependent variables: latency, throughput, compression ratio, cost.
     Hypothesis (per metric): The mean (or distribution) differs across at least two formats at $\alpha=0.05$.
-    \item \textbf{Design and data:} $n=50$ randomized runs per format on EC2 (both RAM-disk and S3). A preliminary power analysis was performed to justify the sample size, targeting 80\% power to detect a medium effect (Cohen’s $f=0.25$).
+    \item \textbf{Design and data:} $n=50$ randomized runs per format on \acrshort{ECtwo} (both RAM-disk and \acrshort{SThree}). A preliminary power analysis was performed to justify the sample size, targeting 80\% power to detect a medium effect (Cohen’s $f=0.25$).
     \item \textbf{Analysis and decision rule:}
     \begin{enumerate}
       \item \textbf{Assumption checks:}
@@ -459,11 +459,11 @@ This study adopts an \emph{experimental benchmarking} approach within a design�
         \end{itemize}
       \item \textbf{Primary test:}
       \begin{itemize}
-        \item If normality and homogeneity hold: one-way ANOVA $\to$ Tukey HSD post-hoc.
+        \item If normality and homogeneity hold: one-way \acrfull{ANOVA} $\to$ Tukey \acrfull{HSD} post-hoc.
         \item Otherwise: Kruskal–Wallis test $\to$ Dunn’s post-hoc with Holm correction.
       \end{itemize}
       \item \textbf{Reporting:}
-      Effect sizes (e.g., \ $\eta^2$ for ANOVA or Cliff’s $\delta$ for nonparametric) and 95\% confidence intervals.
+      Effect sizes (e.g., \ $\eta^2$ for \acrshort{ANOVA} or Cliff’s $\delta$ for nonparametric) and 95\% confidence intervals.
     \end{enumerate}
   \end{itemize}
 \end{enumerate}
