@@ -560,8 +560,8 @@ To handle this torrent of data, a dedicated data-acquisition (\acrfull{DAQ}) ser
 \subsubsection{Detector technologies and raw rates}
 \begin{itemize}
   \item \textbf{Hybrid photon-counting detectors} (e.g.\ EIGER2 XE 16M) capture 16-megapixel images at \(\ge\)400~Hz, producing $\sim$\SI{13.5}{\giga\byte\per\second} uncompressed diffraction data \(\approx\)1 PB/day if run continuously \cite{Galchenkova:if5003} .
-  \item \textbf{High-speed CMOS cameras} for tomography, such as the GigaFRoST system at the Swiss Light Source, sustain continuous streaming at \SI{7.7}{\giga\byte\per\second} directly to backend servers \cite{celcer2018gigafrost}.
-  \item \textbf{Neutron scintillator–coupled imagers} notably the NIST NeXT detector, enable truly simultaneous neutron + X-ray 3-D tomography and has been applied to Li-ion batteries \cite{yusuf2022nexpreprint} and operando polymer-electrolyte fuel cells \cite{shrestha2023simultaneous}.
+  \item \textbf{High-speed \acrfull{CMOS} cameras} for tomography, such as the GigaFRoST system at the Swiss Light Source, sustain continuous streaming at \SI{7.7}{\giga\byte\per\second} directly to backend servers \cite{celcer2018gigafrost}.
+  \item \textbf{Neutron scintillator–coupled imagers} notably the \acrfull{NIST} \acrfull{NeXT} detector, enable truly simultaneous neutron + X-ray 3-D tomography and has been applied to Li-ion batteries \cite{yusuf2022nexpreprint} and operando polymer-electrolyte fuel cells \cite{shrestha2023simultaneous}.
 \end{itemize}
 
 \begin{table}[htbp]
@@ -576,14 +576,14 @@ To handle this torrent of data, a dedicated data-acquisition (\acrfull{DAQ}) ser
     EIGER2 XE 16M\tnote{a}      & $4148\times4362$ & 1\,280  & 23 \\
     JUNGFRAU 4M\tnote{b}        & $2048\times2048$ & 1\,000 & 16.9 \\
     GigaFRoST\tnote{c}          & $2016\times1800$ & 540  & 7.7  \\
-    Andor Balor sCMOS\tnote{d}  & $4096\times4096$ & 54   & 1.8  \\
+    Andor Balor \acrfull{sCMOS}\tnote{d}  & $4096\times4096$ & 54   & 1.8  \\
     \bottomrule
   \end{tabularx}
   \begin{tablenotes}[flushleft]\footnotesize
     \item[a] Serial crystallography and time-resolved Laue diffraction \cite{dectris_eiger2xe16m}.
     \item[b] Single-shot imaging at X-ray free-electron lasers \cite{Leonarski:ti5028}.
-    \item[c] Ultrafast tomography on the SLS TOMCAT beamline \cite{celcer2018gigafrost}.
-    \item[d] Time-resolved SAXS/WAXS experiments \cite{cooper2019scientific}.
+    \item[c] Ultrafast tomography on the \acrfull{SLS} \acrfull{TOMCAT} beamline \cite{celcer2018gigafrost}.
+    \item[d] Time-resolved \acrfull{SAXS}/\acrfull{WAXS} experiments \cite{cooper2019scientific}.
   \end{tablenotes}
   \end{threeparttable}
 \end{table}
@@ -595,7 +595,7 @@ Indexing a single 2-D detector frame by additional experimental coordinates coll
 
 \begin{itemize}
   \item \textbf{Rotation or scan angle:} a full tomographic or serial-crystallography scan may step the sample (or detector) through $10^{2}$–$10^{4}$ projections to reconstruct 3-D real-space structure or space intensity maps (\emph{rotation} $\times$ \emph{energy} $\times$ \emph{time}) \cite{app11198868}.
-  \item \textbf{Energy or wavelength: } spectro-microscopy and EXAFS experiments, the microscope continuously sweeps the X-ray energy across an absorption edge. At the same time, a fast detector captures a rapid series of images. This procedure produces hyperspectral cubes with $\sim$10–$10^{2}$ energy points per angle or time step \cite{Briois:uc5005}.
+  \item \textbf{Energy or wavelength: } spectro-microscopy and \acrfull{EXAFS} experiments, the microscope continuously sweeps the X-ray energy across an absorption edge. At the same time, a fast detector captures a rapid series of images. This procedure produces hyperspectral cubes with $\sim$10–$10^{2}$ energy points per angle or time step \cite{Briois:uc5005}.
 \end{itemize}
 
 \begin{figure}[!ht]
@@ -616,7 +616,7 @@ The auto industry increasingly deploys neutron radiography to visualize water an
 
 \subsection{Experimental Workflows \& Feedback Loops}
 \label{sec:experimental-workflows-feedback-loops}
-Beam time at synchrotron and neutron facilities is hard to get and expensive. Experiments must, therefore, include a \emph{closed data loop} in which raw detector frames are reconstructed, inspected, and, if necessary, used to steer the scan while the sample is still in the beam. There have been multiple ways in which studies have tried to come up with a good solution with real-time feedback to combat this. A study showed that streaming projections from the beamline to an HPC cluster could deliver slice reconstructions within seconds, enabling autonomous adjustment of exposure, angle range, or focus during tomography scans \cite{Bicer2017RealTime}.
+Beam time at synchrotron and neutron facilities is hard to get and expensive. Experiments must, therefore, include a \emph{closed data loop} in which raw detector frames are reconstructed, inspected, and, if necessary, used to steer the scan while the sample is still in the beam. There have been multiple ways in which studies have tried to come up with a good solution with real-time feedback to combat this. A study showed that streaming projections from the beamline to an \acrfull{HPC} cluster could deliver slice reconstructions within seconds, enabling autonomous adjustment of exposure, angle range, or focus during tomography scans \cite{Bicer2017RealTime}.
 
 Shanghai Synchrotron Radiation Facility pushes this concept further: automated pipelines tied into the metadata catalog issue progress notifications and interactive dashboards to users, allowing real-time feedback \cite{wang2024accelerating}.
 
@@ -625,40 +625,40 @@ Shanghai Synchrotron Radiation Facility pushes this concept further: automated p
   \item \textbf{Latency}: scientists often request slices of data (quick-look radiographs or azimuthal-integrated diffraction rings). Data retrieval times must stay in the sub-second regime to keep up with the experiments.
   \item \textbf{Throughput}: full 3-D reconstruction or machine-learning inference may pull hundreds of contiguous gigabytes at the end of a scan, often includes burst bandwidths of $\ge\!\SI{10}{\giga\byte\per\second}$.
   \item \textbf{Scalability \& concurrency}: remote teams viewing the same dataset and automated QC pipelines often need simultaneous small-read streams. This often penalizes monolithic file formats that require entire files to be downloaded or incur seek-heavy range requests.
-  \item \textbf{Online analysis}: real-time processing pipelines (e.g., streaming reconstruction, AI-driven feature extraction) consume data as it arrives. Storage must support continuous, low-overhead partial reads and write-through metadata indexing to feed live analytics without waiting for scan completion.
+  \item \textbf{Online analysis}: real-time processing pipelines (e.g., streaming reconstruction, \acrfull{AI}-driven feature extraction) consume data as it arrives. Storage must support continuous, low-overhead partial reads and write-through metadata indexing to feed live analytics without waiting for scan completion.
 \end{itemize}
 
 These workflow pressures dictate the performance metrics used later in this thesis and motivate the evaluation of cloud-native, chunk-addressable storage formats that promise millisecond-scale partial retrieval.
 
 
-\section{Traditional HPC Storage Paradigms}
+\section{Traditional \acrshort{HPC} Storage Paradigms}
 \label{sec:traditional-hpc-storage-paradigms}
-For the past decades, scientific supercomputers have relied on \emph{parallel file systems}, where Lustre and IBM’s General Parallel File System (GPFS) has stood out. These systems have allowed pushing checkpoint files and simulation outputs across hundreds of disks at tens of \si{\giga\byte\per\second} aggregate bandwidth \cite{schwan2003lustre,schmuck2002gpfs}. By stripping data over many objects, storage targets and coordinating access via distributed locks became ideally matched workloads that wrote multi-gigabyte files in large, contiguous chunks.
+For the past decades, scientific supercomputers have relied on \emph{parallel file systems}, where Lustre and IBM’s \acrfull{GPFS} has stood out. These systems have allowed pushing checkpoint files and simulation outputs across hundreds of disks at tens of \si{\giga\byte\per\second} aggregate bandwidth \cite{schwan2003lustre,schmuck2002gpfs}. By stripping data over many objects, storage targets and coordinating access via distributed locks became ideally matched workloads that wrote multi-gigabyte files in large, contiguous chunks.
 
-Those design assumptions are strained when the I/O profile flips from “few huge checkpoints” to many tiny look-ups and interactive slices. A study from the Summit and Cori supercomputers shows that small transfers (<\SI{1}{\mega\byte}) still account for the overwhelming majority of read and write calls at both the file and process levels. At the same time, in large-scale HPC deployments, metadata operations alone can account for a considerable part of the file-system requests, often saturating the metadata servers and emerging as a primary scalability bottleneck \cite{bez2022access}. As beamlines, AI workflows, and remote collaborators pile on, the gap between traditional parallel-file-system design and real-time, small-slice demands only widens.
+Those design assumptions are strained when the I/O profile flips from “few huge checkpoints” to many tiny look-ups and interactive slices. A study from the Summit and Cori supercomputers shows that small transfers (<\SI{1}{\mega\byte}) still account for the overwhelming majority of read and write calls at both the file and process levels. At the same time, in large-scale \acrshort{HPC} deployments, metadata operations alone can account for a considerable part of the file-system requests, often saturating the metadata servers and emerging as a primary scalability bottleneck \cite{bez2022access}. As beamlines, AI workflows, and remote collaborators pile on, the gap between traditional parallel-file-system design and real-time, small-slice demands only widens.
 
 The remainder of this section revisits how parallel file systems achieve their impressive bulk throughput and why those mechanisms falter under modern, latency-sensitive access patterns. Thus, it motivates the cloud-native alternatives examined later in this chapter.
 
 
-\subsection{Parallel File Systems (Lustre, GPFS, BeeGFS)}
+\subsection{Parallel File Systems (Lustre, \acrfull{GPFS}, \acrshort{BeeGFS})}
 \label{sec:parallel-file-systems}
 
-Lustre, IBM GPFS (now Spectrum Scale), and BeeGFS have dominated supercomputing storage for over two decades, consistently delivering hundreds of gigabytes per second of throughput. By striping data across hundreds of disks and coordinating access with distributed locks, these systems excelled at writing multi-gigabyte files sequentially. The same system, however, reveals hidden costs once workloads pivot to small, random reads or remote, WAN-mounted access.
+Lustre, IBM \acrshort{GPFS} (now Spectrum Scale), and \acrshort{BeeGFS} have dominated supercomputing storage for over two decades, consistently delivering hundreds of gigabytes per second of throughput. By striping data across hundreds of disks and coordinating access with distributed locks, these systems excelled at writing multi-gigabyte files sequentially. The same system, however, reveals hidden costs once workloads pivot to small, random reads or remote, \acrfull{WAN}-mounted access.
 
 \subsubsection{Architecture and striping model}
-Classic HPC file systems split responsibility between \emph{metadata servers} (MDS) and many \emph{object/data servers} (OSS in Lustre, NSD servers in GPFS, storage targets in BeeGFS). Files are \emph{striped} across a few to hundreds of disks in multi-megabyte chunks. Doing this allows a single sequential read or write to optimize the bandwidth of an entire system. PFS uses token-based distributed locking to keep POSIX consistency on a shared-disk SAN \cite{schmuck2002gpfs}. BeeGFS achieves similar semantics over Ethernet by separating data and metadata and scaling the service.
+Classic \acrshort{HPC} file systems split responsibility between \emph{metadata servers} (\acrfull{MDS}) and many \emph{object/data servers} (\acrfull{OSS} in Lustre, \acrfull{NSD} servers in \acrshort{GPFS}, storage targets in \acrshort{BeeGFS}). Files are \emph{striped} across a few to hundreds of disks in multi-megabyte chunks. Doing this allows a single sequential read or write to optimize the bandwidth of an entire system. \acrfull{PFS} uses token-based distributed locking to keep \acrshort{POSIX} consistency on a shared-disk \acrfull{SAN} \cite{schmuck2002gpfs}. \acrshort{BeeGFS} achieves similar semantics over Ethernet by separating data and metadata and scaling the service.
 
 \subsubsection{Bulk Sequential I/O: High Throughput on Parallel File Systems}
-Parallel file systems shine whenever an application issues long, contiguous transfers, checkpoints/restarts, volumes, and snapshots. NASA’s \emph{Pleiades} cluster still sustains, \(\sim\!1\)\,\si{\giga\byte\per\second} from disk for a single 512-rank IOR stream and bursts to \SI{9}{\giga\byte\per\second} when the same data are serviced out of the page cache \cite{6507507}. Modern flagships go far beyond that, where Los Alamos’ \emph{Trinity} Sonexion Lustre tops out near \SI{1.6}{\tera\byte\per\second} for a 78 PB pool \cite{osti_1367056}. Even a single E1000 OSS inside NERSC’s \emph{Perlmutter} can saturate \SI{41}{\giga\byte\per\second} read and \SI{27}{\giga\byte\per\second} write to one OST \cite{lockwood2024architecture}. These traits explain why parallel file systems remain the choice for bulk sequential scans and multi‐terabyte tomography stacks.
+Parallel file systems shine whenever an application issues long, contiguous transfers, checkpoints/restarts, volumes, and snapshots. NASA’s \emph{Pleiades} cluster still sustains, \(\sim\!1\)\,\si{\giga\byte\per\second} from disk for a single 512-rank IOR stream and bursts to \SI{9}{\giga\byte\per\second} when the same data are serviced out of the page cache \cite{6507507}. Modern flagships go far beyond that, where Los Alamos’ \emph{Trinity} Sonexion Lustre tops out near \SI{1.6}{\tera\byte\per\second} for a 78 PB pool \cite{osti_1367056}. Even a single E1000 \acrshort{OSS} inside NERSC’s \emph{Perlmutter} can saturate \SI{41}{\giga\byte\per\second} read and \SI{27}{\giga\byte\per\second} write to one \acrfull{OST} \cite{lockwood2024architecture}. These traits explain why parallel file systems remain the choice for bulk sequential scans and multi‐terabyte tomography stacks.
 
 Lustre separates responsibilities between dedicated \emph{metadata servers} (MDS) that keep inodes and directory state on one or more \emph{metadata targets} (MDTs) and multiple \emph{object‑storage servers} (OSS) that deliver the bulk data stored on \emph{object‑storage targets} (OSTs).  Files are \emph{striped} across a configurable number of OSTs (stripe count) with a tunable stripe width so a single sequential transfer can engage hundreds of disks in parallel. The design of flagship systems such as Oak Ridge’s Spider‐3 sustains more than \SI{1}{\tera\byte\per\second} aggregate read bandwidth \cite{braam2019lustre, oral2013olcf}.
 
 IBM GPFS employs a distributed \emph{token‑based locking} protocol to coordinate metadata and data updates across all nodes, persisting mutations in replicated journals so that failed servers can recover without full replays. This mechanism provides stronger resilience and copes slightly better with so‑called metadata “storms” than Lustre, though at the cost of a more complex recovery state \cite{schmuck2002gpfs}.
 
 \subsubsection{Weaknesses for many-small reads}
-Parallel file systems raise aggregate bandwidth by slicing every file across many Object Storage Targets (OSTs/NSDs). When workloads flip from multi-GB checkpoints to thousands of $4$–$64$\,\si{\kilo\byte} reads the same striping logic backfires when workloads issue thousands of sub-megabyte reads. Intel’s LUG-2018 “Small File I/O” report shows that files smaller than the DoM threshold generate disproportionately more RPCs per MiB, leading to significantly reduced bandwidth on multi-OST Lustre systems \cite{gmitter2018smallfile}.
+Parallel file systems raise aggregate bandwidth by slicing every file across many Object Storage Targets (\acrshort{OST}s/\acrshort{NSD}s). When workloads flip from multi-GB checkpoints to thousands of $4$–$64$\,\si{\kilo\byte} reads the same striping logic backfires when workloads issue thousands of sub-megabyte reads. Intel’s LUG-2018 “Small File I/O” report shows that files smaller than the \acrfull{DoM} threshold generate disproportionately more RPCs per MiB, leading to significantly reduced bandwidth on multi-\acrshort{OST} Lustre systems \cite{gmitter2018smallfile}.
 
-Even in a namespace-sharded file system like Lustre’s DNE, a camera‐style “one-file-per-frame” workflow still concentrates its create/unlink traffic on one hot directory subtree. Production traces from 60 HPC systems show that \SI{64}{\percent} of files are smaller than \SI{64}{\kilo\byte}. When a system gets flushed with thousands of tiny HDF5 or JPEG files, the operations on the metadata will increase exponentially. Based on these 60 different HPC systems, research shows that metadata operations can account for up to \SI{80}{\percent} of total file system operations \cite{9768784}.
+Even in a namespace-sharded file system like Lustre’s \acrfull{DNE}, a camera‐style “one-file-per-frame” workflow still concentrates its create/unlink traffic on one hot directory subtree. Production traces from 60 \acrshort{HPC} systems show that \SI{64}{\percent} of files are smaller than \SI{64}{\kilo\byte}. When a system gets flushed with thousands of tiny HDF5 or JPEG files, the operations on the metadata will increase exponentially. Based on these 60 different \acrshort{HPC} systems, research shows that metadata operations can account for up to \SI{80}{\percent} of total file system operations \cite{9768784}.
 
 \subsection{POSIX-Centric Scientific Formats}
 \label{sec:posix-centric-formats}
