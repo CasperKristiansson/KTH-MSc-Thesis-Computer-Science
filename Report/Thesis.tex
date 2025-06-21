@@ -474,17 +474,17 @@ The code and infrastructure are versioned and configured in a public Git reposit
 
 \section{Delimitations}
 
-This thesis focuses exclusively on cloud-native, object-store–based workflows within the Amazon Web Services (AWS) ecosystem. Specifically, five storage backends are evaluated, HDF5, Zarr, Parquet, Arrow/Feather, and ROOT/RNTuple, by ingesting and benchmarking two representative datasets (tabular and dense arrays) on EC2 instances with S3 storage. The following boundaries apply:
+This thesis focuses exclusively on cloud-native, object-store–based workflows within the \acrfull{AWS} ecosystem. Specifically, five storage backends are evaluated, \acrfull{HDFfive}, Zarr, Parquet, Arrow/Feather, and \acrfull{ROOT}/\acrfull{RNTuple}, by ingesting and benchmarking two representative datasets (tabular and dense arrays) on \acrfull{ECtwo} instances with \acrfull{SThree} storage. The following boundaries apply:
 
 \begin{itemize}
-	\item \textbf{Cloud provider scope:} Only AWS services (S3, EC2) are considered. No experiments involve Azure, Google Cloud, or on-premises HPC clusters.
- 	\item \textbf{Storage formats:} The study is limited to the five specified formats. Other emerging or domain-specific formats (e.g., Avro, ORC, CBF, NeXus variants) fall outside the scope.
+        \item \textbf{Cloud provider scope:} Only \acrshort{AWS} services (\acrshort{SThree}, \acrshort{ECtwo}) are considered. No experiments involve Azure, Google Cloud, or on-premises \acrfull{HPC} clusters.
+        \item \textbf{Storage formats:} The study is limited to the five specified formats. Other emerging or domain-specific formats (e.g., Avro, \acrfull{ORC}, \acrfull{CBF}, NeXus variants) fall outside the scope.
  	\item \textbf{Workload types:} Benchmarks cover two data sets of scattering data: a 1 M \(\times\) 20 tabular dataset and a 3D dense array.
         \item \textbf{Access patterns:} Evaluation targets small-chunk partial reads (\SIrange{4}{8}{\mega\byte}) and full-dataset scans. This study excludes other patterns (e.g., random single-element lookups and real-time streaming ingestion).
- 	\item \textbf{Compression algorithms:} This study applies three widely used codecs (zstd, LZ4, and gzip) and does not compare other options such as Snappy, Brotli, bzip2, ZFP.
+        \item \textbf{Compression algorithms:} This study applies three widely used codecs (zstd, \acrfull{LZfour}, and gzip) and does not compare other options such as Snappy, Brotli, bzip2, \acrfull{ZFP}.
 \end{itemize}
 
-These delimitations ensure a focused, reproducible comparison of core performance and cost trade-offs for large-scale scientific data storage in AWS.
+These delimitations ensure a focused, reproducible comparison of core performance and cost trade-offs for large-scale scientific data storage in \acrshort{AWS}.
 
 
 
@@ -494,13 +494,13 @@ This thesis is organized into seven main chapters, followed by appendices:
 
 \begin{description}
   \item[Chapter 1: Introduction] Presents the motivation, scope, research question, methodology overview, delimitations, and outlines the thesis structure.
-  \item[Chapter 2: Background] Reviews scientific data challenges in synchrotron and neutron facilities, surveys traditional HPC I/O and emerging cloud‐native formats (HDF5/HSDS, Zarr, Parquet, Arrow/Feather, ROOT/RNTuple), and identifies gaps in existing benchmarks.
-  \item[Chapter 3: Research Methodology] Details the experimental design: dataset selection, AWS infrastructure setup, ingestion pipelines, access patterns, performance metrics, statistical tests, and cost/sustainability modeling.
+  \item[Chapter 2: Background] Reviews scientific data challenges in synchrotron and neutron facilities, surveys traditional \acrshort{HPC} I/O and emerging cloud‐native formats (\acrshort{HDFfive}/\acrshort{HSDS}, Zarr, Parquet, Arrow/Feather, \acrshort{ROOT}/\acrshort{RNTuple}), and identifies gaps in existing benchmarks.
+  \item[Chapter 3: Research Methodology] Details the experimental design: dataset selection, \acrshort{AWS} infrastructure setup, ingestion pipelines, access patterns, performance metrics, statistical tests, and cost/sustainability modeling.
   \item[Chapter 4: Implementation] Describes prototype implementations for each storage backend, reproducible chunking and compression, and automation of ingestion and test workflows.
-  \item[Chapter 5: Results and Analysis] Presents quantitative results, latency distributions, throughput curves, compression ratios, and TCO estimates, followed by statistical comparisons and effect‐size interpretations.
+  \item[Chapter 5: Results and Analysis] Presents quantitative results, latency distributions, throughput curves, compression ratios, and \acrfull{TCO} estimates, followed by statistical comparisons and effect‐size interpretations.
   \item[Chapter 6: Decision Matrix and Discussion] Synthesizes findings into a format‐selection matrix, discusses trade‐offs, integration complexity, and sustainability implications, and provides guidelines for beamline scientists and data engineers.
   \item[Chapter 7: Conclusions and Future Work] Summarizes key contributions, reflects on limitations, and proposes directions for extending the study (e.g., \ multi‐cloud comparisons, additional compression algorithms, real‐time streaming ingestion).
-  \item[Appendices] Include detailed benchmark logs, AWS Terraform templates, code snippets, and supplementary figures.
+  \item[Appendices] Include detailed benchmark logs, \acrshort{AWS} Terraform templates, code snippets, and supplementary figures.
 \end{description}
 
 
@@ -523,9 +523,9 @@ This thesis is organized into seven main chapters, followed by appendices:
 \cleardoublepage
 \chapter{Background}
 \label{ch:background}
-Modern synchrotron and neutron facilities now stream data at gigabytes-per-second rates, producing multi-terabyte experiments that quickly overwhelm the large-block assumptions of traditional HPC storage. Chapter \ref{ch:introduction} framed this challenge and posed the central question: Which cloud-native storage approach minimizes latency and cost for partial retrieval of scattering data on AWS? This chapter equips readers with the scientific, technical, and literature context required to follow this study's experimental design and results.
+Modern synchrotron and neutron facilities now stream data at gigabytes-per-second rates, producing multi-terabyte experiments that quickly overwhelm the large-block assumptions of traditional \acrshort{HPC} storage. Chapter \ref{ch:introduction} framed this challenge and posed the central question: Which cloud-native storage approach minimizes latency and cost for partial retrieval of scattering data on \acrshort{AWS}? This chapter equips readers with the scientific, technical, and literature context required to follow this study's experimental design and results.
 
-First, this chapter will survey how modern beamlines generate and consume data, highlighting the feedback loop and collaboration demands that drive storage-system requirements (Section \ref{sec:scientific-data-context}). It then contrasts legacy parallel file systems such as Lustre and GPFS with the architectural principles of Amazon S3 and other object stores (Sections \ref{sec:traditional-hpc-storage-paradigms} and \ref{sec:cloud-object-storage-fundamentals}). Building on that foundation, Sections \ref{sec:cloud-native-storage-models}–\ref{sec:compression-algorithms} introduce the five storage formats examined in this thesis: HDF5 + HSDS, Zarr, Parquet, Arrow / Feather, and ROOT / RNTuple. These file formats are matched with the three compression algorithms (gzip, LZ4, zstd) that modulate their performance. Section \ref{sec:access-patterns-scattering} characterizes the access patterns typical of scattering analysis.
+First, this chapter will survey how modern beamlines generate and consume data, highlighting the feedback loop and collaboration demands that drive storage-system requirements (Section \ref{sec:scientific-data-context}). It then contrasts legacy parallel file systems such as Lustre and \acrfull{GPFS} with the architectural principles of \acrshort{SThree} and other object stores (Sections \ref{sec:traditional-hpc-storage-paradigms} and \ref{sec:cloud-object-storage-fundamentals}). Building on that foundation, Sections \ref{sec:cloud-native-storage-models}–\ref{sec:compression-algorithms} introduce the five storage formats examined in this thesis: \acrshort{HDFfive} + \acrshort{HSDS}, Zarr, Parquet, Arrow / Feather, and \acrshort{ROOT} / \acrshort{RNTuple}. These file formats are matched with the three compression algorithms (gzip, \acrshort{LZfour}, zstd) that modulate their performance. Section \ref{sec:access-patterns-scattering} characterizes the access patterns typical of scattering analysis.
 
 
 
@@ -544,14 +544,14 @@ The industrial impact is tangible. At the European Synchrotron Radiation Facilit
 \subsubsection{Typical beamline architecture}
 Synchrotron and spallation neutron facilities generate intense, tightly focused beams of X-rays or neutrons that travel down a specialized experimental “beamline.” First, the beam passes through a set of front-end optics mirrors, slits, and monochromators, to shape its size, divergence, energy, and flux. Next, a precision sample stage (multi-axis translation stage) positions the specimen with sub-micrometer accuracy and may rotate it to capture different orientations. Immediately downstream, a high-speed detector records two- or three-dimensional diffraction or imaging data at rates up to thousands of frames per second.
 
-To handle this torrent of data, a dedicated data-acquisition (DAQ) server sits between the detector and the facility network. The DAQ server buffers raw frames on local NVMe SSDs or a burst-buffer appliance, performing initial checks (e.g., dropped-frame detection, coarse image correction) before storing the data. Traditionally, the data stream goes directly into a parallel file system such as Lustre or GPFS, making it available to downstream analysis clusters. Figure \ref{fig:beamline-journey} shows this data path into a single schematic, highlighting the fork between traditional parallel file systems and emerging object-store workflows.
+To handle this torrent of data, a dedicated data-acquisition (\acrfull{DAQ}) server sits between the detector and the facility network. The \acrshort{DAQ} server buffers raw frames on local \acrfull{NVMe} \acrfull{SSD}s or a burst-buffer appliance, performing initial checks (e.g., dropped-frame detection, coarse image correction) before storing the data. Traditionally, the data stream goes directly into a parallel file system such as Lustre or \acrshort{GPFS}, making it available to downstream analysis clusters. Figure \ref{fig:beamline-journey} shows this data path into a single schematic, highlighting the fork between traditional parallel file systems and emerging object-store workflows.
 
 \begin{figure}[!ht]
   \centering
   \includegraphics[width=\linewidth]{figures/beamline_data_journey.jpg}
   \caption{
     End-to-end data journey at a modern synchrotron beamline.
-    Photons are shaped by optics, interact with a sample on a multi-axis goniometer, and are converted to megapixel frames by a high-speed detector. A DAQ burst-buffer server transforms the raw stream into a data cube, which then follows two divergent paths: (\emph{i}) low-latency ingestion into an on-premises parallel file system (Lustre/GPFS) for traditional HPC workflows, or (\emph{ii}) upload to an S3-compatible object store where cloud-native formats such as Zarr/HSDS, Parquet/Arrow, and ROOT RNTuple enable slice-level access and long-term archival.
+    Photons are shaped by optics, interact with a sample on a multi-axis goniometer, and are converted to megapixel frames by a high-speed detector. A DAQ burst-buffer server transforms the raw stream into a data cube, which then follows two divergent paths: (\emph{i}) low-latency ingestion into an on-premises parallel file system (Lustre/GPFS) for traditional \acrshort{HPC} workflows, or (\emph{ii}) upload to an \acrshort{SThree}-compatible object store where cloud-native formats such as Zarr/\acrshort{HSDS}, Parquet/Arrow, and \acrshort{ROOT} \acrshort{RNTuple} enable slice-level access and long-term archival.
   }
   \label{fig:beamline-journey}
 \end{figure}
@@ -633,9 +633,7 @@ These workflow pressures dictate the performance metrics used later in this thes
 
 \section{Traditional HPC Storage Paradigms}
 \label{sec:traditional-hpc-storage-paradigms}
-For the past decades, scientific supercomputers have relied on
-\emph{parallel file systems}, where Lustre and IBM’s General
-Parallel File System (GPFS) has stood out. These systems have allowed pushing checkpoint files and simulation outputs across hundreds of disks at tens of \si{\giga\byte\per\second} aggregate bandwidth \cite{schwan2003lustre,schmuck2002gpfs}. By stripping data over many objects, storage targets and coordinating access via distributed locks became ideally matched workloads that wrote multi-gigabyte files in large, contiguous chunks.
+For the past decades, scientific supercomputers have relied on \emph{parallel file systems}, where Lustre and IBM’s General Parallel File System (GPFS) has stood out. These systems have allowed pushing checkpoint files and simulation outputs across hundreds of disks at tens of \si{\giga\byte\per\second} aggregate bandwidth \cite{schwan2003lustre,schmuck2002gpfs}. By stripping data over many objects, storage targets and coordinating access via distributed locks became ideally matched workloads that wrote multi-gigabyte files in large, contiguous chunks.
 
 Those design assumptions are strained when the I/O profile flips from “few huge checkpoints” to many tiny look-ups and interactive slices. A study from the Summit and Cori supercomputers shows that small transfers (<\SI{1}{\mega\byte}) still account for the overwhelming majority of read and write calls at both the file and process levels. At the same time, in large-scale HPC deployments, metadata operations alone can account for a considerable part of the file-system requests, often saturating the metadata servers and emerging as a primary scalability bottleneck \cite{bez2022access}. As beamlines, AI workflows, and remote collaborators pile on, the gap between traditional parallel-file-system design and real-time, small-slice demands only widens.
 
@@ -652,6 +650,10 @@ Classic HPC file systems split responsibility between \emph{metadata servers} (M
 
 \subsubsection{Bulk Sequential I/O: High Throughput on Parallel File Systems}
 Parallel file systems shine whenever an application issues long, contiguous transfers, checkpoints/restarts, volumes, and snapshots. NASA’s \emph{Pleiades} cluster still sustains, \(\sim\!1\)\,\si{\giga\byte\per\second} from disk for a single 512-rank IOR stream and bursts to \SI{9}{\giga\byte\per\second} when the same data are serviced out of the page cache \cite{6507507}. Modern flagships go far beyond that, where Los Alamos’ \emph{Trinity} Sonexion Lustre tops out near \SI{1.6}{\tera\byte\per\second} for a 78 PB pool \cite{osti_1367056}. Even a single E1000 OSS inside NERSC’s \emph{Perlmutter} can saturate \SI{41}{\giga\byte\per\second} read and \SI{27}{\giga\byte\per\second} write to one OST \cite{lockwood2024architecture}. These traits explain why parallel file systems remain the choice for bulk sequential scans and multi‐terabyte tomography stacks.
+
+Lustre separates responsibilities between dedicated \emph{metadata servers} (MDS) that keep inodes and directory state on one or more \emph{metadata targets} (MDTs) and multiple \emph{object‑storage servers} (OSS) that deliver the bulk data stored on \emph{object‑storage targets} (OSTs).  Files are \emph{striped} across a configurable number of OSTs (stripe count) with a tunable stripe width so a single sequential transfer can engage hundreds of disks in parallel. The design of flagship systems such as Oak Ridge’s Spider‐3 sustains more than \SI{1}{\tera\byte\per\second} aggregate read bandwidth \cite{braam2019lustre, oral2013olcf}.
+
+IBM GPFS employs a distributed \emph{token‑based locking} protocol to coordinate metadata and data updates across all nodes, persisting mutations in replicated journals so that failed servers can recover without full replays. This mechanism provides stronger resilience and copes slightly better with so‑called metadata “storms” than Lustre, though at the cost of a more complex recovery state \cite{schmuck2002gpfs}.
 
 \subsubsection{Weaknesses for many-small reads}
 Parallel file systems raise aggregate bandwidth by slicing every file across many Object Storage Targets (OSTs/NSDs). When workloads flip from multi-GB checkpoints to thousands of $4$–$64$\,\si{\kilo\byte} reads the same striping logic backfires when workloads issue thousands of sub-megabyte reads. Intel’s LUG-2018 “Small File I/O” report shows that files smaller than the DoM threshold generate disproportionately more RPCs per MiB, leading to significantly reduced bandwidth on multi-OST Lustre systems \cite{gmitter2018smallfile}.
