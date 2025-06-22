@@ -566,7 +566,7 @@ To handle this torrent of data, a dedicated data-acquisition (\gls{DAQ}) server 
   \includegraphics[width=\linewidth]{figures/beamline_data_journey.jpg}
   \caption{
     End-to-end data journey at a modern synchrotron beamline.
-    Photons are shaped by optics, interact with a sample on a multi-axis goniometer, and are converted to megapixel frames by a high-speed detector. A DAQ burst-buffer server transforms the raw stream into a data cube, which then follows two divergent paths: (\emph{i}) low-latency ingestion into an on-premises parallel file system (Lustre/GPFS) for traditional HPC workflows, or (\emph{ii}) upload to an S3-compatible object store where cloud-native formats such as Zarr/HSDS, Parquet/Arrow, and ROOT RNTuple enable slice-level access and long-term archival.
+    Photons are shaped by optics, interact with a sample on a multi-axis goniometer, and are converted to megapixel frames by a high-speed detector. A DAQ burst-buffer server transforms the raw stream into a data cube, which then follows two divergent paths: (\emph{i}) low-latency ingestion into an on-premises parallel file system (Lustre \cite{braam2019lustre}/GPFS) for traditional HPC workflows, or (\emph{ii}) upload to an S3-compatible object store where cloud-native formats such as Zarr/HSDS, Parquet/Arrow, and ROOT RNTuple enable slice-level access and long-term archival.
   }
   \label{fig:beamline-journey}
 \end{figure}
@@ -658,7 +658,7 @@ The remainder of this section revisits how parallel file systems achieve their i
 \subsection{Parallel File Systems (Lustre, GPFS, BeeGFS)}
 \label{sec:parallel-file-systems}
 
-Lustre, IBM \gls{GPFS} (now Spectrum Scale), and \gls{BeeGFS} have dominated supercomputing storage for over two decades, consistently delivering hundreds of gigabytes per second of throughput. By striping data across hundreds of disks and coordinating access with distributed locks, these systems excelled at writing multi-gigabyte files sequentially. The same system, however, reveals hidden costs once workloads pivot to small, random reads or remote, \gls{WAN}-mounted access.
+Lustre, IBM \gls{GPFS} (now Spectrum Scale) \cite{schmuck2002gpfs}, and \gls{BeeGFS} have dominated supercomputing storage for over two decades, consistently delivering hundreds of gigabytes per second of throughput. By striping data across hundreds of disks and coordinating access with distributed locks, these systems excelled at writing multi-gigabyte files sequentially. The same system, however, reveals hidden costs once workloads pivot to small, random reads or remote, \gls{WAN}-mounted access.
 
 \subsubsection{Architecture and striping model}
 Classic \gls{HPC} file systems split responsibility between \emph{metadata servers} (\gls{MDS}) and many \emph{object/data servers} (\gls{OSS} in Lustre, \gls{NSD} servers in \gls{GPFS}, storage targets in \gls{BeeGFS}). Files are \emph{striped} across a few to hundreds of disks in multi-megabyte chunks. Doing this allows a single sequential read or write to optimize the bandwidth of an entire system. \gls{PFS} uses token-based distributed locking to keep \gls{POSIX} consistency on a shared-disk \gls{SAN} \cite{schmuck2002gpfs}. \gls{BeeGFS} achieves similar semantics over Ethernet by separating data and metadata and scaling the service.
@@ -674,6 +674,8 @@ IBM GPFS employs a distributed \emph{token‑based locking} protocol to coordina
 Parallel file systems raise aggregate bandwidth by slicing every file across many Object Storage Targets (\gls{OST}s/\gls{NSD}s). When workloads flip from multi-GB checkpoints to thousands of $4$–$64$\,\si{\kilo\byte} reads the same striping logic backfires when workloads issue thousands of sub-megabyte reads. Intel’s LUG-2018 “Small File I/O” report shows that files smaller than the \gls{DoM} threshold generate disproportionately more RPCs per MiB, leading to significantly reduced bandwidth on multi-\gls{OST} Lustre systems \cite{gmitter2018smallfile}.
 
 Even in a namespace-sharded file system like Lustre’s \gls{DNE}, a camera‐style “one-file-per-frame” workflow still concentrates its create/unlink traffic on one hot directory subtree. Production traces from 60 \gls{HPC} systems show that \SI{64}{\percent} of files are smaller than \SI{64}{\kilo\byte}. When a system gets flushed with thousands of tiny \gls{HDFfive} or JPEG files, the operations on the metadata will increase exponentially. Based on these 60 different \gls{HPC} systems, research shows that metadata operations can account for up to \SI{80}{\percent} of total file system operations \cite{9768784}.
+
+HPC administrators often impose per-user inode quotas because millions of tiny files overload Meta Target Devices \cite{carns2009small}. Therefore, monolithic containers such as HDF5 can be preferred on-prem, whereas object stores favor chunk-per-object layouts (e.g., Zarr).
 
 \subsection{POSIX-Centric Scientific Formats}
 \label{sec:posix-centric-formats}
@@ -743,6 +745,33 @@ Cloud object stores such as Amazon \gls{SThree}, Azure Blob, and Google Cloud St
 
 The remainder of this section surveys five representative approaches: \gls{HDFfive} served through the Highly Scalable Data Service (\gls{HSDS}), Zarr's chunk-per-object layout, Apache Parquet's columnar row-group design, Apache Arrow/Feather's zero-copy IPC stream, and \gls{CERN}'s page-oriented \gls{ROOT}/\gls{RNTuple} format. Each part highlights how each approach maps its internal data units onto cloud objects, what compression and indexing strategies it employs, and which trade-offs in latency and throughput.
 
+
+\begin{table}[htbp]
+\centering
+\begin{threeparttable}
+\caption{Storage granularity, object‐count, and dominant pain‐point for each candidate format. Figures assume a 1 TB tomography volume stored with 16 MiB scientific chunks (all but Parquet) or 256 MiB Parquet row‐groups.}
+\label{tab:format-granularity}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l l c X@{}}
+\toprule
+\textbf{Format} & \textbf{Storage type} & \textbf{Objects$^\dagger$} & \textbf{Key pain‐point} \\
+\midrule
+HDF5 (single file)      & File‐per‐dataset                       & TODO                     & Thousands of Range‐GETs per slice; RTT dominates \cite{kang2020predicting} \\
+HDF5 + HSDS             & Chunk‐per‐object                       & TODO                     & Extra REST hop; JSON‐metadata fan‐out \\
+Zarr v3                 & Chunk‐per‐object                       & TODO                     & Inode quota / LIST--HEAD storm on S3\& Lustre \cite{kang2020predicting} \\
+Parquet                 & Row‐group object (256 MiB)             & TODO                     & Small slice pulls whole row‐group $\Rightarrow$ over‐fetch \cite{vohra2016apache} \\
+Arrow / Feather V2      & File of 64 MiB record‐batches         & TODO                     & any sub-batch slice drags the whole batch across the wire which leads to over-fetch + higher egress. \cite{zeng2023empiricalevaluationcolumnarstorage} \\
+ROOT / RNTuple          & Cluster‐per‐object ($\approx$\,16 MiB)         & TODO                     & Many GETs for sparse event picks; page look‐up \\
+\bottomrule
+\end{tabularx}
+\begin{tablenotes}[flushleft]
+\footnotesize
+\item[$\dagger$] Approximate count of POSIX inodes or S3 objects, computed as $1\,\text{TB}$. Actual values vary with chunk or row‐group configuration.
+\end{tablenotes}
+\end{threeparttable}
+\end{table}
+
+
 \subsection{HDF5 + HSDS}
 \label{sec:hdf5-hsds}
 The \gls{HDFfive} ecosystem represents the most mature and widely adopted solution for storing complex scientific data, spanning disciplines from climate modeling to synchrotron beamline acquisition \cite{10.1145/1966895.1966900}. However, developers designed the format for low-latency, parallel file systems. When migrated naively to cloud object stores, its monolithic layout magnifies request latency and per-operation costs. To preserve \gls{HDFfive}’s rich data model while overcoming these cloud-specific bottlenecks, the Highly Scalable Data Service (\gls{HSDS}) was created as a stateless REST layer that shards chunks and metadata into individually addressable objects \cite{readey2020hsds}.
@@ -758,6 +787,12 @@ The \emph{Highly Scalable Data Service} (\gls{HSDS}) re-implements the \gls{HDFf
 
 \subsubsection{Operational experience}
 Production \gls{HSDS} clusters are now back multi-hundred-terabyte public archives, for instance, \gls{NREL}’s 500 TB Wind Toolkit Long-Term Ensemble dataset, which users can subset without downloading entire files \cite{draxl2024wtkled}. \gls{HSDS} retains \gls{HDFfive}’s rich ecosystem yet promises proper cloud-native capabilities.
+
+\paragraph{File-system considerations on HPC clusters}
+Most Lustre and \gls{GPFS} installations cap the number of inodes a single user may allocate because millions of tiny files saturate the metadata target (MDT) servers long before disk bandwidth runs out \cite{gmitter2018smallfile}. Therefore, a monolithic \gls{HDFfive} container carries a practical on-prem advantage: \emph{one inode per file} and negligible directory pressure. By contrast, chunk-per-object formats such as Zarr can create $10^{5}$ $10^{7}$ objects for a single 1 TB tomography scan, a scenario many \gls{HPC} administrators actively discourage or block via strict inode quotas. The same characteristic becomes an asset in cloud object stores, where inodes do not exist, and latency can be hidden behind massive GET/PUT parallelism.
+
+\paragraph{Redundant indexing and its performance cost}
+\gls{HDFfive}’s internal super-block, heap tables, and fractal B-trees replicate several file-system duties to offer \gls{POSIX}-seekable random access \cite{howison2010tuning}. On low-latency local storage, this overhead is minor, yet when a single 4 MB slice is served from \gls{SThree}, it incurs two round-trips, first to fetch the B-tree node, then the data chunk, doubling both latency and request cost. Chunk-native layouts (Zarr, Parquet, \gls{ROOT}/\gls{RNTuple}) avoid this indirection because each chunk or page is already an independent object.
 
 \subsection{Zarr}
 \label{sec:zarr}
@@ -806,7 +841,7 @@ Arrow’s zero-copy design promises the \emph{lowest \gls{CPU} overhead} for bul
 After two decades of incremental evolution, \emph{\gls{TTree}} showed architectural limits for modern heterogeneous hardware and cloud storage. The \gls{RNTuple} project, therefore, re-implements \gls{ROOT} I/O with a stricter columnar layout, page-based compression, and a self-describing, versioned metadata footer \cite{blomer2020evolution}. Pages (\(\approx\)\,\SIrange{8}{16}{\kilo\byte}) are grouped into clusters so that entirely columnar reads issue a single contiguous request, while sparse event selections fetch only the referenced pages. By decoupling metadata from data pages, RNTuple avoids rewriting the entire file when appending events, which is critical for streaming detectors and results in improved partial reads.
 
 \subsubsection{Object-store back-end}
-Through the generic \gls{RPageSource} interface, pages can reside in \gls{POSIX} files, over \gls{HTTP}(S), or as individual \gls{SThree} objects \cite{rootRNTuple2025}. Scaling studies by Blomer showed near-linear throughput up to \(\mathcal{O}(10^{2})\) concurrent readers on a >100‐core \gls{HPC} cluster served by a \gls{DAOS} object store, achieving an aggregated read rate above \SI{35}{\giga\byte\per\second} before the storage system became the bottleneck \cite{blomer2024root}.
+Through the generic ROOT Page Source interface, pages can reside in \gls{POSIX} files, over \gls{HTTP}(S), or as individual \gls{SThree} objects \cite{rootRNTuple2025}. Scaling studies by Blomer showed near-linear throughput up to \(\mathcal{O}(10^{2})\) concurrent readers on a >100‐core \gls{HPC} cluster served by a \gls{DAOS} object store, achieving an aggregated read rate above \SI{35}{\giga\byte\per\second} before the storage system became the bottleneck \cite{blomer2024root}.
 
 This architecture thus provides high-throughput, scalable, and selective access to petabyte-scale datasets, whether on \gls{HPC} or in the cloud, making RNTuple a promising foundation for modern, slice-level scattering analyses.
 
@@ -1060,14 +1095,12 @@ For the scanning workload, the entire \( \sim\!1\,\mathrm{TB} \) tomography cube
 The analysis phase will transform the raw data collected during benchmarking into statistical evidence that discriminates between storage–compression combinations and translate the findings into an actionable decision matrix for beamline workflows.
 
 \subsection{Pre-Processing and Screening}
-
 All raw logs (\gls{CSV} from the Python harness and \gls{JSON} from CloudWatch Insights) are merged on the composite key \emph{\{format,\, codec,\, pattern,\, dataset\,run\_id\}} in a Pandas. Outliers beyond \(\pm3\sigma\) of the median deviation are removed to protect parametric tests.
 
 \subsection{Assumption Checks}
 For each performance metric, the sample means of latency, throughput, compression ratio, and \gls{CPU} utilisation will be assessed for normality (Shapiro–Wilk, $n>50$) and for homogeneity of variance (Levene’s test). Median and \gls{Pninetyfive} latency will still be reported descriptively. Still, their inference will rely on the non-parametric aligned-rank-transform (\gls{ART}) procedure rather than a parametric test \cite{razali2011power}.
 
 \subsection{Primary Hypothesis Tests}
-
 \begin{itemize}
     \item When assumptions hold, a factorial two-way \gls{ANOVA} (Format \(\times\) Codec) is fitted to the mean values. Access Pattern is added as a third fixed factor, yielding a three-way model (Format \(\times\) Codec \(\times\) Pattern) where appropriate. This design captures both main effects and interactions.
     \item If \gls{ANOVA} assumptions are violated, the aligned‐rank‐transform (\gls{ART}) \gls{ANOVA} or a rank‐based linear mixed‐effects model will be applied; pairwise contrasts will utilize \gls{ART}-compatible post‐hoc tests with Holm correction.
@@ -1084,6 +1117,7 @@ Significant omnibus results will trigger pairwise contrasts:
 \end{itemize}
 
 Effect sizes will accompany $p$-values: \(\eta^{2}\) for \gls{ANOVA} and Cliff’s \(\delta\) for Kruskal–Wallis pairs, providing practical significance alongside statistical significance \cite{cohen2013statistical}.
+
 
 
 \subsection{Multi-Criteria Structure}
@@ -1116,7 +1150,57 @@ Metrics are normalized to \([0,1]\) via min-max scaling. A single, balanced weig
 
 
 
+\subsection{Statistical Framework and Formal Hypotheses}
+\label{sec:statisticalFramework}
 
+Let $Y_{ijkr}$ denote the \emph{response variable} measured in this study, where  
+\[
+  \underbrace{i = 1,\dots,I}_{\text{storage format}},\qquad
+  \underbrace{j = 1,\dots,J}_{\text{compression codec}},\qquad
+  \underbrace{k = 1,\dots,K}_{\text{access pattern}},\qquad
+  \underbrace{r = 1,\dots,n_{ijk}}_{\text{replicate}}
+\]
+Storage format, codec, access pattern, and replicate run. For each metric matrix (latency, throughput, compression ratio, \gls{CPU} time), the null hypothesis is tested that the population means are equal across the factor levels.
+
+\subsubsection{Model and assumptions.}
+Unless stated otherwise, we assume a two-way or three-way fixed-effects
+\emph{general linear model}
+\[
+  Y_{ijkr}
+  \;=\;
+  \mu
+  + \alpha_i
+  + \beta_j
+  + \gamma_k
+  + (\alpha\beta)_{ij}
+  + (\alpha\gamma)_{ik}
+  + (\beta\gamma)_{jk}
+  + (\alpha\beta\gamma)_{ijk}
+  + \varepsilon_{ijkr},
+\]
+
+where
+
+\[
+  Y_{ijkr}
+  \;=\;
+  \underbrace{\mu}_{\substack{\text{overall}\\\text{mean}}}
+  \;+\;
+  \underbrace{\alpha_i}_{\substack{\text{format}\\\text{effect}}}
+  \;+\;
+  \underbrace{\beta_j}_{\substack{\text{codec}\\\text{effect}}}
+  \;+\;
+  \underbrace{\gamma_k}_{\substack{\text{pattern}\\\text{effect}}}
+  \;+\;
+  \text{interaction terms}
+  \;+\;
+  \underbrace{\varepsilon_{ijkr}}_{\substack{\text{random}\\\text{noise}}}
+\]
+
+with
+\[
+  \varepsilon_{ijkr}\;\stackrel{\sim}\; \mathcal N(0,\sigma^2).
+\]
 
 
 
