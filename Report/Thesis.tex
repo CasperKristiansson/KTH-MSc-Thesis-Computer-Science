@@ -365,7 +365,7 @@ Historically, researchers stored beamline data on parallel file systems such as 
 \subsection{Emergence of Cloud-Native Storage Models}
 Cloud object storage, most notably Amazon \acrshort{SThree}, has emerged as an attractive alternative in recent years. Object stores provide virtually unlimited, durable storage, global namespace access, and a pay‐as‐you‐go billing model that shifts capital costs to operational expenses. However, monolithic scientific formats such as \acrshort{HDFfive} or NeXus, initially designed for \acrfull{POSIX} filesystems that rely on byte-addressable seek semantics, are naively stored on \acrshort{SThree}, and every small slice triggers hundreds or thousands of \acrfull{HTTP} range-GET requests (\acrshort{SThree}’s emulation of those seeks). For \acrshort{SThree} to emulate, namespaces access leads to extra LIST/HEAD calls, each adding \(\approx\$0.01\text{--}\$0.02\) per 10 k operations \cite{durbin2020cloud}.
 
-Researchers have introduced a new generation of cloud-native data models to address these shortcomings. Zarr and similar chunked array formats expose each multidimensional chunk as an independent object, enabling massive parallel GET/PUT operations and delivering aggregate bandwidths comparable to \acrshort{HPC} filesystems when chunks are set to a few megabytes each. \cite{moore2023ome}. Columnar storage formats such as Apache Parquet organize data in row groups and column stripes, pruning unneeded fields to reduce I/O usage \cite{ivanov2020impact}. Apache Arrow delivers zero‐copy, in‐memory serialization that minimizes \acrshort{CPU} overhead and achieves sub‐millisecond data transfer \cite{10.1145/3527199.3527264}. In parallel, the high‐energy physics community has extended \acrshort{ROOT}’s \acrfull{TTree} and \acrshort{RNTuple} abstractions to object‐store backends, preserving branch‐level selective reads while retaining local filesystem performance characteristics \cite{DBLP:journals/corr/abs-2107-07304}.
+Researchers have introduced a new generation of cloud-native data models to address these shortcomings. Zarr and similar chunked array formats expose each multidimensional chunk as an independent object, enabling massive parallel GET/PUT operations and delivering aggregate bandwidths comparable to \acrshort{HPC} filesystems when chunks are set to a few megabytes each. \cite{moore2023ome}. Columnar storage formats such as Apache Parquet organize data in row groups and column stripes, pruning unneeded fields to reduce I/O usage \cite{ivanov2020impact}. Apache Arrow delivers zero‐copy, in‐memory serialization that minimizes \acrshort{CPU} overhead and achieves sub‐millisecond data transfer \cite{10.1145/3527199.3527264}. In parallel, the high‐energy physics community has extended \acrshort{ROOT}’s \acrfull{TTree} and \acrshort{RNTuple} abstractions to object‐store backends, preserving branch‐level selective reads while retaining local filesystem performance characteristics \cite{DBLP:journals/corr/abs-2107-07304}.
 
 Each approach offers distinct trade‐offs in latency, throughput, compression efficiency, \acrshort{CPU} overhead, and cost. Although individual formats have been benchmarked in isolation or within specific domains, there is no comprehensive, side‐by‐side evaluation of realistic, terabyte‐scale scattering datasets in \acrshort{AWS}. Addressing this gap will inform both beamline scientists, seeking responsive, cost‐effective data access, and data‐intensive computing engineers, designing next‐generation, cloud‐native scientific platforms.
 
@@ -459,7 +459,7 @@ This study adopts an \emph{experimental benchmarking} approach within a design�
         \end{itemize}
       \item \textbf{Primary test:}
       \begin{itemize}
-        \item If normality and homogeneity hold: one-way \acrfull{ANOVA} $\to$ Tukey \acrshort{HSD} post-hoc.
+        \item If normality and homogeneity hold: one-way \acrshort{ANOVA} $\to$ Tukey \acrshort{HSD} post-hoc.
         \item Otherwise: Kruskal–Wallis test $\to$ Dunn’s post-hoc with Holm correction.
       \end{itemize}
       \item \textbf{Reporting:}
@@ -718,7 +718,7 @@ Each request traverses a multi-AZ control plane and TLS handshake, giving time-t
   \item \textbf{Prefix parallelism}: \acrshort{SThree} scales to at least \num{5500} GET/HEAD and \num{3500} write requests per \emph{prefix}. Optimally sharding key lifts can aggregate throughput to multi \si{TB/s} \cite{AWSS3Performance2024}.
 \end{itemize}
 
-These optimization strategies allow object storage to approach \acrshort{HPC}-class \emph{throughput}. However, the inherent network-centric part of the system keeps \emph{latency} for small, random slice reads higher than local or \acrshort{NVMe}-backed file systems. This constraint motivates the chunking and indexing strategies evaluated in this report.
+These optimization strategies allow object storage to approach \acrshort{HPC}-class \emph{throughput}. However, the inherent network-centric part of the system keeps \emph{latency} for small, random slice reads higher than local or \acrshort{NVMe}-backed file systems. This constraint motivates the chunking and indexing strategies evaluated in this report.
 
 
 
@@ -739,7 +739,7 @@ Hierarchical Data Format~5 (\acrshort{HDFfive}) is an open-source container, dat
 Placing a monolithic \acrshort{HDFfive} file on Amazon \acrshort{SThree} causes each \acrshort{POSIX} \texttt{read()} call to issue a separate \acrshort{HTTP} Range GET. Therefore, a single \SI{1}{\mega\byte} slice triggers two network round-trips (metadata + data), amplifying latency and incurring request fee costs that traditional \acrshort{HPC} deployments never experience \cite{hdf5_ros3}. Moreover, the file's internal B-tree indices are optimized for low-latency block storage, not for the 10-ms (or higher) object-store round-trip typical of Amazon \acrshort{SThree}.
 
 \subsubsection{\acrshort{HSDS}: a layered service}
-The \emph{Highly Scalable Data Service} (\acrshort{HSDS}) re-implements the \acrshort{HDFfive} abstraction as a stateless REST \acrshort{API} \cite{readey2020hsds}. Internally, \acrshort{HSDS} maps every chunk and metadata into separate objects (\acrshort{SThree}, Azure Blob, \acrfull{MinIO}, or \acrshort{POSIX}) and maintains a small \acrfull{JSON} document that maps logical dataset coordinates to object keys. This approach allows traversing the \acrshort{HDFfive} “groups” and “datasets.” With \acrshort{HSDS}, reading or writing array slices and modifying attributes through standard \acrshort{HTTP} requests is possible.
+The \emph{Highly Scalable Data Service} (\acrshort{HSDS}) re-implements the \acrshort{HDFfive} abstraction as a stateless REST \acrshort{API} \cite{readey2020hsds}. Internally, \acrshort{HSDS} maps every chunk and metadata into separate objects (\acrshort{SThree}, Azure Blob, \acrfull{MinIO}, or \acrshort{POSIX}) and maintains a small \acrfull{JSON} document that maps logical dataset coordinates to object keys. This approach allows traversing the \acrshort{HDFfive} “groups” and “datasets.” With \acrshort{HSDS}, reading or writing array slices and modifying attributes through standard \acrshort{HTTP} requests is possible.
 
 \subsubsection{Operational experience}
 Production \acrshort{HSDS} clusters are now back multi-hundred-terabyte public archives, for instance, \acrfull{NREL}’s 500 TB Wind Toolkit Long-Term Ensemble dataset, which users can subset without downloading entire files \cite{draxl2024wtkled}. \acrshort{HSDS} retains \acrshort{HDFfive}’s rich ecosystem yet promises proper cloud-native capabilities.
@@ -753,7 +753,7 @@ Zarr is an open-source system that builds on the fundamentals of storing chunked
 Because each chunk maps to an \acrshort{SThree} key, thousands of range-GETs can execute in parallel, achieving high bandwidth \cite{aws2023zarr}. Latency for interactive slice retrieval falls to the low milliseconds. Write throughput scales similarly via thousands of concurrent PUTs (one per chunk), enabling real-time ingestion at modern beamlines without seeing too many performance drawbacks.
 
 \subsubsection{Growing ecosystem}
-Researchers across various fields have adopted Zarr; \acrfull{GDAL} provides a native driver for geospatial rasters \cite{gdal2024zarr} while the bioimaging community standardized on \acrfull{OME}-Zarr for petabyte-scale microscopy archives \cite{moore2023ome}. A NumFOCUS-backed governance model and a public Zarr-specs \acrfull{RFC} process ensure long-term stability in the system \cite{zarrspecv3}.
+Researchers across various fields have adopted Zarr; \acrfull{GDAL} provides a native driver for geospatial rasters \cite{gdal2024zarr} while the bioimaging community standardized on \acrfull{OME}-Zarr for petabyte-scale microscopy archives \cite{moore2023ome}. A NumFOCUS-backed governance model and a public Zarr-specs \acrfull{RFC} process ensure long-term stability in the system \cite{zarrspecv3}.
 
 Zarr’s chunk-per-object design aligns perfectly with the partial-read workloads studied in this report. However, its performance depends on chunk size, sharding, and metadata unification.
 
@@ -832,7 +832,7 @@ LZ4 represents the “low-latency, low-\acrshort{CPU},” serving as the low-lat
 
 \subsection{zstd}
 \label{sec:compression-zstd}
-Zstandard (\emph{zstd}) was released by Collet in 2016 and standardized by the IETF as \acrshort{RFC}~8878 \cite{collet2021rfc8878}. It combines an \acrshort{LZseventyseven} dictionary back-reference engine with Finite-State Entropy (\acrfull{FSE}) coding. It supports window sizes up to 128 MiB and offers 23 quality levels ($-7$ to 22), optional long-range mode, and trained dictionaries (negative values activate ultra-fast modes that trade ratio for speed). Decompression speed is deliberately kept almost constant across levels, whereas compression trades \acrshort{CPU} for ratio.
+Zstandard (\emph{zstd}) was released by Collet in 2016 and standardized by the IETF as \acrshort{RFC}~8878 \cite{collet2021rfc8878}. It combines an \acrshort{LZseventyseven} dictionary back-reference engine with Finite-State Entropy (\acrfull{FSE}) coding. It supports window sizes up to 128 MiB and offers 23 quality levels ($-7$ to 22), optional long-range mode, and trained dictionaries (negative values activate ultra-fast modes that trade ratio for speed). Decompression speed is deliberately kept almost constant across levels, whereas compression trades \acrshort{CPU} for ratio.
 
 \subsubsection{Throughput and ratio characteristics}
 According to the \emph{zstd} manual, the fastest compression mode exceeds \SI{200}{\mega\byte\per\second} per core, while the decoder sustains $>$\SI{500}{\mega\byte\per\second} per core on commodity x86 \acrshort{CPU}s \cite{zstdman2025}.
