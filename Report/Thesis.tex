@@ -145,11 +145,11 @@ nopostdot]{glossaries}
 \title{From Experiment to Insight: A Comparative Study of Storage Approaches for Large-Scale Synchrotron and Neutron Scattering Data on AWS}
 \subtitle{-Subtitle-}
 
-\alttitle{Från experiment till insikt: En jämförande studie av lagringsmetoder för storskaliga synkrotron- och neutronstrålningsdata på \gls{AWS}}
+\alttitle{Från experiment till insikt: En jämförande studie av lagringsmetoder för storskaliga synkrotron- och neutronstrålningsdata på AWS}
 \altsubtitle{-Undertitle-}
 
-\EnglishKeywords{Synchrotron data; Neutron scattering; Cloud storage; \gls{AWS}; \gls{HDFfive}; Zarr; Parquet; Scientific workflows Arrow/Feather; ROOT; Compression;}
-\SwedishKeywords{Synkrotrondata; Neutronspridning; Molnlagring; \gls{AWS}; \gls{HDFfive}; Zarr; Parquet; Vetenskapliga arbetsflöden; Arrow/Feather; ROOT; Komprimering;}
+\EnglishKeywords{Synchrotron data; Neutron scattering; Cloud storage; AWS; HDFfive; Zarr; Parquet; Scientific workflows Arrow/Feather; ROOT; Compression;}
+\SwedishKeywords{Synkrotrondata; Neutronspridning; Molnlagring; AWS; HDFfive; Zarr; Parquet; Vetenskapliga arbetsflöden; Arrow/Feather; ROOT; Komprimering;}
 
 \presentationDateAndTimeISO{2022-03-15 13:00}
 \presentationLanguage{eng}
@@ -355,7 +355,7 @@ While isolated evaluations of individual cloud‐native formats have been conduc
 \section{Background}
 As synchrotron and neutron facilities have evolved, detector technologies and beamline instrumentation have driven data generation rates from megabytes to multiple gigabytes per second. Modern experiments frequently combine multiple detectors and scan axes, such as energy, angle, or polarization. This results in multidimensional datasets that can reach terabyte-scale within minutes, making traditional `download-then-analyze` workflows impossible during beam time \cite{celcer2018gigafrost}.
 
-\subsection{Limitations of Traditional \gls{HPC} Storage}
+\subsection{Limitations of Traditional HPC Storage}
 Historically, researchers stored beamline data on parallel file systems such as Lustre or \gls{GPFS} and accessed it through \gls{MPIIO} or batch-oriented workflows. These systems work great for large‐block I/O operations but have high overhead when serving thousands of small, random reads, typical of exploratory data slices or metadata queries \cite{narayan2010characterization}. Furthermore, maintaining on‐premises \gls{HPC} arrays entails significant capital and operational expenditures and network‐mount complexity for geographically distributed collaborators (usually seen because experiments happen in only key parts of the world).
 
 \subsection{Emergence of Cloud-Native Storage Models}
@@ -475,9 +475,9 @@ This thesis focuses exclusively on cloud-native, object-store–based workflows 
 \begin{itemize}
         \item \textbf{Cloud provider scope:} Only \gls{AWS} services (\gls{SThree}, \gls{ECtwo}) are considered. No experiments involve Azure, Google Cloud, or on-premises \gls{HPC} clusters.
         \item \textbf{Storage formats:} The study is limited to the five specified formats. Other emerging or domain-specific formats (e.g., Avro, \gls{ORC}, \gls{CBF}, NeXus variants) fall outside the scope.
- 	\item \textbf{Workload types:} Benchmarks cover two data sets of scattering data: a 1 M \(\times\) 20 tabular dataset and a 3D dense array.
+ 	\item \textbf{Workload types:} Benchmarks cover two scattering data sets: a 1 M \(\times\) 20 tabular dataset and a 3D dense array.
         \item \textbf{Access patterns:} Evaluation targets small-chunk partial reads (\SIrange{4}{8}{\mega\byte}) and full-dataset scans. This study excludes other patterns (e.g., random single-element lookups and real-time streaming ingestion).
-        \item \textbf{Compression algorithms:} This study applies three widely used codecs (zstd, \gls{LZfour}, and gzip) and does not compare other options such as Snappy, Brotli, bzip2, \gls{ZFP}.
+        \item \textbf{Compression algorithms:} This study applies three widely used codecs (zstd, \gls{LZfour}, and gzip) and does not compare other options such as Snappy, Brotli, bzip2, ZFP.
 \end{itemize}
 
 These delimitations ensure a focused, reproducible comparison of core performance and cost trade-offs for large-scale scientific data storage in \gls{AWS}.
@@ -547,7 +547,7 @@ To handle this torrent of data, a dedicated data-acquisition (\gls{DAQ}) server 
   \includegraphics[width=\linewidth]{figures/beamline_data_journey.jpg}
   \caption{
     End-to-end data journey at a modern synchrotron beamline.
-    Photons are shaped by optics, interact with a sample on a multi-axis goniometer, and are converted to megapixel frames by a high-speed detector. A DAQ burst-buffer server transforms the raw stream into a data cube, which then follows two divergent paths: (\emph{i}) low-latency ingestion into an on-premises parallel file system (Lustre/GPFS) for traditional \gls{HPC} workflows, or (\emph{ii}) upload to an \gls{SThree}-compatible object store where cloud-native formats such as Zarr/\gls{HSDS}, Parquet/Arrow, and \gls{ROOT} \gls{RNTuple} enable slice-level access and long-term archival.
+    Photons are shaped by optics, interact with a sample on a multi-axis goniometer, and are converted to megapixel frames by a high-speed detector. A DAQ burst-buffer server transforms the raw stream into a data cube, which then follows two divergent paths: (\emph{i}) low-latency ingestion into an on-premises parallel file system (Lustre/GPFS) for traditional HPC workflows, or (\emph{ii}) upload to an S3-compatible object store where cloud-native formats such as Zarr/HSDS, Parquet/Arrow, and ROOT RNTuple enable slice-level access and long-term archival.
   }
   \label{fig:beamline-journey}
 \end{figure}
@@ -572,14 +572,14 @@ To handle this torrent of data, a dedicated data-acquisition (\gls{DAQ}) server 
     EIGER2 XE 16M\tnote{a}      & $4148\times4362$ & 1\,280  & 23 \\
     JUNGFRAU 4M\tnote{b}        & $2048\times2048$ & 1\,000 & 16.9 \\
     GigaFRoST\tnote{c}          & $2016\times1800$ & 540  & 7.7  \\
-    Andor Balor \gls{sCMOS}\tnote{d}  & $4096\times4096$ & 54   & 1.8  \\
+    Andor Balor sCMOS\tnote{d}  & $4096\times4096$ & 54   & 1.8  \\
     \bottomrule
   \end{tabularx}
   \begin{tablenotes}[flushleft]\footnotesize
     \item[a] Serial crystallography and time-resolved Laue diffraction \cite{dectris_eiger2xe16m}.
     \item[b] Single-shot imaging at X-ray free-electron lasers \cite{Leonarski:ti5028}.
-    \item[c] Ultrafast tomography on the \gls{SLS} \gls{TOMCAT} beamline \cite{celcer2018gigafrost}.
-    \item[d] Time-resolved \gls{SAXS}/\gls{WAXS} experiments \cite{cooper2019scientific}.
+    \item[c] Ultrafast tomography on the SLS TOMCAT beamline \cite{celcer2018gigafrost}.
+    \item[d] Time-resolved SAXS/WAXS experiments \cite{cooper2019scientific}.
   \end{tablenotes}
   \end{threeparttable}
 \end{table}
@@ -627,7 +627,7 @@ Shanghai Synchrotron Radiation Facility pushes this concept further: automated p
 These workflow pressures dictate the performance metrics used later in this thesis and motivate the evaluation of cloud-native, chunk-addressable storage formats that promise millisecond-scale partial retrieval.
 
 
-\section{Traditional \gls{HPC} Storage Paradigms}
+\section{Traditional HPC Storage Paradigms}
 \label{sec:traditional-hpc-storage-paradigms}
 For the past decades, scientific supercomputers have relied on \emph{parallel file systems}, where Lustre and IBM’s \gls{GPFS} has stood out. These systems have allowed pushing checkpoint files and simulation outputs across hundreds of disks at tens of \si{\giga\byte\per\second} aggregate bandwidth \cite{schwan2003lustre,schmuck2002gpfs}. By stripping data over many objects, storage targets and coordinating access via distributed locks became ideally matched workloads that wrote multi-gigabyte files in large, contiguous chunks.
 
@@ -692,7 +692,7 @@ Every interaction with \gls{SThree} is an \gls{HTTP}S \gls{API} call in one of f
     HEAD              & & Fetch metadata, tags, ACLs \\
     \bottomrule
   \end{tabular}
-  \caption{Core \gls{SThree} request classes}
+  \caption{Core S3 request classes}
   \label{tab:s3-requests}
 \end{table}
 
@@ -703,7 +703,7 @@ Each request traverses a multi-AZ control plane and TLS handshake, giving time-t
   \centering
   \includegraphics[width=0.90\linewidth]{figures/latency_ladder.png}
   \caption{Median time-to-first-byte read across common storage
-           tiers, plotted on a logarithmic axis. The three-order-of-magnitude gap between local \gls{NVMe} and \gls{SThree} motivates the chunking and request strategies.}
+           tiers, plotted on a logarithmic axis. The three-order-of-magnitude gap between local NVMe and S3 motivates the chunking and request strategies.}
   \label{fig:latency-ladder}
 \end{figure}
 
@@ -965,7 +965,7 @@ The experiment uses Amazon Web Services (\gls{AWS}) in a cloud-native environmen
 \begin{figure}[htbp]
   \centering
   \includegraphics[width=\linewidth]{figures/aws_benchmarking_topology.png}
-  \caption{\gls{AWS} benchmarking topology. Five \gls{ECtwo} client nodes (Ubuntu, Python harness) issue small-slice requests (solid arrows, \SIrange{2}{8}{\mega\byte}) and full-dataset scans (dashed arrows) to a single Amazon~\gls{SThree} bucket that stores five format prefixes (\gls{HDFfive}, Zarr, Parquet, Feather, \gls{ROOT}/\gls{RNTuple}). CloudWatch Logs, \gls{SThree} Server Access Logs, and Cost \& Usage Reports collect telemetry, latency metrics, and hourly cost data.}
+  \caption{AWS benchmarking topology. Five EC2 client nodes (Ubuntu, Python harness) issue small-slice requests (solid arrows, \SIrange{2}{8}{\mega\byte}) and full-dataset scans (dashed arrows) to a single Amazon S3 bucket that stores five format prefixes (HDF5, Zarr, Parquet, Feather, ROOT/RNTuple). CloudWatch Logs, SThree Server Access Logs, and Cost \& Usage Reports collect telemetry, latency metrics, and hourly cost data.}
   \label{fig:aws_topology}
 \end{figure}
 
@@ -979,7 +979,7 @@ The primary aim of the experiment is to compare the performance of the five stor
 In a small-slice access pattern, data retrieval is performed on small slices (ranging from \SIrange{2}{8}{\mega\byte}) representing portions of multidimensional data, such as individual detector channels or angular segments of diffraction data. It will also represent, for example, grabbing 10 rows from the tabular dataset. This pattern simulates the real-time, interactive data retrieval during and after experiments.
 
 \subsubsection{Full-Dataset Sequential Scans}
-The entire dataset is accessed sequentially in this pattern, simulating bulk data processing for tasks such as full tomographic reconstructions or machine learning inference. This pattern stresses the storage system's bandwidth capacity, requiring high throughput to process large volumes of data efficiently.
+In this pattern, the entire dataset is accessed sequentially, simulating bulk data processing for tasks such as full tomographic reconstructions or machine learning inference. This pattern stresses the storage system's bandwidth capacity, requiring high throughput to process large volumes of data efficiently.
 
 \subsection{Performance Metrics and Evaluation Criteria}
 
@@ -1045,7 +1045,7 @@ The analysis phase will transform the raw data collected during benchmarking int
 All raw logs (\gls{CSV} from the Python harness and \gls{JSON} from CloudWatch Insights) are merged on the composite key \emph{\{format,\, codec,\, pattern,\, dataset\,run\_id\}} in a Pandas. Outliers beyond \(\pm3\sigma\) of the median deviation are removed to protect parametric tests.
 
 \subsection{Assumption Checks}
-For each performance metric, the sample means of latency, throughput, compression ratio, and \gls{CPU} utilisation will be assessed for normality (Shapiro–Wilk, $n>50$) and for homogeneity of variance (Levene’s test). Median and \gls{Pninetyfive} latency will still be reported descriptively, but their inference will rely on the non-parametric aligned-rank-transform (\gls{ART}) procedure rather than a parametric test \cite{razali2011power}.
+For each performance metric, the sample means of latency, throughput, compression ratio, and \gls{CPU} utilisation will be assessed for normality (Shapiro–Wilk, $n>50$) and for homogeneity of variance (Levene’s test). Median and \gls{Pninetyfive} latency will still be reported descriptively. Still, their inference will rely on the non-parametric aligned-rank-transform (\gls{ART}) procedure rather than a parametric test \cite{razali2011power}.
 
 \subsection{Primary Hypothesis Tests}
 
