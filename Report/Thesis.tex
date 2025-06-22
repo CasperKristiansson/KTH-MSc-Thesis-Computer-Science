@@ -636,7 +636,7 @@ Those design assumptions are strained when the I/O profile flips from “few hug
 The remainder of this section revisits how parallel file systems achieve their impressive bulk throughput and why those mechanisms falter under modern, latency-sensitive access patterns. Thus, it motivates the cloud-native alternatives examined later in this chapter.
 
 
-\subsection{Parallel File Systems (Lustre, \gls{GPFS}, \gls{BeeGFS})}
+\subsection{Parallel File Systems (Lustre, GPFS, BeeGFS)}
 \label{sec:parallel-file-systems}
 
 Lustre, IBM \gls{GPFS} (now Spectrum Scale), and \gls{BeeGFS} have dominated supercomputing storage for over two decades, consistently delivering hundreds of gigabytes per second of throughput. By striping data across hundreds of disks and coordinating access with distributed locks, these systems excelled at writing multi-gigabyte files sequentially. The same system, however, reveals hidden costs once workloads pivot to small, random reads or remote, \gls{WAN}-mounted access.
@@ -663,7 +663,7 @@ Most \gls{HPC} codes write \emph{monolithic containers}, a single \gls{POSIX}-se
 \subsubsection{Monolithic container philosophy}
 The Hierarchical Data Format~5 (\gls{HDFfive}) stores every dataset, chunk, and attribute in a single byte‐addressable file whose internal super-block, B-trees, and heap tables, with the help of \gls{POSIX}, seek for navigation \cite{howison2010tuning}. Nexus, the de facto standard at many photon and neutron sources, layers a domain system on top of the same \gls{HDFfive} container, retaining identical I/O semantics while prescribing beamline-specific group names and units \cite{konnecke2015nexus}. This “all-in-one” layout simplifies the file management, but couples performance to the underlying file-system block size and how well metadata caches handle random seeks.
 
-\subsubsection{Serial and \gls{MPIIO} access}
+\subsubsection{Serial and MPIIO access}
 Out-of-the-box \gls{HDFfive} (used via h5py, MATLAB, etc.) issues are independent of \gls{POSIX}. Each rank that samples a \SIrange{4}{8}{\mega\byte} slice generates dozens of tiny, <\SI{64}{\kilo\byte} reads, leading to many metadata lookups. Performance tuning guides from the HDF Group note that such traffic can result in many minor accesses and that parallel file systems do not do well with small I/O \cite{Breitenfeld2022Parallel}. Parallel \gls{HDFfive} wraps the same container in \gls{MPIIO} so that all processes participate collectively. Doing so when users provide non-contiguous selections, \gls{ROMIO} gathers them into a single larger request (data sieving and collective buffering).
 
 Even when using collective metadata I/O, each \gls{HDFfive} read still must fetch the superblock and descriptive metadata before reading the raw data. In the CCGrid’21 benchmarks on Summit and Cori, metadata I/O alone accounted for as much as ~58\% of the total read time \cite{9499420}. \gls{HDFfive}/NeXus excels for large, sequential scans and single-node post-processing. However, their single-file, \gls{POSIX} heritage makes interactive, many-small-read workloads vulnerable to metadata hot spots. These limitations motivate the chunk-per-object designs of Zarr, Parquet, and the other cloud-native formats evaluated in this report.
@@ -724,17 +724,17 @@ Cloud object stores such as Amazon \gls{SThree}, Azure Blob, and Google Cloud St
 
 The remainder of this section surveys five representative approaches: \gls{HDFfive} served through the Highly Scalable Data Service (\gls{HSDS}), Zarr's chunk-per-object layout, Apache Parquet's columnar row-group design, Apache Arrow/Feather's zero-copy IPC stream, and \gls{CERN}'s page-oriented \gls{ROOT}/\gls{RNTuple} format. Each part highlights how each approach maps its internal data units onto cloud objects, what compression and indexing strategies it employs, and which trade-offs in latency and throughput.
 
-\subsection{\gls{HDFfive} + \gls{HSDS}}
+\subsection{HDF5 + HSDS}
 \label{sec:hdf5-hsds}
 The \gls{HDFfive} ecosystem represents the most mature and widely adopted solution for storing complex scientific data, spanning disciplines from climate modeling to synchrotron beamline acquisition \cite{10.1145/1966895.1966900}. However, developers designed the format for low-latency, parallel file systems. When migrated naively to cloud object stores, its monolithic layout magnifies request latency and per-operation costs. To preserve \gls{HDFfive}’s rich data model while overcoming these cloud-specific bottlenecks, the Highly Scalable Data Service (\gls{HSDS}) was created as a stateless REST layer that shards chunks and metadata into individually addressable objects \cite{readey2020hsds}.
 
-\subsubsection{\gls{HDFfive} fundamentals}
+\subsubsection{HDF5 fundamentals}
 Hierarchical Data Format~5 (\gls{HDFfive}) is an open-source container, data model, and I/O library designed to store extensive, multidimensional scientific data efficiently \cite{10.1145/1966895.1966900}. An \gls{HDFfive} file consists of \emph{datasets} (n-dimensional arrays) organized in a \gls{POSIX}-style hierarchy of groups. Datasets may be either \emph{contiguously} or as fixed-size \emph{chunks}. Chunking enables transparent filter pipelines (e.g., gzip, lz4, zstd) and independent partial reads/writes. At the same time, the library’s \gls{MPIIO} pathway lets thousands of compute nodes access different chunks concurrently \cite{hdf5_chunking}. These strengths made \gls{HDFfive} the standard library/system used at X-ray, neutron, and electron facilities.
 
 \subsubsection{Cloud usage}
 Placing a monolithic \gls{HDFfive} file on Amazon \gls{SThree} causes each \gls{POSIX} \texttt{read()} call to issue a separate \gls{HTTP} Range GET. Therefore, a single \SI{1}{\mega\byte} slice triggers two network round-trips (metadata + data), amplifying latency and incurring request fee costs that traditional \gls{HPC} deployments never experience \cite{hdf5_ros3}. Moreover, the file's internal B-tree indices are optimized for low-latency block storage, not for the 10-ms (or higher) object-store round-trip typical of Amazon \gls{SThree}.
 
-\subsubsection{\gls{HSDS}: a layered service}
+\subsubsection{HSDS: a layered service}
 The \emph{Highly Scalable Data Service} (\gls{HSDS}) re-implements the \gls{HDFfive} abstraction as a stateless REST \gls{API} \cite{readey2020hsds}. Internally, \gls{HSDS} maps every chunk and metadata into separate objects (\gls{SThree}, Azure Blob, \gls{MinIO}, or \gls{POSIX}) and maintains a small \gls{JSON} document that maps logical dataset coordinates to object keys. This approach allows traversing the \gls{HDFfive} “groups” and “datasets.” With \gls{HSDS}, reading or writing array slices and modifying attributes through standard \gls{HTTP} requests is possible.
 
 \subsubsection{Operational experience}
@@ -779,11 +779,11 @@ Arrow/Feather underpins the binary interchange layer of pandas \cite{pandas2024}
 
 Arrow’s zero-copy design promises the \emph{lowest \gls{CPU} overhead} for bulk reads. Still, its record-batch grouping (typically \SI{64}{\kilo\byte}--\SI{8}{\mega\byte}) means smaller slices cannot be fetched better in some cases than the surrounding batch.
 
-\subsection{\gls{ROOT} / \gls{RNTuple}}
+\subsection{ROOT / RNTuple}
 \label{sec:root-rntuple}
 \gls{ROOT} is an object-oriented C++ framework developed at \gls{CERN} to handle the petabyte-scale data streams of high-energy-physics experiments \cite{blomer2020evolution}. Its core storage abstraction, \gls{TTree}, stores events as rows and detector variables as \emph{branches}. The format splits each branch into contiguous \emph{baskets}, allowing readers to load them independently. This column-friendly layout lets analysis jobs load only the needed branches, minimizing I/O and deserialization overhead, a property directly relevant to slice-level scattering analysis.
 
-\subsubsection{\gls{RNTuple} redesign}
+\subsubsection{RNTuple redesign}
 After two decades of incremental evolution, \emph{\gls{TTree}} showed architectural limits for modern heterogeneous hardware and cloud storage. The \gls{RNTuple} project, therefore, re-implements \gls{ROOT} I/O with a stricter columnar layout, page-based compression, and a self-describing, versioned metadata footer \cite{blomer2020evolution}. Pages (\(\approx\)\,\SIrange{8}{16}{\kilo\byte}) are grouped into clusters so that entirely columnar reads issue a single contiguous request, while sparse event selections fetch only the referenced pages. By decoupling metadata from data pages, RNTuple avoids rewriting the entire file when appending events, which is critical for streaming detectors and results in improved partial reads.
 
 \subsubsection{Object-store back-end}
