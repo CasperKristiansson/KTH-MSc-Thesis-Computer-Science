@@ -991,13 +991,13 @@ The performance of each storage format is evaluated using the following metrics:
 \begin{itemize}
   \item Read/Write Latency: The time it takes to retrieve a small slice or the entire dataset.
   \item Throughput: The data transfer rate, measured in \si{\mega\byte\per\second}, for both small-slice reads and full-dataset scans.
-  \item Compression Efficiency: The ratio of compressed data size to the original data size and the CPU usage associated with compression and decompression.
-  \item Cost of Ownership: The total cost of using each format in AWS \acrshort{SThree}, including request fees (GET, PUT), egress charges, and storage costs.
+  \item Compression Efficiency: The ratio of compressed data size to the original data size and the \acrshort{CPU} usage associated with compression and decompression.
+   \item Cost of Ownership: The total cost of using each format in AWS \acrfull{SThree}, including request fees (GET, PUT), egress charges, and storage costs.
 \end{itemize}
 
 
 \subsection{Statistical Analysis and Evaluation}
-The data collected from the experiments is analyzed using statistical methods such as one-way ANOVA to compare the performance of the storage formats across different metrics. Post-hoc tests, such as Tukey HSD, are applied to identify significant differences between the storage solutions. Effect sizes and confidence intervals are calculated to assess the statistical significance of the results, ensuring that the conclusions drawn from the analysis are reliable.
+The data collected from the experiments is analyzed using statistical methods such as one-way \acrfull{ANOVA} to compare the performance of the storage formats across different metrics. Post-hoc tests, such as Tukey \acrfull{HSD}, are applied to identify significant differences between the storage solutions. Effect sizes and confidence intervals are calculated to assess the statistical significance of the results, ensuring that the conclusions drawn from the analysis are reliable.
 
 
 \section{Data Collection}
@@ -1027,15 +1027,15 @@ For the scanning workload, the entire \( \sim\!1\,\mathrm{TB} \) tomography cube
 \begin{enumerate}
   \item \textbf{Client-side parameters} log start/stop timestamps, bytes transferred, and CPU cycles for every GET/PUT
   \item \textbf{CloudWatch and \acrshort{SThree} Server Access Logs} capture server-side latencies, throttle events, and per-request diagnostics for cross-validation.
-  \item \textbf{Cost} is sourced from hourly Cost and Usage Reports (CUR), attributing storage GB-days and request counts
+  \item \textbf{Cost} is sourced from hourly Cost and Usage Reports (\acrfull{CUR}), attributing storage GB-days and request counts
 \end{enumerate}
 
 
 
 \subsection{Validity and Reliability Measures}
 \begin{itemize}
-  \item \textbf{Warm-up runs}: the first ten iterations of the caches and TCP pools are discarded.
-  \item \textbf{Replication}: every \{\emph{format, codec, pattern, dataset}\} tuple is executed $n=50$ times. Medians and P95s are reported with 95 \% CIs.
+  \item \textbf{Warm-up runs}: the first ten iterations of the caches and \acrfull{TCP} pools are discarded.
+  \item \textbf{Replication}: every \{\emph{format, codec, pattern, dataset}\} tuple is executed $n=50$ times. Medians and \acrfull{Pninetyfive}s are reported with 95 \% \acrfull{CI}s.
 \end{itemize}
 
 
@@ -1046,16 +1046,16 @@ The analysis phase will transform the raw data collected during benchmarking int
 
 \subsection{Pre-Processing and Screening}
 
-All raw logs (CSV from the Python harness and JSON from CloudWatch Insights) are merged on the composite key \emph{\{format,\, codec,\, pattern,\, dataset\,run\_id\}} in a Pandas. Outliers beyond \(\pm3\sigma\) of the median deviation are removed to protect parametric tests.
+All raw logs (\acrshort{CSV} from the Python harness and \acrshort{JSON} from CloudWatch Insights) are merged on the composite key \emph{\{format,\, codec,\, pattern,\, dataset\,run\_id\}} in a Pandas. Outliers beyond \(\pm3\sigma\) of the median deviation are removed to protect parametric tests.
 
 \subsection{Assumption Checks}
-For each performance metric, the sample means of latency, throughput, compression ratio, and CPU utilisation will be assessed for normality (Shapiro–Wilk, $n>50$) and for homogeneity of variance (Levene’s test). Median and 95th-percentile latency will still be reported descriptively, but their inference will rely on the non-parametric aligned-rank-transform (ART) procedure rather than a parametric test \cite{razali2011power}.
+For each performance metric, the sample means of latency, throughput, compression ratio, and CPU utilisation will be assessed for normality (Shapiro–Wilk, $n>50$) and for homogeneity of variance (Levene’s test). Median and 95th-percentile latency will still be reported descriptively, but their inference will rely on the non-parametric aligned-rank-transform (\acrfull{ART}) procedure rather than a parametric test \cite{razali2011power}.
 
 \subsection{Primary Hypothesis Tests}
 
 \begin{itemize}
-    \item When assumptions hold, a factorial two-way ANOVA (Format \(\times\) Codec) is fitted to the mean values. Access Pattern is added as a third fixed factor, yielding a three-way model (Format \(\times\) Codec \(\times\) Pattern) where appropriate. This design captures both main effects and interactions.
-    \item If ANOVA assumptions are violated, the aligned‐rank‐transform (ART) ANOVA or a rank‐based linear mixed‐effects model will be applied; pairwise contrasts will utilize ART‐compatible post‐hoc tests with Holm correction.
+    \item When assumptions hold, a factorial two-way \acrshort{ANOVA} (Format \(\times\) Codec) is fitted to the mean values. Access Pattern is added as a third fixed factor, yielding a three-way model (Format \(\times\) Codec \(\times\) Pattern) where appropriate. This design captures both main effects and interactions.
+    \item If \acrshort{ANOVA} assumptions are violated, the aligned‐rank‐transform (\acrshort{ART}) \acrshort{ANOVA} or a rank‐based linear mixed‐effects model will be applied; pairwise contrasts will utilize \acrshort{ART}-compatible post‐hoc tests with Holm correction.
     \item The global null \(H_{0}:\mu_{M,A}=\mu_{M,B}\;\forall\,A,B\) is rejected at \(\alpha = 0.05\).
 \end{itemize}
 
@@ -1064,11 +1064,11 @@ For each performance metric, the sample means of latency, throughput, compressio
 Significant omnibus results will trigger pairwise contrasts:
 
 \begin{itemize}
-  \item \emph{Parametric branch}: Tukey HSD with family-wise error control.
+  \item \emph{Parametric branch}: Tukey \acrshort{HSD} with family-wise error control.
   \item \emph{Non-parametric branch}: Dunn’s test with Holm adjustment.
 \end{itemize}
 
-Effect sizes will accompany $p$-values: \(\eta^{2}\) for ANOVA and Cliff’s \(\delta\) for Kruskal–Wallis pairs, providing practical significance alongside statistical significance \cite{cohen2013statistical}.
+Effect sizes will accompany $p$-values: \(\eta^{2}\) for \acrshort{ANOVA} and Cliff’s \(\delta\) for Kruskal–Wallis pairs, providing practical significance alongside statistical significance \cite{cohen2013statistical}.
 
 
 \subsection{Multi-Criteria Structure}
@@ -1084,8 +1084,8 @@ The evaluation framework operationalizes the thesis goal of delivering \emph{act
   \item \textbf{Compression Efficiency}
         — space-savings ratio versus raw HDF5.
   \item \textbf{CPU Overhead}
-        — mean user+sys time per GiB read/write on AWS EC2.
-  \item \textbf{AWS Cost}
+        — mean user+sys time per GiB read/write on \acrshort{AWS} \acrshort{ECtwo}.
+  \item \textbf{\acrshort{AWS} Cost}
         — \SI{1}{\tera\byte} retrieved
   \item \textbf{Ecosystem Maturity}
         — qualitative score derived from GitHub activity, maintainers, language bindings, and release cadence.
