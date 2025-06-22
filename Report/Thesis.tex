@@ -30,6 +30,19 @@
 
 
 \documentclass[nomenclature, english, bibtex]{kththesis}
+\usepackage[T1]{fontenc}          % T1 encoding first
+
+% -- alias the missing "helvet" family to the existing "phv" shapes ----
+\makeatletter
+\DeclareFontFamily{T1}{helvet}{}
+\DeclareFontShape{T1}{helvet}{m}{n}{<->ssub*phv/m/n}{}
+\DeclareFontShape{T1}{helvet}{m}{it}{<->ssub*phv/m/it}{}
+\DeclareFontShape{T1}{helvet}{m}{sl}{<->ssub*phv/m/sl}{}
+\DeclareFontShape{T1}{helvet}{bx}{n}{<->ssub*phv/bx/n}{}
+\makeatother
+
+\renewcommand{\sfdefault}{helvet}
+
 
 \newcommand*{\generalExpl}[1]{\todo[inline]{#1}}
 
@@ -278,6 +291,12 @@ nopostdot]{glossaries}
  \markboth{\abstractname}{}
 \begin{scontents}[store-env=lang]
 eng
+\end{scontents}
+
+
+\begin{scontents}[store-env=abstracts,print-env=true]
+Abstract
+
 \end{scontents}
 
 
