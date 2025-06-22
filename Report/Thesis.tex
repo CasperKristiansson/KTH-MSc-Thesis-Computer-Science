@@ -442,7 +442,7 @@ This study adopts an \emph{experimental benchmarking} approach within a design�
   \item \textbf{Performance testing}
   \begin{itemize}
     \item Define two access patterns: \emph{small‐slice reads} (\SIrange{4}{8}{\mega\byte} chunks) and \emph{bulk scans} (full dataset sequential read).
-    \item Execute $n=50$ randomized runs per format, per pattern, on both RAM‐disk and \acrshort{SThree}, measuring median and 95th‐percentile latency, throughput (\si{\mega\byte\per\second}), compression ratio, and \acrshort{CPU} utilization.
+    \item Execute $n=50$ randomized runs per format, per pattern, on both RAM‐disk and \acrshort{SThree}, measuring median and \acrfull{Pninetyfive} latency, throughput (\si{\mega\byte\per\second}), compression ratio, and \acrshort{CPU} utilization.
   \end{itemize}
 
   \item \textbf{Scientific method framework}
@@ -682,7 +682,7 @@ Amazon Simple Storage Service (\acrshort{SThree}) organizes data in \emph{bucket
 
 
 \subsection{Request classes and cost drivers}
-Every interaction with \acrshort{SThree} is an \acrshort{HTTP}S API call in one of four core request classes. Each call is billable in addition to storage (\si{GB}\,month) and data-egress charges \cite{AWSS3Pricing2025}.
+Every interaction with \acrshort{SThree} is an \acrshort{HTTP}S \acrfull{API} call in one of four core request classes. Each call is billable in addition to storage (\si{GB}\,month) and data-egress charges \cite{AWSS3Pricing2025}.
 
 \begin{table}[ht]
   \centering
@@ -739,7 +739,7 @@ Hierarchical Data Format~5 (\acrshort{HDFfive}) is an open-source container, dat
 Placing a monolithic \acrshort{HDFfive} file on Amazon \acrshort{SThree} causes each \acrshort{POSIX} \texttt{read()} call to issue a separate \acrshort{HTTP} Range GET. Therefore, a single \SI{1}{\mega\byte} slice triggers two network round-trips (metadata + data), amplifying latency and incurring request fee costs that traditional \acrshort{HPC} deployments never experience \cite{hdf5_ros3}. Moreover, the file's internal B-tree indices are optimized for low-latency block storage, not for the 10-ms (or higher) object-store round-trip typical of Amazon \acrshort{SThree}.
 
 \subsubsection{\acrshort{HSDS}: a layered service}
-The \emph{Highly Scalable Data Service} (\acrshort{HSDS}) re-implements the \acrshort{HDFfive} abstraction as a stateless REST API \cite{readey2020hsds}. Internally, \acrshort{HSDS} maps every chunk and metadata into separate objects (\acrshort{SThree}, Azure Blob, MinIO, or \acrshort{POSIX}) and maintains a small \acrfull{JSON} document that maps logical dataset coordinates to object keys. This approach allows traversing the \acrshort{HDFfive} “groups” and “datasets.” With \acrshort{HSDS}, reading or writing array slices and modifying attributes through standard \acrshort{HTTP} requests is possible.
+The \emph{Highly Scalable Data Service} (\acrshort{HSDS}) re-implements the \acrshort{HDFfive} abstraction as a stateless REST \acrshort{API} \cite{readey2020hsds}. Internally, \acrshort{HSDS} maps every chunk and metadata into separate objects (\acrshort{SThree}, Azure Blob, \acrfull{MinIO}, or \acrshort{POSIX}) and maintains a small \acrfull{JSON} document that maps logical dataset coordinates to object keys. This approach allows traversing the \acrshort{HDFfive} “groups” and “datasets.” With \acrshort{HSDS}, reading or writing array slices and modifying attributes through standard \acrshort{HTTP} requests is possible.
 
 \subsubsection{Operational experience}
 Production \acrshort{HSDS} clusters are now back multi-hundred-terabyte public archives, for instance, \acrfull{NREL}’s 500 TB Wind Toolkit Long-Term Ensemble dataset, which users can subset without downloading entire files \cite{draxl2024wtkled}. \acrshort{HSDS} retains \acrshort{HDFfive}’s rich ecosystem yet promises proper cloud-native capabilities.
@@ -823,7 +823,7 @@ LZ4 emerged in 2011 as a lightweight derivative of the Lempel–Ziv (\acrshort{L
 The codec emphasizes extremely fast byte-wise parsing and a greedy match-finder that limits back-references to \SI{64}{\kilo\byte}. Because of this, the compression runs at $>$\SI{500}{\mega\byte\per\second} per core while decompression routinely exceeds \SIrange{2}{3}{\giga\byte\per\second}, albeit with modest ratios (1.2–1.7\(\times\) on floating-point data) \cite{lz42025,7440278}. A high-compression variant \texttt{lz4hc} improves the ratio by $\sim$15\,\% at 3–5 \(\times\) the \acrshort{CPU} cost.
 
 \subsubsection{Empirical results on scientific workloads}
-Almeida \emph{et al.} compared LZ4 with \acrfull{ZLIB} on ROOT HEP and climate grids, reporting \SIrange{1.0}{1.2}{\giga\byte\per\second} decompression (versus \SI{120}{\mega\byte\per\second} for \acrshort{ZLIB}) at the expense of only a 5–10\,\% ratio loss \cite{almeida2014two}. The \acrfull{VLDB}’24 “FCBench” study recently measured the \acrshort{CPU} variant bitshuffle with LZ4 across 33 floating-point datasets. The study showed that it sustained \SI{0.9}{\giga\byte\per\second} compression and \SI{1.2}{\giga\byte\per\second} decompression on \SI{64}{\kilo\byte} blocks while achieving a median compression ratio of 1.43 \cite{chen2023fcbench}.
+Almeida \emph{et al.} compared LZ4 with \acrfull{ZLIB} on ROOT HEP and climate grids, reporting \SIrange{1.0}{1.2}{\giga\byte\per\second} decompression (versus \SI{120}{\mega\byte\per\second} for \acrshort{ZLIB}) at the expense of only a 5–10\,\% ratio loss \cite{almeida2014two}. The \acrfull{VLDB}’24 “\acrfull{FCBench}” study recently measured the \acrshort{CPU} variant bitshuffle with LZ4 across 33 floating-point datasets. The study showed that it sustained \SI{0.9}{\giga\byte\per\second} compression and \SI{1.2}{\giga\byte\per\second} decompression on \SI{64}{\kilo\byte} blocks while achieving a median compression ratio of 1.43 \cite{chen2023fcbench}.
 
 \subsubsection{Integration in storage formats}
 LZ4 filters are first-class options in \acrshort{HDFfive} (\texttt{H5Z\_LZ4}), Zarr v3, Parquet, and Arrow IPC. Because the LZ4 \SI{64}{\kilo\byte} match window limits cross-chunk redundancy, chunk sizes above \SIrange{1}{2}{\mega\byte} yield diminishing returns, which for this study will align well with \acrshort{SThree} request-cost sweet spots.
@@ -839,7 +839,7 @@ According to the \emph{zstd} manual, the fastest compression mode exceeds \SI{20
 
 Promberger \emph{et al.}\ measured \emph{zstd} level 2 on a 4.9 GB \acrfull{LHCb} collision dataset and found that its \emph{compression} throughput was roughly 2–3 \(\times\) higher than that of \emph{zlib} level 2 while achieving an almost identical compression ratio, \cite{promberger2023characterization}.
 
-Delaunay et al. found that “Shuffle + Zstandard-2” compresses \acrfull{CFOSAT} and \acrshort{SWOT} remote-sensing files about 1.4 \(\times\) to 7 \(\times\) faster than the mission’s baseline “Shuffle + Deflate-3/4”. It delivers virtually identical space savings, accelerating decompression by up to seven-fold \cite{delaunay2019evaluation}. Across the full 33-dataset \emph{FCBench} suite, the \acrshort{VLDB}’24 study reports that a \emph{bitshuffle+zstd} pipeline achieves a harmonic-mean compression ratio of 1.47, while sustaining compression and decompression throughputs of $\sim\!\SI{1.4}{\giga\byte\per\second}$ and $\sim\!\SI{1.3}{\giga\byte\per\second}$, respectively  \cite{chen2023fcbench}.
+Delaunay et al. found that “Shuffle + Zstandard-2” compresses \acrfull{CFOSAT} and \acrfull{SWOT} remote-sensing files about 1.4 \(\times\) to 7 \(\times\) faster than the mission’s baseline “Shuffle + Deflate-3/4”. It delivers virtually identical space savings, accelerating decompression by up to seven-fold \cite{delaunay2019evaluation}. Across the full 33-dataset \acrshort{FCBench} suite, the \acrshort{VLDB}’24 study reports that a \emph{bitshuffle+zstd} pipeline achieves a harmonic-mean compression ratio of 1.47, while sustaining compression and decompression throughputs of $\sim\!\SI{1.4}{\giga\byte\per\second}$ and $\sim\!\SI{1.3}{\giga\byte\per\second}$, respectively  \cite{chen2023fcbench}.
 
 \subsubsection{Integration in scientific formats}
 zstd is a first-class codec in Parquet, Arrow IPC, and available as extensions for \acrshort{HDFfive} and Zarr v3. With \acrshort{FSE} contexts resetting per block, 1–4 MiB chunks maximize the ratio without inflating \acrshort{SThree} request counts. Zstd occupies the “balanced ratio/latency” middle ground between gzip (high ratio, high \acrshort{CPU}) and LZ4 (low ratio, low \acrshort{CPU}) in the study.
@@ -881,7 +881,7 @@ Complete reads underpin high-fidelity analyses that cannot tolerate missing fram
 \subsection{Metadata-driven queries}
 A \emph{metadata query} retrieves only descriptive information, sample-environment logs, scan parameters, detector geometry, or a thin set of columns/branches without touching the heavy image stacks. Typical payloads are \(\mathcal{O}(10^{1}\!-\!10^{3})\,\mathrm{kB}\), which a live beamline dashboard may issue tens to hundreds of such queries per second during an experiment.
 
-Synchrotron and neutron facilities increasingly push raw detector frames straight into object stores (\acrshort{AWS} \acrshort{SThree}, \acrfull{Ceph}, \acrfull{MinIO}) to curb on-premise costs and enable remote collaboration. Brookhaven’s \acrfull{NSLSII}, for example, operates a {\small 5 PB} \acrshort{MinIO} cluster exposed via the \acrshort{SThree} \acrfull{API}; the Bluesky acquisition pipeline writes NeXus event documents there, and downstream notebooks read them over the \acrshort{WAN} \cite{Lancon2022}. The UK’s Rutherford Appleton Laboratory offers the \acrfull{ECHO} \acrshort{Ceph} object store, providing {\small 100 PB} of \acrshort{SThree} capacity that underpins \acrfull{IRIS} cloud analysis services and beamline portals \cite{ECHO2025}. In these environments, transferring even a few gigabytes across a \acrshort{WAN} to inspect scan headers is untenable, especially when lightweight, metadata-only queries can satisfy the request.
+Synchrotron and neutron facilities increasingly push raw detector frames straight into object stores (\acrshort{AWS} \acrshort{SThree}, \acrfull{Ceph}, \acrshort{MinIO}) to curb on-premise costs and enable remote collaboration. Brookhaven’s \acrfull{NSLSII}, for example, operates a {\small 5 PB} \acrshort{MinIO} cluster exposed via the \acrshort{SThree} \acrshort{API}; the Bluesky acquisition pipeline writes NeXus event documents there, and downstream notebooks read them over the \acrshort{WAN} \cite{Lancon2022}. The UK’s Rutherford Appleton Laboratory offers the \acrfull{ECHO} \acrshort{Ceph} object store, providing {\small 100 PB} of \acrshort{SThree} capacity that underpins \acrfull{IRIS} cloud analysis services and beamline portals \cite{ECHO2025}. In these environments, transferring even a few gigabytes across a \acrshort{WAN} to inspect scan headers is untenable, especially when lightweight, metadata-only queries can satisfy the request.
 
 \section{Summary and Link to Problem Statement}
 \label{sec:summary-problem-statement}
@@ -1035,7 +1035,7 @@ For the scanning workload, the entire \( \sim\!1\,\mathrm{TB} \) tomography cube
 \subsection{Validity and Reliability Measures}
 \begin{itemize}
   \item \textbf{Warm-up runs}: the first ten iterations of the caches and \acrfull{TCP} pools are discarded.
-  \item \textbf{Replication}: every \{\emph{format, codec, pattern, dataset}\} tuple is executed $n=50$ times. Medians and \acrfull{Pninetyfive}s are reported with 95 \% \acrfull{CI}s.
+  \item \textbf{Replication}: every \{\emph{format, codec, pattern, dataset}\} tuple is executed $n=50$ times. Medians and \acrshort{Pninetyfive}s are reported with 95 \% \acrfull{CI}s.
 \end{itemize}
 
 
@@ -1049,7 +1049,7 @@ The analysis phase will transform the raw data collected during benchmarking int
 All raw logs (\acrshort{CSV} from the Python harness and \acrshort{JSON} from CloudWatch Insights) are merged on the composite key \emph{\{format,\, codec,\, pattern,\, dataset\,run\_id\}} in a Pandas. Outliers beyond \(\pm3\sigma\) of the median deviation are removed to protect parametric tests.
 
 \subsection{Assumption Checks}
-For each performance metric, the sample means of latency, throughput, compression ratio, and \acrshort{CPU} utilisation will be assessed for normality (Shapiro–Wilk, $n>50$) and for homogeneity of variance (Levene’s test). Median and 95th-percentile latency will still be reported descriptively, but their inference will rely on the non-parametric aligned-rank-transform (\acrfull{ART}) procedure rather than a parametric test \cite{razali2011power}.
+For each performance metric, the sample means of latency, throughput, compression ratio, and \acrshort{CPU} utilisation will be assessed for normality (Shapiro–Wilk, $n>50$) and for homogeneity of variance (Levene’s test). Median and \acrshort{Pninetyfive} latency will still be reported descriptively, but their inference will rely on the non-parametric aligned-rank-transform (\acrfull{ART}) procedure rather than a parametric test \cite{razali2011power}.
 
 \subsection{Primary Hypothesis Tests}
 
@@ -1078,7 +1078,7 @@ The evaluation framework operationalizes the thesis goal of delivering \emph{act
   \item \textbf{Performance}
         \begin{enumerate}[label=\alph*]
           \item Median slice-read latency
-          \item 95$^{\text{th}}$-percentile latency
+          \item \acrshort{Pninetyfive} latency
           \item Sequential-scan throughput
         \end{enumerate}
   \item \textbf{Compression Efficiency}
