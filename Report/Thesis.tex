@@ -459,7 +459,7 @@ This study adopts an \emph{experimental benchmarking} approach within a design�
         \end{itemize}
       \item \textbf{Primary test:}
       \begin{itemize}
-        \item If normality and homogeneity hold: one-way \acrfull{ANOVA} $\to$ Tukey \acrfull{HSD} post-hoc.
+        \item If normality and homogeneity hold: one-way \acrfull{ANOVA} $\to$ Tukey \acrshort{HSD} post-hoc.
         \item Otherwise: Kruskal–Wallis test $\to$ Dunn’s post-hoc with Holm correction.
       \end{itemize}
       \item \textbf{Reporting:}
@@ -474,7 +474,7 @@ The code and infrastructure are versioned and configured in a public Git reposit
 
 \section{Delimitations}
 
-This thesis focuses exclusively on cloud-native, object-store–based workflows within the \acrshort{AWS} ecosystem. Specifically, five storage backends are evaluated, \acrshort{HDFfive}, Zarr, Parquet, Arrow/Feather, and \acrshort{ROOT}/\acrshort{RNTuple}, by ingesting and benchmarking two representative datasets (tabular and dense arrays) on \acrfull{ECtwo} instances with \acrshort{SThree} storage. The following boundaries apply:
+This thesis focuses exclusively on cloud-native, object-store–based workflows within the \acrshort{AWS} ecosystem. Specifically, five storage backends are evaluated, \acrshort{HDFfive}, Zarr, Parquet, Arrow/Feather, and \acrshort{ROOT}/\acrshort{RNTuple}, by ingesting and benchmarking two representative datasets (tabular and dense arrays) on \acrshort{ECtwo} instances with \acrshort{SThree} storage. The following boundaries apply:
 
 \begin{itemize}
         \item \textbf{Cloud provider scope:} Only \acrshort{AWS} services (\acrshort{SThree}, \acrshort{ECtwo}) are considered. No experiments involve Azure, Google Cloud, or on-premises \acrshort{HPC} clusters.
@@ -997,7 +997,7 @@ The performance of each storage format is evaluated using the following metrics:
 
 
 \subsection{Statistical Analysis and Evaluation}
-The data collected from the experiments is analyzed using statistical methods such as one-way \acrfull{ANOVA} to compare the performance of the storage formats across different metrics. Post-hoc tests, such as Tukey \acrfull{HSD}, are applied to identify significant differences between the storage solutions. Effect sizes and confidence intervals are calculated to assess the statistical significance of the results, ensuring that the conclusions drawn from the analysis are reliable.
+The data collected from the experiments is analyzed using statistical methods such as one-way \acrfull{ANOVA} to compare the performance of the storage formats across different metrics. Post-hoc tests, such as Tukey \acrshort{HSD}, are applied to identify significant differences between the storage solutions. Effect sizes and confidence intervals are calculated to assess the statistical significance of the results, ensuring that the conclusions drawn from the analysis are reliable.
 
 
 \section{Data Collection}
