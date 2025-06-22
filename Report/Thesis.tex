@@ -1267,18 +1267,9 @@ Metrics are normalized to \([0,1]\) via min-max scaling. A single, balanced weig
 \lstset{numbers=none}
 \divainfo{pg:lastPageofPreface}{pg:lastPageofMainmatter}
 
-\ifxeorlua
 
 \section*{acronyms.tex}
 \lstinputlisting[language={[LaTeX]TeX}, nolol, basicstyle=\ttfamily\color{black},
 commentstyle=\color{black}, backgroundcolor=\color{white}]{lib/acronyms.tex}
-{}
-\else
-\section*{acronyms.tex}
-\lstinputlisting[language={[LaTeX]TeX}, nolol, basicstyle=\ttfamily\color{black},
-commentstyle=\color{black}, backgroundcolor=\color{white}]{lib/acronyms-for-pdflatex.tex}
-{}
-\fi
-
 
 \end{document}
