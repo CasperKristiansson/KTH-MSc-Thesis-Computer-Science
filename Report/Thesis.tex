@@ -275,6 +275,9 @@ nopostdot]{glossaries}
 
 \usepackage{url}
 
+% Added this for math
+\usepackage{amsmath,amssymb}
+
 \begin{document}
 \selectlanguage{english}
 
@@ -823,7 +826,7 @@ Apache Parquet is an open, columnar storage format originally developed at Twitt
 On Amazon \gls{SThree}, each row group is laid out as a large (typically \SIrange{64}{256}{\mega\byte}) contiguous byte range, allowing clients such as Apache Arrow’s vectorized reader or \gls{AWS} Athena to fetch gigabyte-scale slices with a single Range GET. The AWS Athena pricing page states that converting data to compressed, columnar formats like Parquet “can save up to \SI{90}{\percent} per query and improve performance” compared with raw \gls{CSV} \cite{aws_athena_pricing}.
 
 \subsubsection{Ecosystem adoption}
-Parquet has become the default on-disk file format throughout today’s analytics stack. Apache Spark uses Parquet as the \emph{default data source}, and Apache Iceberg likewise keeps its immutable data files in Parquet \cite{iceberg_spec}. In the in-memory layer, Pandas and Apache Arrow provide first-class readers/writers for Parquet \cite{pandas_read_parquet}. Primary cloud analytics services ingest Parquet natively, including Google BigQuery \cite{bq_parquet}, \gls{AWS} Glue \cite{aws_glue_parquet}, and Amazon Athena \cite{aws-athena-columnar}.
+Parquet has become the default on-disk file format throughout today’s analytics stack. Apache Spark uses Parquet as the \emph{default data source}, and Apache Iceberg likewise keeps its immutable data files in Parquet \cite{iceberg_spec}. In the in-memory layer, Pandas and Apache Arrow provide first-class readers/writers for Parquet \cite{pandas_read_parquet}. Primary cloud analytics services natively ingest Parquet, including Google BigQuery \cite{bq_parquet}, \gls{AWS} Glue \cite{aws_glue_parquet}, and Amazon Athena \cite{aws-athena-columnar}.
 
 Parquet’s columnar design is perfect for the tabular metadata portion of scattering experiments, where scientists frequently select a handful of columns across millions of rows. However, its row-group granularity (tens of MB) and lack of native $n$-D chunking can inflate latency for small pixel tiles.
 
@@ -839,7 +842,7 @@ Unlike chunk-per-object layouts, a single fragment typically produces a small, f
 On open, TileDB loads fragment metadata and per-tile statistics/min-max bounds. The system then queries the pruned fragments and data tiles whose minimum-bounding rectangles (MBRs) do not intersect the requested subarray \cite{TileDBFragmentMeta,TileDBMBR}. Reads support ordered or unordered layouts, multi-range subarrays \cite{TileDBReadLayouts}.
 
 \subsubsection{Writes, immutability, and time travel}
-All writes create new immutable fragments and commit files, enabling lock-free multiple-reader/multiple-writer behavior and consistent reads at a chosen timestamp range (“time traveling”). Fragment merging helps compact many small fragments into larger ones, which helps reclaim space \cite{TileDBTimeTravel}.
+All writes create new immutable fragments and commit files, enabling lock-free multiple-reader/multiple-writer behavior and consistent reads at a chosen timestamp range (“time traveling”). Fragment merging helps compact many small fragments into larger ones, which allows reclaim space \cite{TileDBTimeTravel}.
 
 \subsubsection{Compression and filters.}
 TileDB applies a per-attribute filter pipeline to tiles. Supported compressors include GZIP, Zstandard, LZ4, RLE, BZIP2, and integer-oriented transforms (bit-shuffle, bit-width reduction, double-delta). Checksums (MD5/SHA-256) are available for integrity. Arrays can be encrypted at rest using AES-256-GCM \cite{TileDBCompression,TileDBChecksums,TileDBEncryption}.
@@ -936,13 +939,13 @@ Partial reads are equally critical \emph{after} acquisition. For example, strain
 \subsection{Full-dataset sequential scans}
 A \emph{full-dataset scan} means streaming every projection or event record, typically \(10^{2}\)–\(10^{3}\,\mathrm{GB}\) per tomographic run or several terabytes per serial-crystallography campaign. Full dataset scans, therefore, require moving data from storage to the compute tier in a single, sequential pass.
 
-Complete reads underpin high-fidelity analyses that cannot tolerate missing frames. Iterative phase-retrieval and filtered back-projection algorithms in tomography require the entire sinogram for each refinement cycle. In serial femtosecond crystallography, clustering, indexing, and Monte Carlo integration need millions of patterns to converge on accurate structure factors \cite{maiden2009improved}. Full dataset scans are also required when, for example, doing \emph{reference re-processing} of an experiment. Tasks such as simply displaying the image in one continuous video require loading the entire data set. Sequential scans saturate available bandwidth, compression efficiency, and parallel read pipelines dominate time-to-solution.
+Complete reads underpin high-fidelity analyses that cannot tolerate missing frames. Iterative phase-retrieval and filtered back-projection algorithms in tomography require the entire sinogram for each refinement cycle. In serial femtosecond crystallography, clustering, indexing, and Monte Carlo integration need millions of patterns to converge on accurate structure factors \cite{maiden2009improved}. Full dataset scans are also required when, for example, doing \emph{reference re-processing} of an experiment. Tasks such as simply displaying the image in a single continuous video require loading the entire dataset. Sequential scans saturate available bandwidth, compression efficiency, and parallel read pipelines dominate time-to-solution.
 
 
 \subsection{Metadata-driven queries}
-A \emph{metadata query} retrieves only descriptive information, sample-environment logs, scan parameters, detector geometry, or a thin set of columns/branches without touching the heavy image stacks. Typical payloads are \(\mathcal{O}(10^{1}\!-\!10^{3})\,\mathrm{kB}\), which a live beamline dashboard may issue tens to hundreds of such queries per second during an experiment.
+A \emph{metadata query} retrieves only descriptive information, sample-environment logs, scan parameters, detector geometry, or a limited set of columns/branches without accessing the large image stacks. Typical payloads are \(\mathcal{O}(10^{1}\!-\!10^{3})\,\mathrm{kB}\), which a live beamline dashboard may issue tens to hundreds of such queries per second during an experiment.
 
-Synchrotron and neutron facilities increasingly push raw detector frames straight into object stores (\gls{AWS} \gls{SThree}, \gls{Ceph}, \gls{MinIO}) to curb on-premise costs and enable remote collaboration. Brookhaven’s \gls{NSLSII}, for example, operates a {\small 5 PB} \gls{MinIO} cluster exposed via the \gls{SThree} \gls{API}; the Bluesky acquisition pipeline writes NeXus event documents there, and downstream notebooks read them over the \gls{WAN} \cite{Lancon2022}. The UK’s Rutherford Appleton Laboratory offers the \gls{ECHO} \gls{Ceph} object store, providing {\small 100 PB} of \gls{SThree} capacity that underpins \gls{IRIS} cloud analysis services and beamline portals \cite{ECHO2025}. In these environments, transferring even a few gigabytes across a \gls{WAN} to inspect scan headers is untenable, especially when lightweight, metadata-only queries can satisfy the request.
+Synchrotron and neutron facilities increasingly push raw detector frames straight into object stores (\gls{AWS} \gls{SThree}, \gls{Ceph}, \gls{MinIO}) to curb on-premise costs and enable remote collaboration. Brookhaven’s \gls{NSLSII}, for example, operates a {\small 5 PB} \gls{MinIO} cluster exposed via the \gls{SThree} \gls{API}; the Bluesky acquisition pipeline writes NeXus event documents there, and downstream notebooks read them over the \gls{WAN} \cite{Lancon2022}. The UK’s Rutherford Appleton Laboratory offers the \gls{ECHO} \gls{Ceph} object store, providing {\small 100 PB} of \gls{SThree} capacity that underpins \gls{IRIS} cloud analysis services and beamline portals \cite{ECHO2025}. In these environments, transferring even a few gigabytes across a \gls{WAN} to inspect scan headers is untenable, mainly when lightweight, metadata-only queries can satisfy the request.
 
 \section{Summary and Link to Problem Statement}
 \label{sec:summary-problem-statement}
@@ -1081,17 +1084,14 @@ Detector stack ($\sim$\SI{20}{\gibi\byte}): $\sim$1{,}300 CBF frames at 16-bit d
 Two patterns were executed on the same dataset. For the slice workload, each run reads one randomly selected frame (\(\sim\)\SI{15.82}{\mebi\byte}); no cross-format chunk-alignment was enforced. For the scanning workload, the entire \SI{20}{\gibi\byte} dataset is read sequentially.
 
 
-
-
 \subsection{Instrumentation and Metric Logging}
-Full-scan time is measured from first GET dispatch to last byte received; slice-read time is per selected frame. Throughput was calculated as the number of bytes downloaded divided by the wall-clock time.
+Full-scan time is measured from the first GET dispatch to the last byte received; slice-read time is per selected frame. Throughput was calculated as the number of bytes downloaded divided by the wall-clock time.
 
 \begin{enumerate}
     \item \textbf{Client} logs start/stop timestamps and bytes per run.
     \item \textbf{CloudWatch S3 metrics} provide GetRequestsSum, BytesDownloadedSum, FirstByteLatencyP95/Average, TotalRequestLatencyP95/Average.
     \item \textbf{S3} provides file sizes for each codec with each storage backend.
 \end{enumerate}
-
 
 
 \subsection{Validity and Reliability Measures}
@@ -1102,116 +1102,156 @@ Full-scan time is measured from first GET dispatch to last byte received; slice-
 
 No explicit OS cache flushes were performed between runs. Five warm-ups amortize cold-start effects (DNS, TLS, TCP, metadata caches).
 
-\section{Data Analysis Methodology}
-\label{sec:plannedDataAnalysis}
-The analysis phase will transform the raw data collected during benchmarking into statistical evidence that discriminates between storage–compression combinations and translate the findings into an actionable decision matrix for beamline workflows.
+\section{Statistical Analysis Plan}
+\label{sec:statisticalAnalysisPlan}
 
-\subsection{Threats to Validity}
-The tests will be performed in a single region (eu-north-1), on a single instance type, and synthetic expansion from 80 real frames limits external validity. HSDS introduces a service hop absent in other backends. Library implementations differ in prefetching and parallelism. Network jitter can shift tail latencies; reporting medians and P95 mitigates this.
+\subsection{Estimands and data structure}
+Let $i\in\{1,\dots,I\}$ index storage format, $j\in\{1,\dots,J\}$ codec, $k\in\{1,\dots,K\}$ access pattern, and $r=1,\dots,N_{ijk}$ the valid timed runs for $(i,j,k)$. Let $s$ index execution sessions; each run belongs to one session $s=\mathrm{session}(r)$.
 
-\subsection{Pre-Processing and Screening}
-All raw logs (\gls{CSV} from the Python harness and \gls{JSON} from CloudWatch Insights) are merged on the composite key \emph{\{format,\, codec,\, pattern,\,run\_id\}} in json files. Outliers beyond \(\pm3\sigma\) of the median deviation are removed to protect parametric tests.
+\subsubsection{Per--run observables}
+\[
+L_{ijkr}=\text{slice-read latency (s)},\qquad
+S_{ijkr}=\text{full-scan time (s)}.
+\]
 
-\subsection{Assumption Checks}
-For each performance metric, the sample means of latency, throughput, compression ratio, and \gls{CPU} utilisation will be assessed for normality (Shapiro–Wilk, $n>50$) and for homogeneity of variance (Levene’s test). Median and \gls{Pninetyfive} latency will still be reported descriptively. Still, their inference will rely on the non-parametric aligned-rank-transform (\gls{ART}) procedure rather than a parametric test \cite{razali2011power}.
+\subsubsection{CloudWatch aggregates (no run-level S3 metrics)}
+For each $(i,j,k)$ there is a single aggregate across all timed runs (and sessions):
+\[
+\begin{aligned}
+\widetilde{G}_{ijk}&=\text{GetRequestsSum}, & \widetilde{B}_{ijk}&=\text{BytesDownloadedSum},\\
+\widetilde{F}^{(95)}_{ijk}&=\text{FirstByteLatencyP95}, & \widetilde{T}^{(95)}_{ijk}&=\text{TotalRequestLatencyP95}.
+\end{aligned}
+\]
+and the corresponding CloudWatch averages. We also report per--run averages for descriptive purposes:
+\[
+\bar G_{ijk}=\frac{\widetilde{G}_{ijk}}{N_{ijk}},\qquad
+\bar B_{ijk}=\frac{\widetilde{B}_{ijk}}{N_{ijk}}.
+\]
 
-\subsection{Primary Hypothesis Tests}
-\begin{itemize}
-    \item When assumptions hold, a factorial two-way \gls{ANOVA} (Format \(\times\) Codec) is fitted to the mean values. Access Pattern is added as a third fixed factor, yielding a three-way model (Format \(\times\) Codec \(\times\) Pattern) where appropriate. This design captures both main effects and interactions.
-    \item If \gls{ANOVA} assumptions are violated, the aligned‐rank‐transform (\gls{ART}) \gls{ANOVA} or a rank‐based linear mixed‐effects model will be applied; pairwise contrasts will utilize \gls{ART}-compatible post‐hoc tests with Holm correction.
-    \item The global null \(H_{0}:\mu_{M,A}=\mu_{M,B}\;\forall\,A,B\) is rejected at \(\alpha = 0.05\).
-\end{itemize}
+\subsubsection{Aggregated throughput (descriptive)}
+For slices,
+\[
+T^{\mathrm{agg,\,slice}}_{ijk}=\frac{\widetilde{B}_{ijk}}{\sum_{r=1}^{N_{ijk}} L_{ijkr}}.
+\]
+For full scans,
+\[
+T^{\mathrm{agg,\,scan}}_{ijk}=\frac{\widetilde{B}_{ijk}}{\sum_{r=1}^{N_{ijk}} S_{ijkr}}.
+\]
 
-\subsection{Post-Hoc Comparisons}
+\subsubsection{Compression}
+Once datasets are written, compression ratio is deterministic:
+\[
+\rho_{ij}=\frac{\mathrm{size}_{ij}}{\mathrm{size}_{\mathrm{raw}}}.
+\]
 
-Significant omnibus results will trigger pairwise contrasts:
+\subsubsection{Primary estimands}
+We target log--scale means of times and two GET intensities:
+\[
+\theta^{L}_{ijk}=\mathbb{E}[\ln L_{ijkr}],\qquad
+\theta^{S}_{ijk}=\mathbb{E}[\ln S_{ijkr}].
+\]
+GET rates are estimated from the single aggregate per $(i,j,k)$:
+\[
+\gamma^{\mathrm{downGiB}}_{ijk}=\mathbb{E}[\text{GETs per downloaded GiB}],\quad
+\lambda^{\mathrm{run}}_{ijk}=\mathbb{E}[\text{GETs per run}],
+\]
+with point estimates
+\[
+\begin{aligned}
+\widehat{\gamma}^{\mathrm{downGiB}}_{ijk} &= \frac{\widetilde{G}_{ijk}}{\widetilde{B}_{ijk}/\mathrm{GiB}},\\
+\widehat{\lambda}^{\mathrm{run}}_{ijk}   &= \frac{\widetilde{G}_{ijk}}{N_{ijk}}.
+\end{aligned}
+\]
+Treat $\widetilde{G}_{ijk}\sim\mathrm{Poisson}(\mu)$ with exposure $E$ to form exact Poisson CIs for the rate $\mu/E$, using $E=\widetilde{B}_{ijk}/\mathrm{GiB}$ and $E=N_{ijk}$ respectively. CloudWatch latencies are used as diagnostics only.
 
-\begin{itemize}
-  \item \emph{Parametric branch}: Tukey \gls{HSD} with family-wise error control.
-  \item \emph{Non-parametric branch}: Dunn’s test with Holm adjustment.
-\end{itemize}
-
-Effect sizes will accompany $p$-values: \(\eta^{2}\) for \gls{ANOVA} and Cliff’s \(\delta\) for Kruskal–Wallis pairs, providing practical significance alongside statistical significance \cite{cohen2013statistical}.
+\subsubsection{Reporting on the original scale}
+Differences on the log scale are reported as ratios $\exp(\Delta)$. For scans, a decrease $\Delta$ in log-time corresponds to a throughput ratio $\exp(-\Delta)$.
 
 
 
-\subsection{Multi-Criteria Structure}
-The evaluation framework operationalizes the thesis goal of delivering \emph{actionable guidance} to beamline scientists and data engineers by translating raw benchmark results into a transparent, multi-criteria scorecard.
+% To handle AWS uncontrolled noise, will report rations exp(v) and adjusted p-values.
+\subsection{Design, dependence, and blocking}
+Runs were executed in sessions separated by hours or weeks. Dependence is expected within sessions. Primary inference for time outcomes uses ordinary least squares on the log scale with \emph{session fixed effects} and cluster-robust (HC3) standard errors clustered on sessions. Model for times:
+\[
+Y_{ijkr}=\mu+\alpha_i+\beta_j+\gamma_k+(\alpha\beta)_{ij}+(\alpha\gamma)_{ik}+(\beta\gamma)_{jk}+(\alpha\beta\gamma)_{ijk}+\delta_{\mathrm{session}(r)}+\varepsilon_{ijkr},
+\]
+with $Y=\ln L$ for slices and $Y=\ln S$ for scans, and $\delta_{\mathrm{session}(r)}$ absorbing session shocks.
 
-\begin{enumerate}[label=\textbf{F\arabic*.}, leftmargin=*, itemsep=0.2em]
-  \item \textbf{Performance}
-        \begin{enumerate}[label=\alph*]
-          \item Median slice-read latency
-          \item \gls{Pninetyfive} latency
-          \item Sequential-scan throughput
-        \end{enumerate}
-  \item \textbf{Compression Efficiency}
-        — space-savings ratio versus raw data.
-  \item \textbf{Ecosystem Maturity}
-        — qualitative score derived from GitHub activity, maintainers, language bindings, and release cadence.
+Operational controls: single AWS region and VPC S3 endpoint; randomized interleaving of $(i,j,k)$ with a fixed RNG seed; five warm-ups, then $N_{ijk}$ timed runs; no cross-format concurrency.
+
+
+
+\subsection{Assumptions and diagnostics}
+Diagnostics use residuals from the OLS fit on $\ln L$ and $\ln S$: Q--Q plots and Brown--Forsythe tests for variance heterogeneity (descriptive). These diagnostics do not gate the primary analysis. Independence is addressed by session fixed effects and session-clustered SEs. No transforms beyond $\ln$; no smoothing.
+
+\subsection{Primary tests and models}
+Latency and scan time (means on log scale):
+
+\begin{enumerate}[itemsep=0.2em]
+\item \textbf{Primary.} OLS with the three-way factorial design for $Y\in\{\ln L,\ \ln S\}$, session fixed effects, and session-clustered HC3 SEs. Report effect ratios $\exp(\hat\Delta)$; for scans, report throughput ratios $\exp(-\hat\Delta)$.
+\item \textbf{Robustness.} Within each $(j,k)$, analyze session-level geometric means of times via Welch ANOVA and Games--Howell pairwise comparisons; additionally report Kruskal--Wallis and Dunn--Holm as a nonparametric check.
 \end{enumerate}
 
-Metrics are normalized to \([0,1]\) via min-max scaling. A single, balanced weighting vector is adopted for all subsequent analyses to reflect typical beamline priorities. They are weighted based on rapid interactive feedback, and high sustained throughput matters most. Compression and \gls{CPU} overhead are desirable but secondary, and cost is deliberately down-weighted:
+\subsubsection{Tail latency (p95).}
+Per $(i,j,k)$, compute the empirical 0.95 quantile of $\{L_{ijkr}\}$ or $\{S_{ijkr}\}$ with a \emph{cluster bootstrap by session} to form BCa CIs.
+
+\subsubsection{Request counts and request--cost (aggregates).}
+Only one aggregate $\widetilde{G}_{ijk},\widetilde{B}_{ijk}$ is available per $(i,j,k)$. Compare GET intensities using pairwise \emph{exact Poisson rate-ratio tests} with exposure set to downloaded GiB or to runs, and adjust $p$-values (Section~\ref{sec:statisticalAnalysisPlan-multiplicity}). Define costs from aggregates:
+\[
+C^{\mathrm{agg}}_{ijk}=a_{\mathrm{GET}}\widetilde G_{ijk}+b\,\widetilde B_{ijk},\quad
+\bar C_{ijk}=\frac{C^{\mathrm{agg}}_{ijk}}{N_{ijk}},\quad
+C^{\mathrm{GiB}}_{ijk}=a_{\mathrm{GET}}\widehat{\gamma}^{\mathrm{downGiB}}_{ijk}+b,
+\]
+with $a_{\mathrm{GET}}$ and $b$ from the S3 price sheet; egress excluded.
+
+\subsection{Simple tests used explicitly}
+Within each codec and access pattern (operating on session-level geometric means of $\ln L$ or $\ln S$):
+\begin{itemize}[itemsep=0.2em]
+\item Two groups: Welch $t$-test on $\ln L$ or $\ln S$; Mann--Whitney $U$ as a nonparametric check.
+\item $>2$ groups: Welch ANOVA on $\ln L$ or $\ln S$; Games--Howell for pairs; Kruskal--Wallis and Dunn--Holm as a nonparametric check.
+\item Categorical failures/retries: chi-square or Fisher's exact (any expected cell $<5$).
+\item Associations at the cell level (e.g., GET/GiB vs median latency): Spearman's $\rho$ with permutation $p$-values.
+\end{itemize}
+
+
+\subsection{Multiple testing control}
+\label{sec:statisticalAnalysisPlan-multiplicity}
+Adjust all planned \emph{format} pairwise contrasts within each \emph{(codec $\times$ pattern)} and metric with Holm's method (FWER control at $\alpha=0.05$). Report the number of contrasts per family.
+
+\subsection{Measurement error and uncertainty quantification}
+Cloud noise is uncontrolled. CloudWatch \emph{FirstByteLatency} and \emph{TotalRequestLatency} are treated as diagnostics, not responses. Uncertainty for time outcomes is quantified via session-clustered HC3 CIs and a session-cluster bootstrap for medians/p95. For request rates, use exact Poisson CIs and exact rate-ratio tests. Sensitivity: leave-one-session-out re-fits for key contrasts.
+
+\subsection{Confounders and controls in the AWS environment}
+Runs occurred in sessions hours to weeks apart. Risks: diurnal load, instance placement, TCP reuse, SDK retries, library prefetching, OS cache. Mitigations: randomized interleaving within sessions; constant concurrency and connection pools; single region and Gateway VPC endpoint; no cross-format concurrency. Session fixed effects and session clustering address residual dependence.
+
+\subsection{Formal hypotheses}
+For each fixed codec $j$ and access pattern $k$, test whether formats differ in the central tendency of time on the log scale:
 
 \[
-  \boldsymbol{w}_{\mathrm{bal}}
-  = \langle w_{1},w_{2},w_{3},w_{4},w_{5}\rangle
-  = \langle 0.30,\,0.30,\,0.15,\,0.15,\,0.10\rangle
+\begin{aligned}
+H_0^{Y}:&\ \text{ all format means of } Y\in\{\ln L,\ln S\} \text{ are equal},\\
+H_1^{Y}:&\ \text{ at least one format differs}.
+\end{aligned}
 \]
 
+If the omnibus test rejects $H_0^{Y}$, run pairwise comparisons between formats and report multiplicative effects as ratios $\exp(\Delta)$. For full scans, report throughput ratios as $\exp(-\Delta)$.
 
-
-\subsection{Statistical Framework and Formal Hypotheses}
-\label{sec:statisticalFramework}
-
-Let $Y_{ijkr}$ denote the \emph{response variable} measured in this study, where  
-\[
-  \underbrace{i = 1,\dots,I}_{\text{storage format}},\qquad
-  \underbrace{j = 1,\dots,J}_{\text{compression codec}},\qquad
-  \underbrace{k = 1,\dots,K}_{\text{access pattern}},\qquad
-  \underbrace{r = 1,\dots,n_{ijk}}_{\text{replicate}}
-\]
-Storage format, codec, access pattern, and replicate run. For each metric matrix (latency, throughput, compression ratio, \gls{CPU} time), the null hypothesis is tested that the population means are equal across the factor levels.
-
-\subsubsection{Model and assumptions.}
-Unless stated otherwise, we assume a two-way or three-way fixed-effects
-\emph{general linear model}
-\[
-  Y_{ijkr}
-  \;=\;
-  \mu
-  + \alpha_i
-  + \beta_j
-  + \gamma_k
-  + (\alpha\beta)_{ij}
-  + (\alpha\gamma)_{ik}
-  + (\beta\gamma)_{jk}
-  + (\alpha\beta\gamma)_{ijk}
-  + \varepsilon_{ijkr},
-\]
-
-where
+For request intensity, test equality of GET rates using exact Poisson methods:
 
 \[
-  Y_{ijkr}
-  \;=\;
-  \underbrace{\mu}_{\substack{\text{overall}\\\text{mean}}}
-  \;+\;
-  \underbrace{\alpha_i}_{\substack{\text{format}\\\text{effect}}}
-  \;+\;
-  \underbrace{\beta_j}_{\substack{\text{codec}\\\text{effect}}}
-  \;+\;
-  \underbrace{\gamma_k}_{\substack{\text{pattern}\\\text{effect}}}
-  \;+\;
-  \text{interaction terms}
-  \;+\;
-  \underbrace{\varepsilon_{ijkr}}_{\substack{\text{random}\\\text{noise}}}
+\begin{aligned}
+H_0^{G}:&\ \text{ all format GET rates are equal (per GiB or per run)},\\
+H_1^{G}:&\ \text{ at least one format differs}.
+\end{aligned}
 \]
 
-with
-\[
-  \varepsilon_{ijkr}\;\stackrel{\sim}\; \mathcal N(0,\sigma^2).
-\]
+\subsection{Reporting}
+Per $(i,j,k)$ report: geometric mean slice latency or scan time with 95\% session-clustered CIs (and scan throughput ratios via $\exp(-\Delta)$); p95 with cluster-bootstrap BCa CI; aggregate throughputs $T^{\mathrm{agg,\,slice}}$, $T^{\mathrm{agg,\,scan}}$ (descriptive) with bootstrap CIs; GET rates (per run and per downloaded GiB) with exact Poisson CIs; compression ratio $\rho_{ij}$; and cost ($\bar C_{ijk}$, $C^{\mathrm{GiB}}_{ijk}$). We then use Holm-adjusted $p$-values.
+
+\subsection{Link to the decision matrix}
+Inputs: geometric mean slice latency, p95 latency, scan throughput (from $\ln S$), compression ratio, and request--cost. Normalize to $[0,1]$ by min--max within pattern.
+
+
 
 
 
