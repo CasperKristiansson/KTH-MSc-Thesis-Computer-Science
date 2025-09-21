@@ -998,7 +998,7 @@ The second step of the research process involved executing the experiment. This 
 For each format, three datasets were created—one for each codec (gzip, LZ4, and zstd). Chunking was fixed per format and held constant across runs. Two access patterns were executed per dataset: full scan of the \SI{20}{\gibi\byte} object and random single-frame reads (\(\sim\)\SI{15.82}{\mebi\byte} per frame). Logged metrics: wall-clock time and \gls{SThree} GetRequestsSum, BytesDownloadedSum, FirstByteLatencyP95/Average, TotalRequestLatencyP95/Average, allowing for post-experiment analysis. A key decision point in this phase ensured that the results were consistent and reliable. If the system detects inconsistencies, the experiment setup is adjusted for potential setup errors or unexpected issues.
 
 \subsection{Step 3: Analyzing the Data}
-After the experiment, the data is cleaned to remove outliers and irrelevant measurements. Statistical analysis will be performed using one-way analysis of variance (\gls{ANOVA}) followed by post-hoc tests, such as Tukey’s Honest Significant Difference (\gls{HSD}) test, to identify significant differences between storage formats and compression algorithms. Cost is estimated from GetRequestsSum and BytesDownloadedSum; egress and tiering are excluded. Data visualization tools will display latency, throughput, and compression results, enabling a clear interpretation. Statistical methods will be ensured through effect sizes and confidence intervals, providing a robust assessment of the significance of the results.
+This step summarizes run-level timings and S3 aggregates to compare formats under the two access patterns. Warm-ups are excluded by design, and all valid runs are retained. Times are analyzed on the log scale and reported as ratios; within each (codec × pattern), we run Welch ANOVA with Games–Howell post-hoc, with nonparametric checks as a safeguard, and we cross-check results with an OLS factorial on log time including session effects. Tail latency is the empirical p95 with a session-cluster bootstrap. GET intensities per GiB and per run are estimated from CloudWatch aggregates via exact Poisson methods, and cost proxies combine \texttt{GetRequestsSum} and \texttt{BytesDownloadedSum} with S3 unit prices (egress excluded). Aggregated throughput is reported as a point estimate only. Multiple testing uses Holm adjustment, and diagnostics (Q–Q on the log scale and variance checks).
 
 \subsection{Step 4: Discussing the Results}
 The last research stage will involve evaluating the study's findings and creating recommendations for beamline scientists and data engineers. The results are thoroughly examined, considering the trade-offs between performance, cost, and compression efficiency when working with the five different storage configurations.
@@ -1101,6 +1101,13 @@ Full-scan time is measured from the first GET dispatch to the last byte received
 \end{itemize}
 
 No explicit OS cache flushes were performed between runs. Five warm-ups amortize cold-start effects (DNS, TLS, TCP, metadata caches).
+
+
+
+
+
+
+
 
 \section{Statistical Analysis Plan}
 \label{sec:statisticalAnalysisPlan}
@@ -1247,7 +1254,7 @@ H_1^{G}:&\ \text{ at least one format differs}.
 \]
 
 \subsection{Reporting}
-Per $(i,j,k)$ report: geometric mean slice latency or scan time with 95\% session-clustered CIs (and scan throughput ratios via $\exp(-\Delta)$); p95 with cluster-bootstrap BCa CI; aggregate throughputs $T^{\mathrm{agg,\,slice}}$, $T^{\mathrm{agg,\,scan}}$ (descriptive) with bootstrap CIs; GET rates (per run and per downloaded GiB) with exact Poisson CIs; compression ratio $\rho_{ij}$; and cost ($\bar C_{ijk}$, $C^{\mathrm{GiB}}_{ijk}$). We then use Holm-adjusted $p$-values.
+Per $(i,j,k)$ report: geometric mean slice latency or scan time with 95\% session-clustered CIs (and scan throughput ratios via $\exp(-\Delta)$); p95 with cluster-bootstrap BCa CI; aggregate throughputs $T^{\mathrm{agg,\,slice}}$, $T^{\mathrm{agg,\,scan}}$ (descriptive); GET rates (per run and per downloaded GiB) with exact Poisson CIs; compression ratio $\rho_{ij}$; and cost ($\bar C_{ijk}$, $C^{\mathrm{GiB}}_{ijk}$). We then use Holm-adjusted $p$-values.
 
 \subsection{Link to the decision matrix}
 Inputs: geometric mean slice latency, p95 latency, scan throughput (from $\ln S$), compression ratio, and request--cost. Normalize to $[0,1]$ by min--max within pattern.
