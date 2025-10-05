@@ -1,0 +1,25 @@
+Format,Codec,Pattern,n,Shapiro $p$,Non-normal (p<0.05),$\rho_1$,$\mathrm{p95}/\mathrm{GM}$,Spearman $p$
+hdf5,gzip,full,50,3.43e-09,\textbf{Yes},0.66,1.02,0.837
+root,gzip,full,50,0.305,No,0.75,1.05,8.09e-06
+tiledb,gzip,full,50,0.067,No,0.61,1.10,0.531
+zarr,gzip,full,50,0.0571,No,0.79,1.02,4.63e-15
+hdf5,gzip,slice,50,0.00656,\textbf{Yes},-0.12,1.42,0.337
+root,gzip,slice,50,0.983,No,0.02,1.16,0.161
+tiledb,gzip,slice,50,0.334,No,0.03,1.34,0.00376
+zarr,gzip,slice,50,0.773,No,-0.19,1.23,0.786
+hdf5,lz4,full,50,0.249,No,0.34,1.01,0.831
+root,lz4,full,50,0.0396,\textbf{Yes},0.77,1.03,0.036
+tiledb,lz4,full,50,0.07,No,0.69,1.06,0.0948
+zarr,lz4,full,50,0.311,No,0.71,1.03,0.689
+hdf5,lz4,slice,50,0.481,No,0.07,1.23,0.509
+root,lz4,slice,50,0.432,No,0.32,1.16,0.00312
+tiledb,lz4,slice,50,0.00033,\textbf{Yes},0.05,1.28,0.178
+zarr,lz4,slice,50,0.0164,\textbf{Yes},-0.09,1.99,0.585
+hdf5,zstd,full,50,0.000154,\textbf{Yes},0.57,1.01,0.00385
+root,zstd,full,50,0.556,No,0.60,1.17,0.395
+tiledb,zstd,full,50,0.00838,\textbf{Yes},0.75,1.11,0.33
+zarr,zstd,full,50,0.0821,No,0.57,1.02,0.00347
+hdf5,zstd,slice,50,0.0038,\textbf{Yes},-0.21,1.21,0.625
+root,zstd,slice,50,0.101,No,-0.17,1.16,0.0225
+tiledb,zstd,slice,50,0.339,No,0.01,1.41,0.0662
+zarr,zstd,slice,50,0.00425,\textbf{Yes},0.00,1.26,0.236

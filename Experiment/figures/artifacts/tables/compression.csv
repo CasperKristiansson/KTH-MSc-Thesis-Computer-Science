@@ -1,0 +1,13 @@
+format,codec,object_count,stored_gib,avg_kib_per_object,layout_type
+HSDS,gzip,5183,11.11,2247.8,shard
+HSDS,lz4,5183,19.17,3878.1,shard
+HSDS,zstd,5183,10.67,2158.4,shard
+ROOT,gzip,1,11.09,11626174.2,single-object
+ROOT,lz4,1,13.31,13956389.1,single-object
+ROOT,zstd,1,10.26,10759260.2,single-object
+TileDB,gzip,244,11.44,49183.8,fragment
+TileDB,lz4,244,15.56,66874.7,fragment
+TileDB,zstd,244,10.74,46165.2,fragment
+Zarr,gzip,1297,11.09,8963.5,chunk-per-object
+Zarr,lz4,1297,10.40,8407.2,chunk-per-object
+Zarr,zstd,1297,10.51,8500.5,chunk-per-object
