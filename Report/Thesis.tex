@@ -390,9 +390,9 @@ Each approach offers distinct trade‐offs in latency, throughput, compression e
 
 \section{Problem}
 \label{sec:problem}
-Handling large-scale scattering datasets on \gls{AWS} \gls{SThree} reveals several limitations in current data platforms. First, partial reads of beamline slices, such as retrieving a single detector channel or angular data segment, can result in high latency due to the need to perform hundreds, if not thousands, of GET operations and metadata lookups, leading to delayed experimental feedback. Secondly, existing prior prototype evaluations have focused on moderate‐scale workloads. There is limited empirical data on true terabyte-scale (1~TB+) scattering experiments. This thesis benchmarks each format on a single \SI{20}{\gibi\byte} detector dataset (\(\sim\)1{,}300 frames) to uncover performance, request behavior, and data ingestion considerations. Thirdly, the interaction between storage formats and compression algorithms (e.g., zstd, LZ4, gzip) has not been systematically evaluated, making it unclear which format codec combinations best optimize latency, throughput, and cost for large-scale \gls{SThree}-based workflows.
+Handling large-scale scattering datasets on \gls{AWS} \gls{SThree} reveals several limitations in current data platforms. First, partial reads of beamline slices, such as retrieving a single detector channel or angular data segment, can result in high latency due to the need to perform hundreds, if not thousands, of GET operations and metadata lookups, leading to delayed experimental feedback. Secondly, existing prior prototype evaluations have focused on moderate‐scale workloads. There is limited empirical data on true terabyte-scale (1~TB+) scattering experiments. This thesis benchmarks each format on a single \SI{20}{\gibi\byte} detector dataset (\(\sim\)1{,}300 frames) to uncover performance, request behavior, and data ingestion considerations. Thirdly, the interaction between storage formats and compression algorithms (e.g., zstd, LZ4, gzip) has not been systematically evaluated, making it unclear which format codec combinations best optimize latency and throughput for large-scale \gls{SThree}-based workflows.
 
-These industrial challenges raise questions for the data-intensive computing community: How can we systematically leverage and compare different storage backends to generate guidance for scientific users? Which combinations of performance, cost, and integration trade-offs matter most when designing cloud-native workflows for interactive, partial-retrieval use cases? \emph{How do five candidate formats (\gls{HDFfive}, Zarr, Parquet, TileDB, \gls{ROOT}) compare on \gls{AWS} regarding performance, scalability, cost, and compression efficiency for partial-retrieval workloads on large-scale scattering datasets?}. Answering this question will enable the development of best practices for data handling at synchrotron and neutron facilities and provide transferable insights to other big-data science domains, improving experimental productivity and resource efficiency, especially in cloud computing.
+These industrial challenges raise questions for the data-intensive computing community: How can we systematically leverage and compare different storage backends to generate guidance for scientific users? Which combinations of performance, and integration trade-offs matter most when designing cloud-native workflows for interactive, partial-retrieval use cases? \emph{How do five candidate formats (\gls{HDFfive}, Zarr, Parquet, TileDB, \gls{ROOT}) compare on \gls{AWS} regarding performance, scalability, and compression efficiency for partial-retrieval workloads on large-scale scattering datasets?}. Answering this question will enable the development of best practices for data handling at synchrotron and neutron facilities and provide transferable insights to other big-data science domains, improving experimental productivity and resource efficiency, especially in cloud computing.
 
 \subsection{Original problem and definition}
 This thesis defines the original industrial problem as optimizing the retrieval of small, targeted data slices (e.g., a single angle’s worth of diffraction frames) from multi-terabyte scattering datasets stored on \gls{AWS} \gls{SThree}. “Partial retrieval” refers to reading only the necessary object segments by byte range or object key rather than downloading entire files. This scope excludes batch transfers or on-premises filesystem solutions. It focuses solely on cloud-native, object-store workflows.
@@ -432,12 +432,12 @@ This paper aims to develop a comprehensive, experimentally validated decision fr
   \begin{itemize}
     \item Measure read latency for two patterns: full scan and random single‐frame reads.
     \item Record compressed object sizes in \gls{SThree} for each codec and format.
-    \item Estimate request and transfer cost from \texttt{GetRequestsSum} and \texttt{BytesDownloadedSum}. Egress charges are out of scope.
+    \item Estimate request from \texttt{GetRequestsSum} and \texttt{BytesDownloadedSum}. Egress charges are out of scope.
   \end{itemize}
 
   \item \textbf{Decision Matrix and Guidelines}
   \begin{itemize}
-    \item Synthesize results into a matrix correlating workload patterns (partial vs.\ bulk reads, compression) with format‐specific performance, cost, and ease of integration.
+    \item Synthesize results into a matrix correlating workload patterns (partial vs.\ bulk reads, compression) with format‐specific performance, and ease of integration.
     \item Formulate best‐practice recommendations for beamline scientists and data‐intensive computing engineers.
   \end{itemize}
 \end{enumerate}
@@ -484,7 +484,7 @@ This thesis is organized into seven main chapters, followed by appendices:
 \begin{description}
   \item[Chapter 1: Introduction] Presents the motivation, scope, research question, methodology overview, delimitations, and outlines the thesis structure.
   \item[Chapter 2: Background] Reviews scientific data challenges in synchrotron and neutron facilities, surveys traditional \gls{HPC} I/O and emerging cloud‐native formats (\gls{HDFfive}/\gls{HSDS}, Zarr, Parquet, TileDB, \gls{ROOT}/\gls{RNTuple}), and identifies gaps in existing benchmarks.
-  \item[Chapter 3: Research Methodology] Details the experimental design: dataset selection, \gls{AWS} infrastructure setup, ingestion pipelines, access patterns, performance metrics, statistical tests, and cost/sustainability modeling.
+  \item[Chapter 3: Research Methodology] Details the experimental design: dataset selection, \gls{AWS} infrastructure setup, ingestion pipelines, access patterns, performance metrics, and statistical tests.
   \item[Chapter 4: Implementation] Describes prototype implementations for each storage backend, reproducible chunking and compression, and automation of ingestion and test workflows.
   \item[Chapter 5: Results and Analysis] Presents quantitative results, latency distributions, throughput curves, compression ratios, and \gls{TCO} estimates, followed by statistical comparisons and effect‐size interpretations.
   \item[Chapter 6: Decision Matrix and Discussion] Synthesizes findings into a format‐selection matrix, discusses trade‐offs, integration complexity, and sustainability implications, and provides guidelines for beamline scientists and data engineers.
@@ -512,7 +512,7 @@ This thesis is organized into seven main chapters, followed by appendices:
 \cleardoublepage
 \chapter{Background}
 \label{ch:background}
-Modern synchrotron and neutron facilities now stream data at gigabytes-per-second rates, producing multi-terabyte experiments that quickly overwhelm the large-block assumptions of traditional \gls{HPC} storage. Chapter \ref{ch:introduction} framed this challenge and posed the central question: Which cloud-native storage approach minimizes latency and cost for partial retrieval of scattering data on \gls{AWS}? This chapter equips readers with the scientific, technical, and literature context required to follow this study's experimental design and results.
+Modern synchrotron and neutron facilities now stream data at gigabytes-per-second rates, producing multi-terabyte experiments that quickly overwhelm the large-block assumptions of traditional \gls{HPC} storage. Chapter \ref{ch:introduction} framed this challenge and posed the central question: Which cloud-native storage approach minimizes latency for partial retrieval of scattering data on \gls{AWS}? This chapter equips readers with the scientific, technical, and literature context required to follow this study's experimental design and results.
 
 First, this chapter will survey how modern beamlines generate and consume data, highlighting the feedback loop and collaboration demands that drive storage-system requirements (Section \ref{sec:scientific-data-context}). It then contrasts legacy parallel file systems such as Lustre and \gls{GPFS} with the architectural principles of \gls{SThree} and other object stores (Sections \ref{sec:traditional-hpc-storage-paradigms} and \ref{sec:cloud-object-storage-fundamentals}). Building on that foundation, Sections \ref{sec:cloud-native-storage-models}–\ref{sec:compression-algorithms} introduce the five storage formats examined in this thesis: \gls{HDFfive} + \gls{HSDS}, Zarr, Parquet, TileDB, and \gls{ROOT} / \gls{RNTuple}. These file formats are matched with the three compression algorithms (gzip, \gls{LZfour}, zstd) that modulate their performance. Section \ref{sec:access-patterns-scattering} characterizes the access patterns typical of scattering analysis.
 
@@ -959,9 +959,9 @@ This chapter presents the methodology to guide the benchmark study, beginning wi
 The research process for this thesis follows a structured methodology, as described in the flowchart in Figure \ref{fig:researchprocess}. The research process can be broken down into four main stages: planning the experiment, conducting the experiment, analyzing the data, and discussing the results. Each stage contributes to a comprehensive framework for benchmarking cloud-native storage formats and compression algorithms in \gls{AWS} \gls{SThree}.
 
 \subsection{Step 1: Planning the Experiment}
-The planning stage involved several crucial tasks. First, the objectives of the experiment were defined, focusing on the comparison of four timed storage formats (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}/\gls{RNTuple}) with Parquet as a pilot-only artifact (no timed runs) and three compression algorithms (gzip, LZ4, zstd) concerning performance, scalability, cost, and compression efficiency for partial retrieval of large-scale scattering data. Subsequently, appropriate datasets were selected for ingestion, using a single \SI{20}{\gibi\byte} detector dataset (\(\sim\)1{,}300 frames) expanded from 80 real seed frames standard in synchrotron and neutron facilities.
+The planning stage involved several crucial tasks. First, the objectives of the experiment were defined, focusing on the comparison of four timed storage formats (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}/\gls{RNTuple}) with Parquet as a pilot-only artifact (no timed runs) and three compression algorithms (gzip, LZ4, zstd) concerning performance, scalability, and compression efficiency for partial retrieval of large-scale scattering data. Subsequently, appropriate datasets were selected for ingestion, using a single \SI{20}{\gibi\byte} detector dataset (\(\sim\)1{,}300 frames) expanded from 80 real seed frames standard in synchrotron and neutron facilities.
 
-Key variables, such as read latency, derived throughput, and request/byte-based cost proxies, are identified as suitable metrics for benchmarking. As discussed in prior studies, compression algorithms were selected based on their widespread use in scientific workflows and cloud-native environments. This stage also included the decision to utilize \gls{AWS} infrastructure for its flexibility, scalability, and cost-efficient model.
+Key variables, such as read latency, derived throughput, and request/byte-based outputs, are identified as suitable metrics for benchmarking. As discussed in prior studies, compression algorithms were selected based on their widespread use in scientific workflows and cloud-native environments. This stage also included the decision to utilize \gls{AWS} infrastructure for its flexibility, and scalability.
 
 \subsection{Step 2: Conducting the Experiment}
 The second step of the research process involved executing the experiment. This included setting up Amazon \gls{ECtwo} instances and \gls{SThree} Buckets.
@@ -972,7 +972,7 @@ For each format, three datasets were created—one for each codec (gzip, LZ4, an
 This step summarizes run-level timings and S3 aggregates. Warm-ups are excluded by default, and all successful timed runs are retained. Timings are analyzed on the log scale. For each {format$\times$codec$\times$pattern} cell we report (i) geometric mean (GM) time with dependence-robust 95\% CIs via a moving-block bootstrap (MBB; $\ell\in\{4,6,8\}$; $B{=}10{,}000$; we then report the widest CI across $\ell$) and (ii) p95 latency with the same bootstrap. For full scans, throughput is analyzed on the log scale as the reciprocal of time, with the same bootstrap. Cross-format contrasts within a codec$\times$pattern are presented as GM time \emph{ratios} versus a reference format (zarr) and are labeled \textbf{descriptive, session-conditional}. CloudWatch request counts and latencies are per-session descriptive context (no inference). Compression is reported as the number of stored bytes and the compression ratio. Tail sensitivity recomputes p95 with the Harrell–Davis estimator and the extended block grid \(\ell\in\{4,6,8,10\}\).
 
 \subsection{Step 4: Discussing the Results}
-The last research stage will involve evaluating the study's findings and creating recommendations for beamline scientists and data engineers. The results are thoroughly examined, considering the trade-offs between performance, cost, and compression efficiency when working with the five different storage configurations.
+The last research stage will involve evaluating the study's findings and creating recommendations for beamline scientists and data engineers. The results are thoroughly examined, considering the trade-offs between performance, and compression efficiency when working with the five different storage configurations.
 
 Recommendations on the optimal configuration of storage formats and compression algorithms, tailored to use cases prioritizing either high throughput or low-latency access, are provided. The research will conclude with the formulation of practical guidelines for future investigations into cloud-native storage solutions for data-intensive scientific experiments.
 
@@ -999,7 +999,7 @@ This research paradigm allows for an iterative experimentation cycle. For each c
 The experimental design for this thesis focuses on evaluating and comparing four timed cloud-native storage formats (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{RNTuple}) where Parquet was treated as pilot-only (no timed runs) when applied to large-scale scattering datasets in \gls{AWS} \gls{SThree}. This section describes the methodologies used to carry out the experiments, including data collection, infrastructure setup, experimental parameters, and performance benchmarking.
 
 \subsection{Test Environment and Infrastructure Setup}
-The experiment uses Amazon Web Services (\gls{AWS}) in a cloud-native environment. Specifically, the storage backends were implemented on Amazon \gls{SThree}, and the experimental infrastructure is provisioned using Amazon \gls{ECtwo} instances for data processing and benchmarking. Figure \ref{fig:aws_topology} illustrates the overall cloud testbed, highlighting the data-flow paths and the layers used for performance and cost measurement.
+The experiment uses Amazon Web Services (\gls{AWS}) in a cloud-native environment. Specifically, the storage backends were implemented on Amazon \gls{SThree}, and the experimental infrastructure is provisioned using Amazon \gls{ECtwo} instances for data processing and benchmarking. Figure \ref{fig:aws_topology} illustrates the overall cloud testbed, highlighting the data-flow paths and the layers used for performance.
 
 \begin{figure}[htbp]
   \centering
@@ -1021,7 +1021,7 @@ A single detector dataset of \(\sim\)\SI{20}{\gibi\byte} (\(\sim\)1{,}300 frames
 The logical array shape was (\text{frame},y,x) with (\(\sim\)1{,}300 frames at 16-bit depth. \gls{HDFfive}/\gls{HSDS} and Zarr used frame-major chunking (one frame per chunk). TileDB uses tile extents (1, y, x) with row-major cell order. Parquet stores one row per frame with a binary payload column. ROOT/RNTuple stored one event per frame.
 
 \subsection{Experimental Parameters and Workloads}
-The primary aim of the experiment is to compare the performance of the five storage formats under two different access patterns: small-slice reads and full-dataset sequential scans. These access patterns reflect typical usage scenarios in beamline experiments, where scientists need quick access to specific data slices for real-time feedback or to process entire datasets for post-experiment analysis. Runs were executed in sessions, one cell (format × codec × pattern) at a time. Within-session run order was randomized with a fixed seed.
+The primary aim of the experiment is to compare the performance of the five storage formats under two different access patterns: small-slice reads and full-dataset sequential scans. These access patterns reflect typical usage scenarios in beamline experiments, where scientists need quick access to specific data slices for real-time feedback or to process entire datasets for post-experiment analysis. Runs were executed in sessions, one cell (format$\times$codec$\times$pattern) at a time. Within-session run order was randomized with a fixed seed.
 
 \subsubsection{Small-Slice Reads}
 In a small-slice access pattern, data retrieval is performed on random single-frame reads; each frame averages \(\sim\)\SI{15.82}{\mebi\byte}. No tabular dataset was benchmarked. This pattern simulates the real-time, interactive data retrieval during and after experiments.
@@ -1489,7 +1489,7 @@ Runs followed a fixed warm-up and timing protocol. Integrity checks verified sha
 \label{ch:resultsAndAnalysis}
 This chapter reports the empirical results of benchmarking four storage backends on Amazon \gls{SThree}, \gls{HDFfive} via \gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{RNTuple} under two workload patterns on a single $\sim$20 GiB detector stack ($\sim$1{,}300 frames, \texttt{uint16}). Parquet is included as a pilot-only storage engine (no timed results). Each backend is evaluated with three codecs (gzip, LZ4, zstd). We present outcomes for (i) partial retrieval of a single frame ($\sim$15.82 MiB), and (ii) full sequential scans of the dataset.
 
-Metrics encompass client-observed timing, service-side behavior, and storage footprint, with timings analyzed on a log scale. For each {format×codec×pattern} cell, we report geometric mean (GM) time with dependence-robust 95\% CIs via a moving-block bootstrap (MBB; $\ell\in\{4,6,8\}$; $B{=}10{,}000$). The tail behavior is reported via p95 with the same bootstrap. For full scans, we also report throughput (GiB/s) derived from bytes/time and analyzed on the log scale with the same bootstrap. The storage footprint is reported as the number of stored bytes and the compression ratio relative to the raw storage. Request intensity (GETs/rep, GETs/GiB) is derived from CloudWatch session aggregates of all runs within a cell.
+Metrics encompass client-observed timing, service-side behavior, and storage footprint, with timings analyzed on a log scale. For each {format$\times$codec$\times$pattern} cell, we report geometric mean (GM) time with dependence-robust 95\% CIs via a moving-block bootstrap (MBB; $\ell\in\{4,6,8\}$; $B{=}10{,}000$). The tail behavior is reported via p95 with the same bootstrap. For full scans, we also report throughput (GiB/s) derived from bytes/time and analyzed on the log scale with the same bootstrap. The storage footprint is reported as the number of stored bytes and the compression ratio relative to the raw storage. Request intensity (GETs/rep, GETs/GiB) is derived from CloudWatch session aggregates of all runs within a cell.
 
 Cross-format contrasts are \textbf{descriptive, session-conditional} because formats run in separate sessions. Warm-ups are excluded; $n=50$ timed repetitions per cell are analyzed. Exploratory nonparametric summaries and tail-sensitivity checks are provided.
 
@@ -1656,7 +1656,7 @@ Rates are descriptive and session-conditional. Table \ref{tab:req_intensity} lis
 
 
 \subsection{CloudWatch FirstByte and TotalRequest latencies}
-We report S3 service-side latency summaries \emph{per session} (format×codec×pattern): \emph{FirstByteLatency} and \emph{TotalRequestLatency} (average and p95, ms). These are provider-defined aggregates over the timed window and are used descriptively only. We do not calculate the p95 across sessions and make no statistical inferences. Values reflect S3 service timing, not end-to-end client timers. Exact per-session values appear in Appendix~\ref{tab:cw_latencies}.
+We report S3 service-side latency summaries \emph{per session} (format$\times$codec$\times$pattern): \emph{FirstByteLatency} and \emph{TotalRequestLatency} (average and p95, ms). These are provider-defined aggregates over the timed window and are used descriptively only. We do not calculate the p95 across sessions and make no statistical inferences. Values reflect S3 service timing, not end-to-end client timers. Exact per-session values appear in Appendix~\ref{tab:cw_latencies}.
 
 \begin{figure}[H]
   \centering
@@ -2039,7 +2039,7 @@ We apply the robustness procedures to all cells and fix the resampling settings 
 
 
 \subsection{Nonparametric confirmation}
-TODO
+This subsection cross-checks central tendency with nonparametric centers. We report medians with 95\% CIs obtained using the moving-block bootstrap and compare descriptive median ratios and rankings to the GM-based results.
 
 \subsubsection{Slice}
 We confirm central tendency using the sample median with moving–block bootstrap (MBB) 95\% CIs (\(\ell\in\{4,6,8,10\}\), \(B{=}10{,}000\)). Rankings align with geometric means where ratios are descriptive and session–conditional (reference = Zarr).
@@ -2258,7 +2258,7 @@ We confirm central tendency using the sample median with moving–block bootstra
 
 
 \subsection{Tail sensitivity}
-TODO
+This subsection tests tail estimate robustness. We re-estimate $p_{95}$ (and nearby quantiles) with the Harrell–Davis quantile and a block-length grid, reporting the widest dependence-robust CI per format.
 
 \subsubsection{Slice}
 We estimate p95 with the Harrell–Davis quantile and dependence-robust 95\% CIs via a moving-block bootstrap (\(\ell\in\{4,6,8,10\}\), \(B{=}10{,}000\)). Ordering is stable across \(\ell\) and we report the widest CI per format and show \(\ell\)–sensitivity curves.
@@ -2383,7 +2383,7 @@ We estimate $p_{95}$ with the Harrell–Davis quantile and dependence-robust 95\
 This section compiles summary tables for each codec $ \ times$ pattern combination to support the downstream decision matrix. Entries are \emph{session-conditional} and descriptive, where we report geometric mean (GM) latency with dependence-robust 95\% CIs and p95 (CI). For full scans, we also include GM throughput (GiB/s, CI), and each table lists S3 GETs/GiB and stored size (GiB).
 
 \subsection{Per‑codec league tables}
-TODO
+This subsection presents per-codec league tables to summarize practical rankings. Rankings are descriptive and session-conditional, using the stated primary objective and tie-breakers.
 
 \subsubsection{Slice}
 Rankings use lower GM latency (tie-break: $p_{95}\!\rightarrow$ GETs/GiB $\rightarrow$ stored GiB), which are descriptive and session-conditional.
@@ -2494,11 +2494,11 @@ Rank & Format & GM thr (GiB/s) [CI] & GM time (ms) [CI] & GETs/GiB & Stored GiB 
 
 
 \subsection{Normalized scores matrix}
-TODO
+This subsection aggregates metrics into 0–100 scores per codec$\times$pattern to support selection. Scores use robust min–max normalization and predefined weights, and totals are descriptive and session-conditional.
 
 
 \subsubsection{Slice}
-Scores are 0–100 per metric using robust min–max (5th–95th percentiles) within each codec×pattern where higher is better. Weights: GM 0.60, $p_{95}$ 0.20, GETs/GiB 0.10, Stored 0.10.
+Scores are 0–100 per metric using robust min–max (5th–95th percentiles) within each codec$\times$pattern where higher is better. Weights: GM 0.60, $p_{95}$ 0.20, GETs/GiB 0.10, Stored 0.10.
 
 
 \begin{figure}[H]
@@ -2571,7 +2571,7 @@ root   & 0.0   & 0.0   & 100.0& 100.0& 20.0 & / \\
 \end{table}
 
 \subsubsection{Full Scan}
-Scores are 0–100 per metric, using robust min–max normalization within codec × pattern where higher scores are better. Weights: throughput 0.60, GETs/GiB 0.15, Stored 0.15, $p_{95}$ 0.10.
+Scores are 0–100 per metric, using robust min–max normalization within codec$\times$  pattern where higher scores are better. Weights: throughput 0.60, GETs/GiB 0.15, Stored 0.15, $p_{95}$ 0.10.
 
 
 \begin{figure}[H]
@@ -2651,6 +2651,59 @@ hdf5   & 1.5   & 63.5  & 0.0  & 13.8 & 9.3  & / zarr \\
 \label{ch:discussion}
 
 
+\section{Scope and framing}
+\subsection{Paradigm and artifact}
+\subsection{Study context needed for interpretation}
+\subsection{Workloads, timing, and estimands}
+\subsection{Inference stance}
+\subsection{Editorial cleanup}
+
+\section{Principal findings}
+\subsection{Pattern x codec winners}
+\subsubsection{Partial retrieval (slice)}
+\subsubsection{Full dataset scans}
+\subsection{Compression and stored size}
+\subsection{Objectization and observed performance}
+\subsection{Request intensity vs client outcomes}
+\subsection{Distribution shape and robustness}
+
+\section{Mechanisms behind results}
+\subsection{S3 and access physics}
+\subsection{Format-specific mechanisms}
+\subsubsection{HSDS (HDF5)}
+\subsubsection{Zarr}
+\subsubsection{TileDB}
+\subsubsection{ROOT/RNTuple}
+\subsection{Codec levers}
+
+\section{Decision matrix for practitioners}
+\subsection{Scoring method}
+\subsection{Recommendations: interactive slices (latency-first)}
+\subsection{Recommendations: bulk scans (throughput-first)}
+\subsection{Sensitivity and caveats}
+\subsection{How to use the matrix}
+
+\section{Operational guidance}
+\subsection{Zarr}
+\subsection{TileDB}
+\subsection{HSDS}
+\subsection{ROOT/RNTuple}
+\subsection{Cross-cutting}
+
+\section{Validity, reliability, and confounders}
+\subsection{Internal validity}
+\subsection{Measurement reliability}
+\subsection{External validity}
+\subsection{What not concluded}
+
+\section{Deviations and exclusions}
+\subsection{Parquet pilot (qualitative only)}
+
+\section{Limits and implications}
+\subsection{Boundaries of evidence}
+\subsection{Reader guidance}
+
+
 
 
 
@@ -2669,6 +2722,40 @@ hdf5   & 1.5   & 63.5  & 0.0  & 13.8 & 9.3  & / zarr \\
 \cleardoublepage
 \chapter{Conclusions and Future work}
 \label{ch:conclusionsAndFutureWork}
+
+
+\section{Closing synthesis}
+\subsection{Bottom line}
+\subsection{Mechanism linkage}
+\subsection{Artifact hand-off}
+
+
+\section{Broaden scope}
+\subsection{Datasets}
+\subsection{Access patterns}
+\subsection{Environments}
+
+\section{Concurrency and caching}
+\subsection{Multi-client scaling}
+\subsection{Cache controls}
+
+\section{Layout and consolidation}
+\subsection{Zarr}
+\subsection{TileDB}
+\subsection{HSDS/ROOT}
+
+\section{Codecs and filters}
+\subsection{Additions}
+\subsection{Reporting}
+
+\section{Multi-cloud and cost}
+\subsection{Platforms}
+\subsection{Cost surfaces}
+
+\section{Statistics and delivery}
+\subsection{Design}
+\subsection{Decision matrix v2}
+\subsection{Reproducibility}
 
 
 
@@ -2723,8 +2810,8 @@ hdf5   & 1.5   & 63.5  & 0.0  & 13.8 & 9.3  & / zarr \\
   \centering
   \caption{S3 request intensity per cell: point estimates and exact Poisson 95\% CIs.}
   \label{tab:req_intensity}
-  \rotatebox{90}{%
-    \resizebox{\textheight}{!}{%
+  \rotatebox{90}{
+    \resizebox{\textheight}{!}{
       \begin{tabular}{lllrrrrr}
         \toprule
         Format & Codec & Pattern & GETs/rep [95\% CI] & GETs/GiB [95\% CI] & $G$ & Bytes (GiB) & $n$ \\
@@ -2754,9 +2841,9 @@ root  & zstd & slice & 1.26    [0.97, 1.61]        & 66.20  [50.87, 84.70]   & 6
 tiledb& zstd & slice & 1.20    [0.92, 1.54]        & 120.72 [92.12, 155.39]  & 60       & 0.497    & 50 \\
 zarr  & zstd & slice & 1.30    [1.00, 1.66]        & 134.99 [104.18, 172.05] & 65       & 0.482    & 50 \\
         \bottomrule
-      \end{tabular}%
-    }% end resizebox
-  }% end rotatebox
+      \end{tabular}
+    }
+  }
 \end{table}
 
 
@@ -2794,8 +2881,8 @@ root   & zstd & slice & 68.444 & 85.236  & 189.476 & 250.441 \\
 tiledb & zstd & slice & 62.633 & 106.719 & 80.901  & 207.882 \\
 zarr   & zstd & slice & 102.016& 171.055 & 161.938 & 330.963 \\
         \bottomrule
-      \end{tabular}%
-    }% end resizebox
+      \end{tabular}
+    }
 \end{table}
 
 
@@ -2803,7 +2890,7 @@ zarr   & zstd & slice & 102.016& 171.055 & 161.938 & 330.963 \\
   \centering
   \includegraphics[width=\linewidth]{figures/graphs/fig_np_median_ci_row_slice.pdf}
   \caption{Slice: median latency \(\pm\)95\% CI (MBB); one row with three panels (gzip, LZ4, zstd).}
-  \label{fig:np_median_ci_row_full}
+  \label{fig:np_median_ci_row_slice}
 \end{figure}
 
 
