@@ -447,48 +447,19 @@ This paper aims to develop a comprehensive, experimentally validated decision fr
 
 \section{Research Methodology}
 
-This study adopts an \emph{experimental benchmarking} approach within a design–science framework to evaluate five storage backends on \gls{AWS}. Our methodology comprises four main components:
+We use an \emph{experimental benchmarking} approach within a design–science framework to evaluate four timed storage backends on \gls{AWS} (HDF5/HSDS, Zarr, TileDB, ROOT/RNTuple). Parquet is included \emph{pilot-only} (no timed runs).
 
 \begin{enumerate}
-  \item \textbf{Data ingestion and environment setup}
-  \begin{itemize}
-    \item Use one dense 3D detector dataset stored as a \(\sim\)\SI{20}{\gibi\byte} object with \(\sim\)1{,}300 frames.
-    \item Run clients on \gls{ECtwo} reading directly from \gls{SThree}.
-    \item Implement ingestion pipelines for \gls{HDFfive}, Zarr, Parquet, TileDB, \gls{ROOT}/\gls{RNTuple}, mapped over compression algorithms (zstd, LZ4, gzip).
-  \end{itemize}
-
-  \item \textbf{Performance testing}
-  \begin{itemize}
-    \item Define two access patterns: \emph{full scan} of the entire \SI{20}{\gibi\byte} object and \emph{random single‐frame reads} (\(\sim\)\SI{15.82}{\mebi\byte} per frame on average).
-    \item For each format–codec combination, execute 5 warmup iterations followed by 50 timed runs per pattern against \gls{SThree}. Record wall‐clock time and \gls{SThree} metrics: \texttt{GetRequestsSum}, \texttt{BytesDownloadedSum}, \texttt{FirstByteLatencyP95}, \texttt{TotalRequestLatencyP95}, \texttt{FirstByteLatencyAverage}, \texttt{TotalRequestLatencyAverage}. Derive throughput from bytes and time. \gls{CPU} utilization and write latency are not recorded.
-  \end{itemize}
-
-  \item \textbf{Scientific method framework}
-  \begin{itemize}
-    \item \textbf{Variables and hypotheses:} Independent variable: storage format (five approaches). Dependent variables: latency, throughput, compression ratio, cost.
-    Hypothesis (per metric): The mean (or distribution) differs across at least two formats at $\alpha=0.05$.
-    \item \textbf{Design and data:} For each format–codec and access pattern we ran 5 warmups then 50 timed repetitions against \gls{SThree}. No separate power analysis was performed; the repetition count was fixed a priori for stability.
-    \item \textbf{Analysis and decision rule:}
-    \begin{enumerate}
-      \item \textbf{Assumption checks:}
-        \begin{itemize}
-          \item Normality of residuals: Shapiro–Wilk test \emph{plus} Q–Q plots (since Shapiro–Wilk can flag minor deviations at $n>50$).
-          \item Homogeneity of variance: Levene’s test.
-        \end{itemize}
-      \item \textbf{Primary test:}
-      \begin{itemize}
-        \item If normality and homogeneity hold: one-way \gls{ANOVA} $\to$ Tukey \gls{HSD} post-hoc.
-        \item Otherwise: Kruskal–Wallis test $\to$ Dunn’s post-hoc with Holm correction.
-      \end{itemize}
-      \item \textbf{Reporting:}
-      Effect sizes (e.g., \ $\eta^2$ for \gls{ANOVA} or Cliff’s $\delta$ for nonparametric) and 95\% confidence intervals.
-    \end{enumerate}
-  \end{itemize}
+  \item \textbf{Data \& environment}:
+  one dense detector stack (\(\sim\)20\,GiB, \(\sim\)1{,}300 frames, uint16) and one EC2 client reading from a co-located \gls{SThree} bucket.
+  \item \textbf{Workloads \& execution}:
+  two patterns, full scan and random single-frame reads (\(\sim\)15.82\,MiB/frame). Per cell (format\(\times\)codec\(\times\)pattern) run 5 warm-ups then \(n{=}50\) timed reads in a \emph{separate session} with randomized order (fixed seed). Logged: wall-clock time and CloudWatch \texttt{GetRequestsSum}, \texttt{BytesDownloadedSum}, \texttt{FirstByteLatency\{Avg,p95\}}, \texttt{TotalRequestLatency\{Avg,p95\}}.
+  \item \textbf{Analysis (summary)}:
+  times on the log scale; report geometric-mean (GM) time with dependence-robust 95\% CIs via moving-block bootstrap, and p95 with the same bootstrap; for scans, GM throughput (GiB/s).
+  Cross-format contrasts are \emph{descriptive, session-conditional}.
+  \item \textbf{Outputs \& reproducibility}:
+  compression (stored bytes, ratio), request intensity (GETs/GiB), and decision-matrix summaries for selection. Code, seeds, and a small data subset are published for reproduction.
 \end{enumerate}
-
-The code and infrastructure are versioned and configured in a public Git repository. Benchmark parameters and raw measurements are archived and made available alongside the thesis. This rigorous methodology lets us derive statistically sound, actionable guidelines for selecting cloud-native storage formats in large-scale scientific workflows.
-
-
 
 \section{Delimitations}
 
@@ -725,7 +696,7 @@ Each request traverses a multi-AZ control plane and TLS handshake, giving time-t
 
 \begin{figure}[htbp]
   \centering
-  \includegraphics[width=0.90\linewidth]{figures/latency_ladder.png}
+  \includegraphics[width=0.90\linewidth]{figures/latency_ladder.pdf}
   \caption{Median time-to-first-byte read across common storage
            tiers, plotted on a logarithmic axis. The three-order-of-magnitude gap between local NVMe and \gls{SThree} storage motivates the use of chunking and request strategies.}
   \label{fig:latency-ladder}
@@ -988,7 +959,7 @@ This chapter presents the methodology to guide the benchmark study, beginning wi
 The research process for this thesis follows a structured methodology, as described in the flowchart in Figure \ref{fig:researchprocess}. The research process can be broken down into four main stages: planning the experiment, conducting the experiment, analyzing the data, and discussing the results. Each stage contributes to a comprehensive framework for benchmarking cloud-native storage formats and compression algorithms in \gls{AWS} \gls{SThree}.
 
 \subsection{Step 1: Planning the Experiment}
-The planning stage involved several crucial tasks. First, the objectives of the experiment were defined, focusing on the comparison of five storage formats (\gls{HDFfive}/\gls{HSDS}, Zarr, Parquet, TileDB, \gls{ROOT}/\gls{RNTuple}) and three compression algorithms (gzip, LZ4, zstd) concerning performance, scalability, cost, and compression efficiency for partial retrieval of large-scale scattering data. Subsequently, appropriate datasets were selected for ingestion, using a single \SI{20}{\gibi\byte} detector dataset (\(\sim\)1{,}300 frames) expanded from 80 real seed frames standard in synchrotron and neutron facilities.
+The planning stage involved several crucial tasks. First, the objectives of the experiment were defined, focusing on the comparison of four timed storage formats (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}/\gls{RNTuple}) with Parquet as a pilot-only artifact (no timed runs) and three compression algorithms (gzip, LZ4, zstd) concerning performance, scalability, cost, and compression efficiency for partial retrieval of large-scale scattering data. Subsequently, appropriate datasets were selected for ingestion, using a single \SI{20}{\gibi\byte} detector dataset (\(\sim\)1{,}300 frames) expanded from 80 real seed frames standard in synchrotron and neutron facilities.
 
 Key variables, such as read latency, derived throughput, and request/byte-based cost proxies, are identified as suitable metrics for benchmarking. As discussed in prior studies, compression algorithms were selected based on their widespread use in scientific workflows and cloud-native environments. This stage also included the decision to utilize \gls{AWS} infrastructure for its flexibility, scalability, and cost-efficient model.
 
@@ -998,7 +969,7 @@ The second step of the research process involved executing the experiment. This 
 For each format, three datasets were created—one for each codec (gzip, LZ4, and zstd). Chunking was fixed per format and held constant across runs. Two access patterns were executed per dataset: full scan of the \SI{20}{\gibi\byte} object and random single-frame reads (\(\sim\)\SI{15.82}{\mebi\byte} per frame). Logged metrics: wall-clock time and \gls{SThree} GetRequestsSum, BytesDownloadedSum, FirstByteLatencyP95/Average, TotalRequestLatencyP95/Average, allowing for post-experiment analysis. A key decision point in this phase ensured that the results were consistent and reliable. If the system detects inconsistencies, the experiment setup is adjusted for potential setup errors or unexpected issues.
 
 \subsection{Step 3: Analyzing the Data}
-This step summarizes run-level timings and S3 aggregates. Warm-ups are excluded by default, and all successful timed runs are retained. Timings are analyzed on the log scale. For each {format$\times$codec$\times$pattern} cell we report (i) geometric mean (GM) time with dependence-robust 95\% CIs via a moving-block bootstrap (MBB; $\ell\in\{4,6,8\}$; $B{=}10{,}000$. We than report the widest CI across $\ell$) and (ii) p95 latency with the same bootstrap. For full scans, throughput is analyzed on the log scale as the reciprocal of time, with the same bootstrap. Cross-format contrasts within a codec$\times$pattern are presented as GM time \emph{ratios} versus a reference format (zarr) and are labeled \textbf{descriptive, session-conditional}. CloudWatch request counts and latencies are per-session descriptive context (no inference). Compression is reported as the number of stored bytes and the compression ratio.
+This step summarizes run-level timings and S3 aggregates. Warm-ups are excluded by default, and all successful timed runs are retained. Timings are analyzed on the log scale. For each {format$\times$codec$\times$pattern} cell we report (i) geometric mean (GM) time with dependence-robust 95\% CIs via a moving-block bootstrap (MBB; $\ell\in\{4,6,8\}$; $B{=}10{,}000$; we then report the widest CI across $\ell$) and (ii) p95 latency with the same bootstrap. For full scans, throughput is analyzed on the log scale as the reciprocal of time, with the same bootstrap. Cross-format contrasts within a codec$\times$pattern are presented as GM time \emph{ratios} versus a reference format (zarr) and are labeled \textbf{descriptive, session-conditional}. CloudWatch request counts and latencies are per-session descriptive context (no inference). Compression is reported as the number of stored bytes and the compression ratio. Tail sensitivity recomputes p95 with the Harrell–Davis estimator and the extended block grid \(\ell\in\{4,6,8,10\}\).
 
 \subsection{Step 4: Discussing the Results}
 The last research stage will involve evaluating the study's findings and creating recommendations for beamline scientists and data engineers. The results are thoroughly examined, considering the trade-offs between performance, cost, and compression efficiency when working with the five different storage configurations.
@@ -1015,7 +986,7 @@ Recommendations on the optimal configuration of storage formats and compression 
 
 \section{Research Paradigm}
 \label{sec:researchParadigm}
-The research paradigm for this thesis is grounded in an experimental research approach within the broader context of design science research (\gls{DSR}). Given that this study aims to benchmark and compare multiple cloud-native storage formats (\gls{HDFfive}/\gls{HSDS}, Zarr, Parquet, TileDB, and \gls{ROOT}/\gls{RNTuple}) and compression algorithms (gzip, LZ4, zstd) under real-world scenarios, it is critical to adopt a method that highlights systematic evaluation, controlled experimentation, and result-based design. This research aims to perform a comparative analysis of storage and compression techniques and develop actionable guidelines for optimizing cloud-native workflows in the context of data-intensive scientific experiments, particularly in synchrotron and neutron scattering facilities.
+The research paradigm for this thesis is grounded in an experimental research approach within the broader context of design science research (\gls{DSR}). Given that this study aims to benchmark and compare multiple cloud-native storage formats (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{RNTuple}) where Parquet was included pilot-only (no timed runs) and compression algorithms (gzip, LZ4, zstd) under real-world scenarios, it is critical to adopt a method that highlights systematic evaluation, controlled experimentation, and result-based design. This research aims to perform a comparative analysis of storage and compression techniques and develop actionable guidelines for optimizing cloud-native workflows in the context of data-intensive scientific experiments, particularly in synchrotron and neutron scattering facilities.
 
 The design science research paradigm is particularly suited for this study because it enables the creation and evaluation of artifacts, such as storage and compression systems used for large-scale scattering data in the cloud. Design science emphasizes the building and assessment of solutions to practical problems through the design and development of artifacts. This approach aligns well with the thesis's goal of designing a decision matrix that helps beamline scientists and engineers optimize storage formats and compression techniques in cloud environments, such as \gls{AWS} \gls{SThree}.
 
@@ -1025,7 +996,7 @@ This research paradigm allows for an iterative experimentation cycle. For each c
 
 \section{Experimental Design and Methodology}
 \label{sec:experimentalDesign}
-The experimental design for this thesis focuses on evaluating and comparing the performance, scalability, cost-efficiency, and compression efficiency of five cloud-native storage formats (\gls{HDFfive}/\gls{HSDS}, Zarr, Parquet, TileDB, and \gls{ROOT}/\gls{RNTuple}) when applied to large-scale scattering datasets in \gls{AWS} \gls{SThree}. This section describes the methodologies used to carry out the experiments, including data collection, infrastructure setup, experimental parameters, and performance benchmarking.
+The experimental design for this thesis focuses on evaluating and comparing four timed cloud-native storage formats (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{RNTuple}) where Parquet was treated as pilot-only (no timed runs) when applied to large-scale scattering datasets in \gls{AWS} \gls{SThree}. This section describes the methodologies used to carry out the experiments, including data collection, infrastructure setup, experimental parameters, and performance benchmarking.
 
 \subsection{Test Environment and Infrastructure Setup}
 The experiment uses Amazon Web Services (\gls{AWS}) in a cloud-native environment. Specifically, the storage backends were implemented on Amazon \gls{SThree}, and the experimental infrastructure is provisioned using Amazon \gls{ECtwo} instances for data processing and benchmarking. Figure \ref{fig:aws_topology} illustrates the overall cloud testbed, highlighting the data-flow paths and the layers used for performance and cost measurement.
@@ -1070,24 +1041,35 @@ We evaluate each format with:
 
 Cross-format contrasts are reported as \emph{descriptive} GM time ratios within each codec$\times$pattern family.
 
+\subsection{Decision-matrix scoring (normalization and weights)}
+For downstream selection, we compute normalized 0–100 scores per codec\(\times\)pattern using robust min–max scaling within that family (lower bound = 5th percentile, upper bound = 95th percentile, clipped).
+
+\begin{itemize}
+    \item \textbf{Slice weights:} GM latency 0.60 (lower better), \(p_{95}\) 0.20 (lower), GETs/GiB 0.10 (lower), stored GiB 0.10 (lower).
+    \item \textbf{Full-scan weights:} throughput 0.60 (higher), GETs/GiB 0.15 (lower), stored GiB 0.15 (lower), \(p_{95}\) 0.10 (lower).
+\end{itemize}
+
+League tables rare rankedby the primary objective (slice: GM latency; full: throughput) ,with tie-breakers matching the Results section.
+
 
 
 \subsection{Statistical methods}
-Timings are positive and multiplicative; we analyze \(\ln(\text{time})\) per cell (format$\times$codec$\times$pattern). Primary estimands are:
+Timings are positive and multiplicative; we therefore analyze \(\ln(\text{time})\) per cell (format\(\times\)codec\(\times\)pattern). 
 
+Primary estimands are:
 \begin{itemize}
-  \item \textbf{GM time} with 95\% CIs from a moving-block bootstrap on \(\ln(\text{time})\) (MBB; $\ell\in\{4,6,8\}$; $B{=}10{,}000$; fixed seed). We back-transform to the original scale and report the widest CI across $\ell$.
-  \item \textbf{Tail latency (p95)} with 95\% CIs using the same MBB (on the original time scale).
-  \item \textbf{Full-scan throughput} compared towards time, analyzed on the log scale with the same bootstrap.
+  \item \textbf{Geometric-mean (GM) time} with 95\% CIs via a moving-block bootstrap (MBB) on \(\ln(\text{time})\), baseline block lengths \(\ell\in\{4,6,8\}\), resamples \(B{=}10{,}000\), fixed seed. CIs are back-transformed where we report the widest CI across \(\ell\). Robustness extends to \(\ell=10\) (reported in sensitivity checks).
+  \item \textbf{Tail latency (p95)} using the sample quantile (Type 7) with MBB 95\% CIs on the original scale where sensitivity recomputes p95 with the Harrell–Davis estimator and \(\ell\in\{4,6,8,10\}\).
+  \item \textbf{Full-scan throughput} (GiB/s) analyzed on the log scale from bytes/time with the same MBB settings.
 \end{itemize}
 
-Within each codec$\times$pattern we display \textbf{GM time ratios} versus a reference format as \emph{descriptive, session-conditional} summaries (no cross-session inference). Diagnostics per cell include Q–Q plots on a log scale, run-order traces, residual ACF, lag-1 autocorrelation, and a run-order trend tested.
+Within each codec\(\times\)pattern, cross-format contrasts are presented as GM time \emph{ratios} versus a reference (Zarr) and are labeled \textbf{descriptive, session-conditional} (formats ran in separate sessions and no cross-session inference). Diagnostics per cell include Q–Q plots on \(\ln(\text{time})\), lag-1 autocorrelation \(\rho_1\), and a run-order trend test (Spearman).
 
-CloudWatch metrics (\texttt{GetRequestsSum}, \texttt{BytesDownloadedSum}, \texttt{FirstByteLatency\{Avg,p95\}}, \texttt{TotalRequestLatency\{Avg,p95\}}) are recorded per session and used descriptively only. We do not average percentiles across sessions or attach inferential CIs. Warm-ups are excluded by design where we then have $n{=}50$ timed runs per cell.
+CloudWatch metrics (\texttt{GetRequestsSum}, \texttt{BytesDownloadedSum}, \texttt{FirstByteLatency\{Avg,p95\}}, \texttt{TotalRequestLatency\{Avg,p95\}}) are recorded per \emph{session} and used descriptively only. We do not average percentiles across sessions or attach inferential CIs. Warm-ups are excluded by design; \(n{=}50\) timed runs per cell are analyzed.
 
 
 \subsection{Uncertainty and confounders in AWS}
-AWS introduces time-varying latency and variance that cannot be fully controlled. We mitigated this issue by using a single region with the S3 bucket co-located, a Gateway VPC endpoint, fixed client settings, five warm-ups per session, and a randomized within-session order (with a fixed seed). Formats were executed in \emph{separate sessions} with no cross-format overlap. Consequently, cross-format contrasts are \textbf{descriptive, session-conditional}. Inference is limited to within-cell estimands (GM, p95, throughput) with dependence-robust bootstrap CIs. CloudWatch aggregates data per cell and reports it in a descriptive manner.
+AWS introduces time-varying latency and variance that cannot be fully controlled. We mitigated this issue by using a single region with the S3 bucket co-located, a Gateway VPC endpoint, fixed client settings, five warm-ups per session, and a randomized within-session order (with a fixed seed). Formats were executed in \emph{separate sessions} with no cross-format overlap. Consequently, cross-format contrasts are \textbf{descriptive, session-conditional}. Inference is limited to within-cell estimands (GM, p95, throughput) with dependence-robust bootstrap CIs. CloudWatch aggregates are per session and are reported descriptively (no inference, no cross-session averaging of percentiles).
 
 \subsubsection*{Deviation: Parquet pilot-only}
 Parquet was piloted but excluded from the timed results due to its single-object layout, which had a large metadata open time and object growth. The pilot and rationale are documented in Chapter \ref{ch:whatYouDid}, where Parquet remains as a qualitative discussion only. Timed comparisons cover four formats: \gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{RNTuple}.
@@ -1102,7 +1084,7 @@ Detector stack ($\sim$\SI{20}{\gibi\byte}): $\sim$1{,}300 CBF frames at 16-bit d
 
 
 \subsection{Sampling Strategy}
-Two patterns were executed on the same dataset. For the slice workload, each run reads one randomly selected frame (\(\sim\)\SI{15.82}{\mebi\byte}); no cross-format chunk-alignment was enforced. For the scanning workload, the entire \SI{20}{\gibi\byte} dataset is read sequentially.
+Two patterns were executed on the same dataset. For the slice workload, each run reads one randomly selected frame (\(\sim\)\SI{15.82}{\mebi\byte}); no cross-format chunk-alignment was enforced. For the scanning workload, the entire \SI{20}{\gibi\byte} dataset is read sequentially. Within-session run order was randomized with a fixed seed, and no cross-format concurrency occurred.
 
 
 \subsection{Instrumentation and Metric Logging}
@@ -1486,6 +1468,22 @@ Runs followed a fixed warm-up and timing protocol. Integrity checks verified sha
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 \cleardoublepage
 \chapter{Results and Analysis}
 \label{ch:resultsAndAnalysis}
@@ -1493,9 +1491,7 @@ This chapter reports the empirical results of benchmarking four storage backends
 
 Metrics encompass client-observed timing, service-side behavior, and storage footprint, with timings analyzed on a log scale. For each {format×codec×pattern} cell, we report geometric mean (GM) time with dependence-robust 95\% CIs via a moving-block bootstrap (MBB; $\ell\in\{4,6,8\}$; $B{=}10{,}000$). The tail behavior is reported via p95 with the same bootstrap. For full scans, we also report throughput (GiB/s) derived from bytes/time and analyzed on the log scale with the same bootstrap. The storage footprint is reported as the number of stored bytes and the compression ratio relative to the raw storage. Request intensity (GETs/rep, GETs/GiB) is derived from CloudWatch session aggregates of all runs within a cell.
 
-Cross-format contrasts are \textbf{descriptive, session-conditional} because formats run in separate sessions. Warm-ups are excluded; $n=50$ timed repetitions per cell are analyzed.
-
-All hypothesis tests are conducted \emph{within} each {codec $\times$ pattern} family. Times are analyzed on the log scale and back-transformed to ratios on the original scale. Nonparametric confirmations (Kruskal–Wallis and Dunn with Holm adjustment) and tail-sensitivity checks appear in the Appendix. Warm-up iterations are excluded; $n=50$ timed repetitions per cell are analyzed.
+Cross-format contrasts are \textbf{descriptive, session-conditional} because formats run in separate sessions. Warm-ups are excluded; $n=50$ timed repetitions per cell are analyzed. Exploratory nonparametric summaries and tail-sensitivity checks are provided.
 
 
 
@@ -1505,7 +1501,7 @@ All hypothesis tests are conducted \emph{within} each {codec $\times$ pattern} f
 This section checks the executed runs and verifies data hygiene before analysis. We report run coverage per {format $\times$ codec $\times$ pattern}, assess distributional shape and run-order drift on $\ln(\text{time})$.
 
 \subsection{Run inclusion and coverage}
-All planned timed runs completed successfully. For every \{format $\times$ codec $\times$ pattern\} cell; planned $n=50$, included $n=50$, retried $n=0$, failures $n=0$. Across the 24 cells: planned $1{,}200$, included $1{,}200$; warm-ups ($5$ per cell; total $120$) were excluded by design. Potential failure modes would have included S3 throttling (HTTP 429 SlowDown), request timeouts, transient HTTP 5xx from S3/HSDS, connection resets, or client decode errors. None of these errors was observed during the execution of the experiment.
+All planned timed runs completed successfully. For every \{format $\times$ codec $\times$ pattern\} cell we had planned $n=50$ where  $n=50$ runs where included and retried $n=0$, failures $n=0$. Across the 24 cells: planned $1{,}200$, included $1{,}200$; warm-ups ($5$ per cell; total $120$) were excluded by design. Potential failure modes would have included S3 throttling (HTTP 429 SlowDown), request timeouts, transient HTTP 5xx from S3/HSDS, connection resets, or client decode errors. None of these errors was observed during the execution of the experiment.
 
 
 \subsection{Timing diagnostics (distributional shape and drift)}
@@ -1547,6 +1543,8 @@ zarr–zstd–slice   & 0.00425  & 0.00  & 1.26 & 0.236 \\
 \end{tabular}
 \end{table}
 
+\noindent\textit{Note.} Positive $\rho_1$ indicates serial dependence within sessions, the $\mathrm{p95}/\mathrm{GM}$ ratio summarizes tail heaviness.
+
 
 
 \section{Compression and objectization outcomes}
@@ -1558,9 +1556,8 @@ This section enumerates the total stored bytes on \gls{SThree} for each {format,
 
  \begin{equation}
  \label{eq:compression_ratio}
- R_{f,c} ;=; \frac{B_{\text{raw}}}{B^{\text{stored}}{f,c}},
-\qquad
-B{\text{raw}} ;=; N \times 2880 \times 2880 \times 2\ \text{bytes}.
+    R_{f,c} \coloneqq \frac{B_{\text{raw}}}{B^{\text{stored}}_{f,c}},\qquad
+    B_{\text{raw}} \coloneqq N \times 2880 \times 2880 \times 2~\text{bytes}.
  \end{equation}
 
 For $N=1{,}300$, $B_{\text{raw}}=21{,}565{,}440{,}000\ \text{bytes}$ ($\approx 20.08\,\text{GiB}$). Figure \ref{fig:stored_bytes} reports absolute stored size and Figure \ref{fig:compression_rates} shows the corresponding compression ratios.
@@ -1621,7 +1618,7 @@ Table \ref{tab:object_counts} lists total S3 object counts per family (format~$\
 
 
 \section{Request intensity and S3 service latencies}
-This section summarizes S3 request behavior and service-side latencies to provide context for client timings. We report the number of GETs per session, per repetition, and per GiB. CloudWatch FirstByte/TotalRequest averages and p95 are considered descriptive because they are aggregated, session-conditional metrics.
+This section summarizes S3 request behavior and service-side latencies to provide context for client timings. We report the number of GETs per session, per repetition, and per GiB. CloudWatch FirstByte/TotalRequest averages and p95 are considered descriptive because they are aggregated, session-conditional metrics. Because these are session aggregates, we report \emph{point estimates only}.
 
 \subsection{GETs per repetition and per GiB}
 We summarize request intensity from CloudWatch \emph{session} aggregates. All $n$ timed runs in a cell (format$\times$codec$\times$pattern) contribute to one set of counts. Let $G$ be \texttt{GetRequestsSum} and $B$ be \texttt{BytesDownloadedSum}. Counts include S3 \texttt{GET} only; \texttt{HEAD}/\texttt{LIST}/\texttt{PUT} are excluded. Warm-ups are excluded and separated temporally from the timed window.
@@ -1638,7 +1635,9 @@ Volume-normalized intensity:
 \widehat{\lambda}_{\mathrm{GiB}}=\frac{G\,2^{30}}{B}.
 \end{equation}
 
-Because these are session aggregates, we report \emph{point estimates only}; no confidence intervals or inference are attached. Rates are descriptive and session-conditional. Table~\ref{tab:req_intensity} lists $\widehat{\lambda}_{\mathrm{rep}}$ and $\widehat{\lambda}_{\mathrm{GiB}}$ for all cells. Figures~\ref{fig:reqintensity_perRep_grid} and \ref{fig:reqintensity_perGiB_grid} plot per-cell point estimates (rows = codecs \{gzip, lz4, zstd\}; columns = patterns \{slice, full\}).
+Here $n$ is the number of timed repetitions in the cell; $\widehat{\lambda}_{\mathrm{GiB}}$ is measured in GETs per GiB.
+
+Rates are descriptive and session-conditional. Table \ref{tab:req_intensity} lists $\widehat{\lambda}_{\mathrm{rep}}$ and $\widehat{\lambda}_{\mathrm{GiB}}$ for all cells. Figures~\ref{fig:reqintensity_perRep_grid} and \ref{fig:reqintensity_perGiB_grid} plot per-cell point estimates (rows = codecs \{gzip, lz4, zstd\}; columns = patterns \{slice, full\}).
 
 \begin{figure}[H]
   \centering
@@ -1837,7 +1836,7 @@ For \texttt{gzip}/full-scan, geometric-mean (GM) times with dependence-robust 95
 \begin{figure}[H]
   \centering
   \includegraphics[width=\linewidth]{figures/graphs/fig_mbb_full_gzip_gm_ci_ms.pdf}
-  \caption{\texttt{gzip}/full: geometric-mean time with dependence-robust 95\% CIs.}
+  \caption{\texttt{gzip}/full: geometric-mean time (ms) with dependence-robust 95\% CIs.}
   \label{fig:full_gzip_gm_mbb}
 \end{figure}
 
@@ -1880,7 +1879,7 @@ For \texttt{lz4}/full-scan, geometric-mean (GM) times with dependence-robust 95\
 \begin{figure}[H]
   \centering
   \includegraphics[width=\linewidth]{figures/graphs/fig_mbb_full_lz4_gm_ci_ms.pdf}
-  \caption{\texttt{lz4}/full: geometric-mean time with dependence-robust 95\% CIs.}
+  \caption{\texttt{lz4}/full: geometric-mean time (ms) with dependence-robust 95\% CIs.}
   \label{fig:full_lz4_gm_mbb}
 \end{figure}
 
@@ -1922,7 +1921,7 @@ For \texttt{zstd}/full-scan, geometric-mean (GM) times with dependence-robust 95
 \begin{figure}[H]
   \centering
   \includegraphics[width=\linewidth]{figures/graphs/fig_mbb_full_zstd_gm_ci_ms.pdf}
-  \caption{\texttt{zstd}/full: geometric-mean time with dependence-robust 95\% CIs.}
+  \caption{\texttt{zstd}/full: geometric-mean time (ms) with dependence-robust 95\% CIs.}
   \label{fig:full_zstd_gm_mbb}
 \end{figure}
 
