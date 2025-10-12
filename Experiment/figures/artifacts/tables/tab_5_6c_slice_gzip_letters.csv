@@ -1,0 +1,5 @@
+format,letters
+hdf5,A
+root,B
+tiledb,C
+zarr,A

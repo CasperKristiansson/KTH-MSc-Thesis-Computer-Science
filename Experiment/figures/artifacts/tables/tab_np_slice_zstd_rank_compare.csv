@@ -1,0 +1,5 @@
+format,rank_median,rank_gm,rank_diff
+zarr,1.0,1.0,0.0
+tiledb,2.0,2.0,0.0
+hdf5,3.0,3.0,0.0
+root,4.0,4.0,0.0
