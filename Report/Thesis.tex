@@ -1501,6 +1501,7 @@ Cross-format contrasts are \textbf{descriptive, session-conditional} because for
 This section checks the executed runs and verifies data hygiene before analysis. We report run coverage per {format $\times$ codec $\times$ pattern}, assess distributional shape and run-order drift on $\ln(\text{time})$.
 
 \subsection{Run inclusion and coverage}
+\label{sec:run-inclusion-and-coverage}
 All planned timed runs completed successfully. For every \{format $\times$ codec $\times$ pattern\} cell we had planned $n=50$ where  $n=50$ runs where included and retried $n=0$, failures $n=0$. Across the 24 cells: planned $1{,}200$, included $1{,}200$; warm-ups ($5$ per cell; total $120$) were excluded by design. Potential failure modes would have included S3 throttling (HTTP 429 SlowDown), request timeouts, transient HTTP 5xx from S3/HSDS, connection resets, or client decode errors. None of these errors was observed during the execution of the experiment.
 
 
@@ -2649,59 +2650,152 @@ hdf5   & 1.5   & 63.5  & 0.0  & 13.8 & 9.3  & / zarr \\
 \cleardoublepage
 \chapter{Discussion}
 \label{ch:discussion}
+TODO
+
+\section{Bottom-line outcomes}
+\label{sec:discussion-bottomline}
+This section reports winners by workload and codec, using GM latency (slices) and GM throughput (full scans) with dependence-robust 95\% CIs and $p_{95}$ checks tail risk. All contrasts are \emph{descriptive} and \emph{session-conditional}.
+
+\subsection{Slices: winners by codec}
+Single–frame reads often will have two stress areas: (i) layout/objectization, which sets how many objects and round–trips each request touches, and (ii) decode cost, which depends on the codec and the library path. We judge the winners by geometric mean (GM) latency with dependence robust 95\% CIs and use $p_{95}$ to flag tail risk. All cross–format contrasts are \emph{descriptive} and \emph{session–conditional}. References below point back to the Slice tables and figures for each codec.
+
+\textbf{Zarr is the clear winner} for zstd slices. Its GM CI lies fully below TileDB’s, which is second, followed by HDF5/HSDS and then ROOT. The $p_{95}$ ordering mirrors the center, indicating Zarr combines a fast typical latency with controlled tails. Mechanistically, this matches a chunk–per–frame layout that amortizes S3 RTT via client concurrency, while zstd keeps the decode cost moderate. See Table~\ref{tab:slice_zstd_mbb} and Figs. \ref{fig:slice_zstd_gm_mbb}, \ref{fig:slice_zstd_p95_mbb}, \ref{fig:slice_zstd_ratios_point}.
+
+\textbf{Zarr remains fastest} on GM under lz4. \textbf{TileDB and HDF5/HSDS are close} behind it, with overlapping CIs between those two, where ROOT is slowest. A notable trade–off appears in the tails: Zarr’s $p_{95}$ is higher and less tight than TileDB and HDF5/HSDS, consistent with lz4’s bias toward decode speed over compactness. If the application is highly tail–sensitive, TileDB’s steadier $p_{95}$ may offset its slightly higher GM. See Table \ref{tab:slice_lz4_mbb} and Figs. \ref{fig:slice_lz4_gm_mbb}, \ref{fig:slice_lz4_p95_mbb}, \ref{fig:slice_lz4_ratios_point}.
+
+\textbf{TileDB wins} gzip slices with non-overlapping GM CIs versus Zarr. Zarr is next and outperforms HDF5/HSDS, where ROOT again is slowest by a wide margin. This pattern aligns with gzip’s higher CPU cost, which leads to TileDB’s fewer, larger fragments reducing request overhead enough to compensate for gzip decode, while Zarr’s per–frame objects incur more round–trips. Ordering is consistent in $p_{95}$ and in the Zarr–referenced ratio view. See Table \ref{tab:slice_gzip_mbb} and Figs. \ref{fig:slice_gzip_gm_mbb}, \ref{fig:slice_gzip_p95_mbb}, \ref{fig:slice_gzip_ratios_point}.
+
+Across codecs, the winner patterns above align with request intensity evidence for slices: lower GETs/GiB often coincide with lower GM latency for Zarr and TileDB. At the same time, ROOT’s single–object layout shows that “few GETs” does not guarantee speed due to paging and decode path overhead. See Fig. \ref{fig:cross_slice_latency_vs_gets} and Table~\ref{tab:cross_slice_latency_vs_gets}.
+
+Nonparametric confirmations reproduce the same slice rankings by codec, and Harrell–Davis $p_{95}$ with an $\ell$–grid preserves ordering, with the lz4/Zarr heavier–tail observation intact. See Fig. \ref{fig:np_slice_ratios_grid}; Tables \ref{tab:np_slice_gzip_median}, \ref{tab:np_slice_lz4_median}, \ref{tab:np_slice_zstd_median}, and the tail–sensitivity artifacts in Fig. \ref{fig:tail-slice-p95-hd-ci-vs-L} and Tables \ref{tab:tail-slice-gzip-p95-selected}–\ref{tab:tail-slice-zstd-p95-selected}.
 
 
-\section{Scope and framing}
-\subsection{Paradigm and artifact}
-\subsection{Study context needed for interpretation}
-\subsection{Workloads, timing, and estimands}
-\subsection{Inference stance}
-\subsection{Editorial cleanup}
+\subsection{Full scans: throughput ordering}
+Full–dataset reads test sustained sequential delivery and decode under continuous concurrency. We judge winners by geometric mean (GM) \emph{throughput} (GiB/s) with dependence–robust 95\% CIs derived from GM time on the log scale, where $p_{95}$ times are used to check stability. All cross–format contrasts are \emph{descriptive} and \emph{session–conditional}. The key result is simple: across \texttt{zstd}, \texttt{lz4}, and \texttt{gzip}, \textbf{TileDB leads by a wide margin}, \textbf{Zarr is consistently second}, and \textbf{HDF5/HSDS and ROOT come last}.
 
-\section{Principal findings}
-\subsection{Pattern x codec winners}
-\subsubsection{Partial retrieval (slice)}
-\subsubsection{Full dataset scans}
-\subsection{Compression and stored size}
-\subsection{Objectization and observed performance}
-\subsection{Request intensity vs client outcomes}
-\subsection{Distribution shape and robustness}
+\textbf{TileDB is the clear throughput leader.} Zarr is a distant second, and HDF5/HSDS and ROOT are far behind. GM time and its CI show clean separation, and the ratio view reinforces TileDB’s advantage. $p_{95}$ times follow the same ordering, indicating stable long–scan behavior. See Table \ref{tab:full_zstd_mbb} and Figs. \ref{fig:full_zstd_gm_mbb}, \ref{fig:full_zstd_p95_mbb}, \ref{fig:full_zstd_ratios_point}.
 
-\section{Mechanisms behind results}
-\subsection{S3 and access physics}
-\subsection{Format-specific mechanisms}
-\subsubsection{HSDS (HDF5)}
-\subsubsection{Zarr}
-\subsubsection{TileDB}
-\subsubsection{ROOT/RNTuple}
-\subsection{Codec levers}
+\textbf{TileDB remains first and Zarr second.} Faster decode narrows absolute times but does not change ranks. HDF5/HSDS and ROOT stay well behind. $p_{95}$ times are tight for TileDB and Zarr, consistent with sustained data streaming. See Table \ref{tab:full_lz4_mbb} and Figs. \ref{fig:full_lz4_gm_mbb}, \ref{fig:full_lz4_p95_mbb}, \ref{fig:full_lz4_ratios_point}.
 
-\section{Decision matrix for practitioners}
-\subsection{Scoring method}
-\subsection{Recommendations: interactive slices (latency-first)}
-\subsection{Recommendations: bulk scans (throughput-first)}
-\subsection{Sensitivity and caveats}
-\subsection{How to use the matrix}
+\textbf{TileDB still leads and Zarr is second.} Gzip’s higher CPU cost lifts absolute times for all formats, but ordering is unchanged. HDF5/HSDS and ROOT remain the slowest. $p_{95}$ is consistent with the GM picture. See Table \ref{tab:full_gzip_mbb} and Figs. \ref{fig:full_gzip_gm_mbb}, \ref{fig:full_gzip_p95_mbb}, \ref{fig:full_gzip_ratios_point}.
 
-\section{Operational guidance}
+Throughput aligns with request intensity and layout: TileDB attains high throughput with \emph{moderate} GETs/GiB due to fragment–backed long reads. Zarr is \emph{higher} on GETs/GiB yet parallelizes effectively, and where HDF5/HSDS shows \emph{higher} GETs/GiB with poorer streaming. ROOT has \emph{few} GETs/GiB but still has low throughput because a single–object layout, plus paging/decode, dominates. See Fig. \ref{fig:cross_full_throughput_vs_gets} and Table \ref{tab:cross_full_throughput_vs_gets}.
+
+CloudWatch FirstByte and TotalRequest latencies are stable by session and do not explain cross–format gaps; the driver is layout and decode rather than “faster S3.” See Figs. \ref{fig:cw_firstbyte_grid}, \ref{fig:cw_total_grid}.
+
+Nonparametric centers reproduce the same ranks across codecs, and the HD $p_{95}$ sensitivity keeps the ordering intact. See Fig. \ref{fig:np_full_ratios_grid} and Tables \ref{tab:np_full_gzip_median}, \ref{tab:np_full_lz4_median}, \ref{tab:np_full_zstd_median}, see also Fig. \ref{fig:tail-full-p95-hd-ci-vs-L} and Tables \ref{tab:tail-full-gzip-p95-selected}–\ref{tab:tail-full-zstd-p95-selected}.
+
+
+\section{Mechanisms explaining outcomes}
+This section explains \emph{why} the observed orderings occur. We link layout-driven objectization and request intensity (GETs/GiB) to client timings, show that S3 service latencies are stable and not causal, and summarize codec CPU–bytes trade-offs.
+
+\subsection{Objectization and layout}
+Objectization for each storage backend determines the request pattern. \textbf{Zarr/HSDS} materializes roughly one data object per frame (plus metadata), \textbf{TileDB} writes a small number of immutable \emph{fragments} (each with internal files), and \textbf{ROOT/RNTuple} stores a \emph{single} large object. The consequence is straightforward: per–frame layouts expose more opportunities for client concurrency. Where fragment layouts trade fewer objects for long sequential reads, and lastly single–object layouts minimize GET count but constrain parallelism to range requests within one key. This matches the data in Table \ref{tab:object_counts} and the distribution in Fig. \ref{fig:object_counts}. Practically, concurrency benefits Zarr/TileDB, where ROOT often shows \emph{few GETs yet slow} performance because paging and decoding dominate once request speed is reached.
+
+\subsection{Request intensity vs client timing}
+Lower request intensity \textit{often} aligns with better client outcomes for chunked/fragmented stores. Fewer GETs/GiB tend to coincide with lower slice GM and higher full-scan throughput for \textbf{Zarr} and \textbf{TileDB}. See the slice correlation in Fig. \ref{fig:cross_slice_latency_vs_gets} and Table \ref{tab:cross_slice_latency_vs_gets}, and the scan view in Fig. \ref{fig:cross_full_throughput_vs_gets} and Table \ref{tab:cross_full_throughput_vs_gets}. The pattern is not universal, where \textbf{ROOT} is the counterexample. It has \emph{very} low GETs/GiB yet poor latency/throughput due to the single-object layout, plus small pages and decode costs limit effective parallelism. GETs/GiB explains part of the variance, while layout and decode paths account for the rest.
+
+
+\subsection{Service latencies are not the driver}
+CloudWatch \emph{FirstByteLatency} and \emph{TotalRequestLatency} are stable within sessions (both avg and $p_{95}$) and do not track the large cross–format gaps seen in client timings. The dominant factors are request pattern and decode path, not “faster S3.” Treat these metrics as context, not causal evidence. See Figs. \ref{fig:cw_firstbyte_grid}, \ref{fig:cw_total_grid}.
+
+
+\subsection{Codec effects}
+Codecs trade CPU for bytes. \textbf{lz4} minimizes decode time and helps latency where per–chunk CPU dominates. \textbf{zstd} strikes a balance between compression and decoding, while \textbf{gzip} yields the smallest stored size but is slower to decode. Stored size is primarily \emph{codec–driven} (gzip$\approx$zstd $<$ lz4), with only minor format deltas from layout metadata (Figs. \ref{fig:stored_bytes}, \ref{fig:compression_rates}). These trade–offs align with the winners in section \ref{sec:discussion-bottomline}: Zarr leads zstd/lz4 slices while TileDB leads gzip slices (Tables \ref{tab:slice_zstd_mbb}, \ref{tab:slice_lz4_mbb}, \ref{tab:slice_gzip_mbb}). TileDB dominates full–scan throughput across codecs (Tables \ref{tab:full_zstd_mbb}, \ref{tab:full_lz4_mbb}, \ref{tab:full_gzip_mbb}).
+
+
+\section{Distribution shape and robustness}
+This section verifies that the modeling choices are appropriate and yield similar results to those of other estimators. We first assess shape and serial dependence to justify log–time analysis using the moving–block bootstrap (MBB), then confirm rankings with median centers, and finally test tail stability with Harrell–Davis $p_{95}$.
+
+\subsection{Shape and dependence}
+Log–time is appropriate, and serial dependence is present. The diagnostics table shows frequent non-normality in the raw time series and improved behavior in $\ln(\text{time})$, while positive lag-1 autocorrelation is observed across all cells. This both motivates analyzing centers on the log scale and using MBB CIs that respect dependence (Table \ref{tab:timing_diag_main}). Q–Q grids on $\ln(\text{time})$ support the transformation, and run-order traces show no systematic drift beyond short-range dependence (Appendix Figs. \ref{fig:appendix_qq_grid}, \ref{fig:appendix_drift_grid}). Together, these justify GM on log–time with dependence-robust CIs.
+
+
+\subsection{Center robustness}
+Median-based rankings match GM across codecs and patterns. Descriptive median ratios reproduce the slice and full-scan orderings, and rank-agreement tables show identical ranks to GM within each codec (Figs. \ref{fig:np_slice_ratios_grid}, \ref{fig:np_full_ratios_grid} and Tables \ref{tab:np_slice_gzip_median}, \ref{tab:np_slice_lz4_median}, \ref{tab:np_slice_zstd_median}, \ref{tab:np_full_gzip_median}, \ref{tab:np_full_lz4_median}, \ref{tab:np_full_zstd_median}, and \ref{tab:np_slice_gzip_rank}, \ref{tab:np_slice_lz4_rank}, \ref{tab:np_slice_zstd_rank}, \ref{tab:np_full_gzip_rank}, \ref{tab:np_full_lz4_rank}, \ref{tab:np_full_zstd_rank}).
+
+
+\subsection{Tail robustness}
+Orderings are stable under Harrell–Davis $p_{95}$ with an $\ell\in\{4,6,8,10\}$ block-length grid, where we report the widest dependence-robust CI per cell. The notable exception is \texttt{lz4}/Zarr, which shows heavier tails relative to its peers, but this does not overturn the winner hierarchy established by GM and median centers (Figs. \ref{fig:tail-slice-p95-hd-ci-vs-L}, \ref{fig:tail-full-p95-hd-ci-vs-L} and Tables \ref{tab:tail-slice-gzip-p95-selected}, \ref{tab:tail-slice-lz4-p95-selected}, \ref{tab:tail-slice-zstd-p95-selected}, \ref{tab:tail-full-gzip-p95-selected}, \ref{tab:tail-full-lz4-p95-selected}, \ref{tab:tail-full-zstd-p95-selected}).
+
+
+
+\section{Cost and storage posture}
+We use two proxies for cost, \emph{GETs/GiB} for request cost and \emph{stored GiB} for storage cost. Prices are out of scope, and the aim is directional guidance tied to the observed timings.
+
+\subsection{Request cost proxy}
+For slice-heavy workloads, watch \emph{GETs/GiB}. \textbf{TileDB} and \textbf{Zarr} typically deliver lower GETs/GiB at competitive or better latency than compared with \textbf{HDF5/HSDS}. This indicates a more favorable request-cost posture at equal performance. See Table \ref{tab:cross_slice_latency_vs_gets} and Fig. \ref{fig:cross_slice_latency_vs_gets}.
+
+\subsection{Storage cost proxy}
+Stored size is mainly \emph{codec-driven}, where \textbf{zstd} and \textbf{gzip} compress more than \textbf{lz4}. Between-format differences at a fixed codec are small and arise from layout metadata, rather than the payload. See Figs. \ref{fig:stored_bytes}, \ref{fig:compression_rates}.
+
+\subsection{Counterexample}
+\textbf{ROOT} shows that a few requests do not imply speed or efficiency. It has the lowest \emph{GETs/GiB} yet poor slice latency and scan throughput due to single-object paging and decode overhead. See Tables \ref{tab:cross_slice_latency_vs_gets}, \ref{tab:cross_full_throughput_vs_gets} and the per-codec MBB results (slices: Tables \ref{tab:slice_gzip_mbb}, \ref{tab:slice_lz4_mbb}, \ref{tab:slice_zstd_mbb}; full scans: Tables \ref{tab:full_gzip_mbb}, \ref{tab:full_lz4_mbb}, \ref{tab:full_zstd_mbb}).
+
+
+
+
+\section{Practitioner choices (decision matrix hook)}
+This section turns the empirical rankings into concrete decisions. Choices are related to the primary objective of each workload. All evidence is descriptive and session–conditional, and ties back to the league tables and per–codec slice/full results.
+
+
+
+\subsection{Interactive slices (latency–first)}
+\begin{itemize}
+    \item \textbf{Default:} \emph{Zarr + zstd}. It delivers the lowest slice GM with controlled tails across our setting, and scales with client concurrency (Tables~\ref{tab:league-slice-zstd}, \ref{tab:slice_zstd_mbb}).
+    \item \textbf{If gzip is mandated:} \emph{TileDB + gzip}. TileDB’s fragment layout offsets gzip’s CPU cost and wins on GM with non-overlapping CIs versus Zarr (Tables \ref{tab:league-slice-gzip}, \ref{tab:slice_gzip_mbb}).
+    \item \textbf{Avoid for frame-random reads:} \emph{ROOT}. Few GETs do not translate to low latency due to paging and decode (Tables \ref{tab:league-slice-gzip}, \ref{tab:league-slice-lz4}, \ref{tab:league-slice-zstd} and Tables \ref{tab:slice_gzip_mbb}, \ref{tab:slice_lz4_mbb}, \ref{tab:slice_zstd_mbb}).
+\end{itemize}
+
+
+\subsection{Bulk scans (throughput–first)}
+\begin{itemize}
+    \item \textbf{Default:} \emph{TileDB + zstd or lz4}. TileDB dominates full-scan throughput across codecs. Choose \texttt{lz4} if CPU is tight, \texttt{zstd} if space matters (Tables \ref{tab:league-full-zstd}, \ref{tab:league-full-lz4} andTables \ref{tab:full_zstd_mbb}, \ref{tab:full_lz4_mbb}).
+    \item \textbf{Second choice when ecosystem fit matters:} \emph{Zarr} (any of zstd/lz4/gzip) trades some throughput for broader tooling while retaining stable streaming of data (Tables \ref{tab:league-full-gzip}, \ref{tab:league-full-lz4}, \ref{tab:league-full-zstd} and Tables \ref{tab:full_gzip_mbb}, \ref{tab:full_lz4_mbb}, \ref{tab:full_zstd_mbb}).  
+\end{itemize}
+
+
+\subsection{Weight sensitivity}
+Top selections remain stable under the stated weights, as the selected weights do not alter the winners in our data. Where near-ties appear within a codec×pattern bucket, we call them out in the league tables and recommend using the tie-breakers (slice: $p_{95}\!\rightarrow$ GETs/GiB $\rightarrow$ stored GiB and for full scan GM time $\!\rightarrow$ GETs/GiB $\rightarrow$ stored GiB). See the score tables (\ref{tab:scores-slice-gzip}, \ref{tab:scores-slice-lz4}, \ref{tab:scores-slice-zstd}, \ref{tab:scores-full-gzip}, \ref{tab:scores-full-lz4}, \ref{tab:scores-full-zstd}).
+
+
+
+
+\section{Operational implications}
+This section converts the Results into backend-specific operational actions. Recommendations cover metadata consolidation, prefix sharding, chunk/tile sizing, fragment consolidation, cache tuning, and read-page batching. Measured object counts justify each item, GETs/GiB, and $p_{95}$ tails.
+
 \subsection{Zarr}
-\subsection{TileDB}
-\subsection{HSDS}
-\subsection{ROOT/RNTuple}
-\subsection{Cross-cutting}
+\textbf{Consolidate metadata} to cut LIST/HEAD fan–out and reduce cold–open overhead by unconsolidated layouts inflate object count and amplify per–request latency (\emph{cf.} Fig. \ref{fig:object_counts}). \textbf{Shard prefixes} (e.g., hash or date shards) to distribute keys across S3 partitions and avoid hot prefixes as datasets grow. \textbf{Keep frame–sized chunks} \((1,\cdot,\cdot)\) for frame–granularity reads and adjust only if the access unit changes. \textbf{Monitor tails on \texttt{lz4}}: slice \(p_{95}\) is heavier for Zarr+\texttt{lz4}, where prefer \texttt{zstd} for tighter latency envelopes or mitigate with concurrency and consolidated metadata (Fig. \ref{fig:slice_lz4_p95_mbb} and also see Fig. \ref{fig:object_counts}).
 
-\section{Validity, reliability, and confounders}
-\subsection{Internal validity}
-\subsection{Measurement reliability}
+
+\subsection{TileDB}
+\textbf{Manage fragment counts}: each write produces an immutable fragment, where many small fragments raise metadata work. Schedule \textbf{fragment consolidation} when counts grow to keep open/scan overhead low (Table \ref{tab:object_counts}). \textbf{Align tile extents} to the access unit (frame–aligned tiles for these arrays) to preserve long sequential reads. These practices sustain \textbf{scan dominance} observed across codecs (Figs. \ref{fig:full_gzip_gm_mbb}, \ref{fig:full_lz4_gm_mbb}, \ref{fig:full_zstd_gm_mbb}) and the favorable throughput vs GETs/GiB posture (Fig. \ref{fig:cross_full_throughput_vs_gets}).
+
+\subsection{HSDS (HDF5)}
+\textbf{Account for REST fan–out} and \textbf{many small objects}: chunk and metadata requests add round–trips (Table \ref{tab:object_counts}). Provision and tune \textbf{server–side caches} (dataset/chunk caches) and concurrency to hide latency, right-size chunks to reduce request pressure where feasible. CloudWatch service latencies are stable across sessions, so speedups must come from reducing fan–out or improving caching, not expecting “faster S3” (Figs. \ref{fig:cw_firstbyte_grid}, \ref{fig:cw_total_grid}).
+
+\subsection{ROOT/RNTuple}
+\textbf{Batch page reads} and \textbf{avoid per–frame random access}: issue ranged reads and increase read windows so many small pages are fetched together. Prefer workflows that \textbf{scan clusters} over frame–random access for images. Remember that \textbf{few GETs do not imply speed}: single–object layout plus paging/decode keeps latency high despite low GETs/GiB (Tables \ref{tab:cross_slice_latency_vs_gets}, \ref{tab:slice_gzip_mbb}, \ref{tab:slice_lz4_mbb}, \ref{tab:slice_zstd_mbb}).
+
+
+\section{Validity and limits}
+This section states what the measurements support and where they do not generalize.
+
+\subsection{Internal checks}
+All planned runs were included with no failures, and warm-ups were excluded by design. The order was randomized with a fixed seed. Serial dependence is present and handled via the moving-block bootstrap, and the log-time choice is supported by shape diagnostics. See the section \ref{sec:run-inclusion-and-coverage} and Table \ref{tab:timing_diag_main} for Shapiro $p$ and $\rho_1$.
+
 \subsection{External validity}
-\subsection{What not concluded}
+Findings reflect one dataset, one region, and one client. We measure two access patterns with three different codecs. Cross-format contrasts are \emph{descriptive} and \emph{session-conditional}. CloudWatch service metrics are used as descriptive context only, not as causal evidence. See the Results section headers for scope and Figs. \ref{fig:cw_firstbyte_grid}, \ref{fig:cw_total_grid} for the service-latency context.
 
 \section{Deviations and exclusions}
-\subsection{Parquet pilot (qualitative only)}
+Parquet was piloted only and excluded from timed comparisons. Early exploration used small subsets and smoke tests, so the format was only lightly exercised. When we scaled to complete ingestion and attempted full-dataset scans, the issues surfaced: a \emph{single} large object (~34 GiB for ~20 GiB raw) incurred 3–4 min metadata/open time and intermittent client instability on the GZIP file, making it unsuitable for frame-granularity reads and unattractive even for bulk scans in this setup. The root cause is objectization and file semantics: a single-object, columnar Parquet file offers few request-level parallelization opportunities and concentrates footer/metadata work at open. We therefore retain Parquet as a qualitative caution for n-D image stacks on S3 single-object layouts and exclude it from quantitative timing; see the Results introduction (Chapter \ref{ch:resultsAndAnalysis}). A partitioned Parquet \emph{dataset} with row-grouping aligned to frames might alter objectization, but designing and validating that variant was out of scope.
 
-\section{Limits and implications}
-\subsection{Boundaries of evidence}
-\subsection{Reader guidance}
+
+\section{Closing synthesis}
+Across single-frame slices and full scans, the ordering is consistent and session-conditional. For slices, \textbf{Zarr} is fastest under \texttt{zstd} and \texttt{lz4}, while \textbf{TileDB} wins under \texttt{gzip}. \textbf{HDF5/HSDS} comes not far behind but where \textbf{ROOT} is slowest. For full scans, \textbf{TileDB} delivers the highest throughput across all codecs by a wide margin, with \textbf{Zarr} second and \textbf{HDF5/HSDS} and \textbf{ROOT} far behind. The mechanism is objectization plus request intensity; the per-frame objects (Zarr/HSDS) and fragments (TileDB) enable client concurrency, while a single object (ROOT) minimizes GETs but limits parallelism and pays paging/decode overhead. This means that \emph{few GETs} does not imply speed; this linkage appears in the cross-metric views (\ref{tab:cross_slice_latency_vs_gets}, \ref{tab:cross_full_throughput_vs_gets}). Cost properties follow: request cost tracks GETs/GiB (important for slice-heavy use), while stored GiB is codec-driven (zstd$\approx$gzip $<$ lz4). Therefore, choose \texttt{zstd} or \texttt{gzip} when space dominates and \texttt{lz4} when CPU/latency dominates.
+
+
+
 
 
 
