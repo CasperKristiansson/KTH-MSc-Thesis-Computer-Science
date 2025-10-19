@@ -156,9 +156,14 @@ nopostdot]{glossaries}
 \input{custom_configuration}
 
 \title{From Experiment to Insight: A Comparative Study of Storage Approaches for Large-Scale Synchrotron and Neutron Scattering Data on AWS}
-\subtitle{-Subtitle-}
+\subtitle{Benchmarking HDF5/HSDS, Zarr, TileDB, and ROOT/RNTuple for Partial Retrieval and Whole-Dataset Sequential Sweeps}
 
-\EnglishKeywords{Synchrotron data; Neutron scattering; Cloud storage; AWS; HDF5; Zarr; TileDB; ROOT; Parquet; Scientific workflows; Compression;}
+% \alttitle{Från experiment till insikt: En jämförande studie av lagringsmetoder för storskaliga synkrotron- och neutronstrålningsdata på AWS}
+% \altsubtitle{-Undertitle-}
+
+\EnglishKeywords{Synchrotron; Neutron scattering; Object storage; AWS S3; EC2; CloudWatch; Cloud-native; HDF5; HSDS; Zarr; TileDB; ROOT; RNTuple; Parquet; Partial retrieval; Random reads; Full scans; Chunking; Fragments; Metadata; Compression; zstd; lz4; gzip; Latency; Throughput; Request cost; Decision matrix; Scientific data management; Benchmarking;}
+% \SwedishKeywords{Synkrotrondata; Neutronspridning; Molnlagring; AWS; HDFfive; Zarr; TileDB; ROOT; Parquet; Vetenskapliga arbetsflöden; Komprimering;}
+
 
 \presentationDateAndTimeISO{2022-03-15 13:00}
 \presentationLanguage{eng}
@@ -294,8 +299,11 @@ eng
 
 
 \begin{scontents}[store-env=abstracts,print-env=true]
-Abstract
+Modern synchrotron and neutron beamlines stream at gigabytes per second, turning single experiments into multi-terabyte datasets and exposing latency limits of parallel file systems. This thesis evaluates which cloud-native storage on AWS S3 minimizes slice-level latency while preserving scan throughput and cost control. Four back ends (HDF5 via HSDS, Zarr v3, TileDB, ROOT/RNTuple) and three codecs (gzip, LZ4, zstd) are benchmarked on a 20~GiB, $\sim$1{,}300-frame detector stack under two workloads, random single-frame reads and full sequential scans. Client timings are analyzed on the log scale with dependence-robust confidence intervals, where S3 request counts and stored size provide context.
 
+Results are descriptive and session-conditional. For interactive slices, Zarr is fastest with zstd (GM $\approx$155~ms) and with LZ4, where TileDB wins with gzip. For full scans, TileDB delivers 2.2–3.2$\times$ higher throughput than Zarr across codecs (e.g., zstd $\approx$1.06~GiB/s for 20~GiB). ROOT is slow for frame-random reads despite a few GETs, indicating single-object paging and decode overheads. HDF5/HSDS trails on slice latency and scan throughput; with LZ4, it stored 19.17~GiB versus Zarr 10.40~GiB for the same payload.
+
+The contribution is a reproducible AWS-native method and a decision matrix: choose Zarr+zstd when slice latency dominates and choose TileDB+zstd/LZ4 when throughput dominates.
 \end{scontents}
 
 
@@ -304,10 +312,11 @@ Abstract
 \InsertKeywords{english}
 \end{scontents}
 
-\subsection*{Nyckelord}
-\begin{scontents}[store-env=keywords,print-env=true]
-\InsertKeywords{swedish}
-\end{scontents}
+% \subsection*{Nyckelord}
+% \begin{scontents}[store-env=keywords,print-env=true]
+% \InsertKeywords{swedish}
+% \end{scontents}
+
 \end{abstract}
 
 \cleardoublepage
