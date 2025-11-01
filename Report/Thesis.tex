@@ -516,7 +516,7 @@ First, this chapter will survey how modern beamlines generate and consume data, 
 
 \section{Scientific Context and Workflows}
 \label{sec:scientific-context-workflows}
-% TODO
+Modern beamlines generate multi–GiB/s data streams and require selective, near-real-time inspection during beamtime. This section sets the scientific scene, outlines facility and workflow mechanics, and defines the access patterns that motivate partial retrieval.
 
 \subsection{Scientific-Data Context}
 \label{sec:scientific-data-context}
@@ -659,7 +659,7 @@ Synchrotron and neutron facilities increasingly push raw detector frames straigh
 
 \section{Storage Foundations: HPC vs Object Stores}
 \label{sec:storage-foundations}
-% TODO
+This section contrasts parallel file systems with cloud object stores to expose core throughput and latency trade-offs. We review how Lustre/GPFS/BeeGFS achieve high sequential I/O and why many-small reads and metadata traffic degrade performance, then summarize \gls{SThree} semantics, costs, and latency.
 
 \subsection{Traditional HPC Storage Paradigms}
 \label{sec:traditional-hpc-storage-paradigms}
@@ -754,7 +754,7 @@ These optimization strategies allow object storage to approach \gls{HPC}-class \
 
 \section{Cloud-Native Models and Compression}
 \label{sec:cloud-native-models-compression}
-% TODO
+This section surveys the cloud-native storage formats evaluated in the study and the lossless codecs they use. We map each format’s data unit to object-store operations and summarize how \texttt{gzip}, \texttt{lz4}, and \texttt{zstd} influence latency, throughput, and cost.
 
 \subsection{Cloud-Native Storage Models}
 \label{sec:cloud-native-storage-models}
@@ -957,24 +957,38 @@ The preceding background underscores how accelerating detector output and evolvi
 \label{ch:methods}
 This chapter presents the methodology to guide the benchmark study, beginning with an iterative workflow that encompasses planning, execution, analysis, and synthesis of results within a design-science framework. The experiment leverages provisioned \gls{AWS} infrastructure and synthetic datasets that mirror beamline workloads, exercising small-slice and full-scan access patterns to stress latency and throughput. A rigorous data-collection pipeline captures wall-clock time and \gls{SThree} metrics (GetRequestsSum, BytesDownloadedSum, FirstByteLatencyP95/Average, TotalRequestLatencyP95/Average), with five warm-up runs and 50 timed repetitions per case trials, ensuring reliability. Finally, a multi-criteria evaluation framework will determine these measurements into an actionable decision matrix for optimizing cloud-native storage solutions.
 
-\section{Research Process}
+\section{Research Design and Process}
+\label{sec:methods-design-process}
+This section outlines a design science path from idea to evidence, including the plan, execute, analyze, and synthesize. The aim is to build practical artifacts, test them rigorously, and let results guide the next iteration.
+
+\subsection{Research Paradigm}
+\label{sec:researchParadigm}
+The research paradigm for this thesis is grounded in an experimental research approach within the broader context of design science research (\gls{DSR}). Given that this study aims to benchmark and compare multiple cloud-native storage formats (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{RNTuple}) where Parquet was included pilot-only (no timed runs) and compression algorithms (\texttt{gzip}, \texttt{lz4}, \texttt{zstd}) under real-world scenarios, it is critical to adopt a method that highlights systematic evaluation, controlled experimentation, and result-based design. This research aims to perform a comparative analysis of storage and compression techniques and develop actionable guidelines for optimizing cloud-native workflows in the context of data-intensive scientific experiments, particularly in synchrotron and neutron scattering facilities.
+
+The design science research paradigm is particularly suited for this study because it enables the creation and evaluation of artifacts, such as storage and compression systems used for large-scale scattering data in the cloud. Design science emphasizes the building and assessment of solutions to practical problems through the design and development of artifacts. This approach aligns well with the thesis's goal of designing a decision matrix that helps beamline scientists and engineers optimize storage formats and compression techniques in cloud environments, such as \gls{AWS} \gls{SThree}.
+
+Design science research places significant emphasis on both problem-driven and solution-driven research. The study focuses on the challenges researchers and engineers face in handling massive scattering datasets in the problem-driven component. These challenges include the high volume of data produced by modern synchrotron and neutron facilities, rapid, selective data retrieval, and the cost efficiency required for managing large datasets in the cloud. The solution-driven aspect involves implementing and benchmarking various cloud-native storage models and compression algorithms to address these problems effectively.
+
+This research paradigm allows for an iterative experimentation cycle. For each cycle, the findings from one phase can influence the setup of subsequent tests. The decision point "Results Consistent?" reflects this iterative process, where the experimental setup may be adjusted based on preliminary results, ensuring continuous refinement throughout the research.
+
+\subsection{Research Process}
 \label{sec:researchProcess}
 The research process for this thesis follows a structured methodology, as described in the flowchart in Figure \ref{fig:researchprocess}. The research process can be broken down into four main stages: planning the experiment, conducting the experiment, analyzing the data, and discussing the results. Each stage contributes to a comprehensive framework for benchmarking cloud-native storage formats and compression algorithms in \gls{AWS} \gls{SThree}.
 
-\subsection{Step 1: Planning the Experiment}
+\subsubsection{Step 1: Planning the Experiment}
 The planning stage involved several crucial tasks. First, the objectives of the experiment were defined, focusing on the comparison of four timed storage formats (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}/\gls{RNTuple}) with Parquet as a pilot-only artifact (no timed runs) and three compression algorithms (\texttt{gzip}, \texttt{lz4}, \texttt{zstd}) concerning performance, scalability, and compression efficiency for partial retrieval of large-scale scattering data. Subsequently, appropriate datasets were selected for ingestion, using a single \SI{20}{\gibi\byte} detector dataset (\(\sim\)1{,}300 frames) expanded from 80 real seed frames standard in synchrotron and neutron facilities.
 
 Key variables, such as read latency, derived throughput, and request/byte-based outputs, are identified as suitable metrics for benchmarking. As discussed in prior studies, compression algorithms were selected based on their widespread use in scientific workflows and cloud-native environments. This stage also included the decision to utilize \gls{AWS} infrastructure for its flexibility, and scalability.
 
-\subsection{Step 2: Conducting the Experiment}
+\subsubsection{Step 2: Conducting the Experiment}
 The second step of the research process involved executing the experiment. This included setting up Amazon \gls{ECtwo} instances and \gls{SThree} Buckets.
 
 For each format, three datasets were created—one for each codec (\texttt{gzip}, \texttt{lz4}, and \texttt{zstd}). Chunking was fixed per format and held constant across runs. Two access patterns were executed per dataset: full scan of the \SI{20}{\gibi\byte} object and random single-frame reads (\(\sim\)\SI{15.82}{\mebi\byte} per frame). Logged metrics: wall-clock time and \gls{SThree} GetRequestsSum, BytesDownloadedSum, FirstByteLatencyP95/Average, TotalRequestLatencyP95/Average, allowing for post-experiment analysis. A key decision point in this phase ensured that the results were consistent and reliable. If the system detects inconsistencies, the experiment setup is adjusted for potential setup errors or unexpected issues.
 
-\subsection{Step 3: Analyzing the Data}
+\subsubsection{Step 3: Analyzing the Data}
 This step summarizes run-level timings and \gls{SThree} aggregates. Warm-ups are excluded by default, and all successful timed runs are retained. Timings are analyzed on the log scale. For each {format$\times$codec$\times$pattern} cell we report (i) geometric mean (GM) time with dependence-robust 95\% \glspl{CI} via a moving-block bootstrap (MBB; $\ell\in\{4,6,8\}$; $B{=}10{,}000$; we then report the widest \gls{CI} across $\ell$) and (ii) $p_{95}$ latency with the same bootstrap. For full scans, throughput is analyzed on the log scale as the reciprocal of time, with the same bootstrap. Cross-format contrasts within a codec$\times$pattern are presented as GM time \emph{ratios} versus a reference format (zarr) and are labeled \textbf{descriptive, session-conditional}. CloudWatch request counts and latencies are per-session descriptive context (no inference). Compression is reported as the number of stored bytes and the compression ratio. Tail sensitivity recomputes $p_{95}$ with the Harrell–Davis estimator and the extended block grid \(\ell\in\{4,6,8,10\}\).
 
-\subsection{Step 4: Discussing the Results}
+\subsubsection{Step 4: Discussing the Results}
 The last research stage will involve evaluating the study's findings and creating recommendations for beamline scientists and data engineers. The results are thoroughly examined, considering the trade-offs between performance, and compression efficiency when working with the five different storage configurations.
 
 Recommendations on the optimal configuration of storage formats and compression algorithms, tailored to use cases prioritizing either high throughput or low-latency access, are provided. The research will conclude with the formulation of practical guidelines for future investigations into cloud-native storage solutions for data-intensive scientific experiments.
@@ -987,19 +1001,11 @@ Recommendations on the optimal configuration of storage formats and compression 
 \end{figure}
 
 
-\section{Research Paradigm}
-\label{sec:researchParadigm}
-The research paradigm for this thesis is grounded in an experimental research approach within the broader context of design science research (\gls{DSR}). Given that this study aims to benchmark and compare multiple cloud-native storage formats (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{RNTuple}) where Parquet was included pilot-only (no timed runs) and compression algorithms (\texttt{gzip}, \texttt{lz4}, \texttt{zstd}) under real-world scenarios, it is critical to adopt a method that highlights systematic evaluation, controlled experimentation, and result-based design. This research aims to perform a comparative analysis of storage and compression techniques and develop actionable guidelines for optimizing cloud-native workflows in the context of data-intensive scientific experiments, particularly in synchrotron and neutron scattering facilities.
 
-The design science research paradigm is particularly suited for this study because it enables the creation and evaluation of artifacts, such as storage and compression systems used for large-scale scattering data in the cloud. Design science emphasizes the building and assessment of solutions to practical problems through the design and development of artifacts. This approach aligns well with the thesis's goal of designing a decision matrix that helps beamline scientists and engineers optimize storage formats and compression techniques in cloud environments, such as \gls{AWS} \gls{SThree}.
-
-Design science research places significant emphasis on both problem-driven and solution-driven research. The study focuses on the challenges researchers and engineers face in handling massive scattering datasets in the problem-driven component. These challenges include the high volume of data produced by modern synchrotron and neutron facilities, rapid, selective data retrieval, and the cost efficiency required for managing large datasets in the cloud. The solution-driven aspect involves implementing and benchmarking various cloud-native storage models and compression algorithms to address these problems effectively.
-
-This research paradigm allows for an iterative experimentation cycle. For each cycle, the findings from one phase can influence the setup of subsequent tests. The decision point "Results Consistent?" reflects this iterative process, where the experimental setup may be adjusted based on preliminary results, ensuring continuous refinement throughout the research.
-
-\section{Experimental Design and Methodology}
-\label{sec:experimentalDesign}
+\section{Experimental Testbed and Protocols}
+\label{sec:methods-testbed}
 The experimental design for this thesis focuses on evaluating and comparing four timed cloud-native storage formats (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{RNTuple}) where Parquet was treated as pilot-only (no timed runs) when applied to large-scale scattering datasets in \gls{AWS} \gls{SThree}. This section describes the methodologies used to carry out the experiments, including data collection, infrastructure setup, experimental parameters, and performance benchmarking.
+
 
 \subsection{Test Environment and Infrastructure Setup}
 The experiment uses Amazon Web Services (\gls{AWS}) in a cloud-native environment. Specifically, the storage backends were implemented on Amazon \gls{SThree}, and the experimental infrastructure is provisioned using Amazon \gls{ECtwo} instances for data processing and benchmarking. Figure \ref{fig:aws_topology} illustrates the overall cloud testbed, highlighting the data-flow paths and the layers used for performance.
@@ -1012,10 +1018,10 @@ The experiment uses Amazon Web Services (\gls{AWS}) in a cloud-native environmen
 \end{figure}
 
 \subsubsection{Hardware, region, and network controls}
- All runs are executed in a single \gls{AWS} region with the \gls{SThree} bucket co-located. No CloudFront, \gls{SThree} Transfer Acceleration, or cross-region traffic was used. A Gateway VPC endpoint for \gls{SThree} provided private networking. The \gls{AWS} SDK utilized persistent \gls{HTTP} connections with a fixed connection pool, and the default retry policy remained enabled.
+All runs are executed in a single \gls{AWS} region with the \gls{SThree} bucket co-located. No CloudFront, \gls{SThree} Transfer Acceleration, or cross-region traffic was used. A Gateway VPC endpoint for \gls{SThree} provided private networking. The \gls{AWS} SDK utilized persistent \gls{HTTP} connections with a fixed connection pool, and the default retry policy remained enabled.
 
 \subsubsection{Client libraries and access paths}
- Access used \gls{HSDS} via \texttt{h5pyd}, Zarr via \texttt{zarr}+ \texttt{s3fs}, Parquet via \texttt{pyarrow}, TileDB via \texttt{tiledb-py}, and \gls{ROOT}/\gls{RNTuple} via \texttt{uproot}/\gls{ROOT}.
+Access used \gls{HSDS} via \texttt{h5pyd}, Zarr via \texttt{zarr}+ \texttt{s3fs}, Parquet via \texttt{pyarrow}, TileDB via \texttt{tiledb-py}, and \gls{ROOT}/\gls{RNTuple} via \texttt{uproot}/\gls{ROOT}.
 
 \subsection{Data Ingestion and Configuration}
 A single detector dataset of \(\sim\)\SI{20}{\gibi\byte} (\(\sim\)1{,}300 frames) was used. It was derived from 80 real experiment frames and expanded synthetically to the target size using a jitter-and-noise procedure. The first phase computes the number of additional frames needed to reach the target size, then generates the remaining frames in parallel and writes them as \gls{CBF}. For each storage format, three datasets were created—one for each codec (\texttt{gzip}, \texttt{lz4}, and \texttt{zstd}).
@@ -1031,6 +1037,12 @@ In a small-slice access pattern, data retrieval is performed on random single-fr
 
 \subsubsection{Full-Dataset Sequential Scans}
 In this pattern, a sequential read of the entire \SI{20}{\gibi\byte} dataset for each format–codec combination. This pattern stresses the storage system's bandwidth capacity, requiring high throughput to process large volumes of data efficiently.
+
+
+
+\section{Metrics, Statistics, and Scoring}
+\label{sec:methods-metrics}
+This section turns measurements into evidence by defining estimands, quantifying uncertainty, and scoring alternatives so the decision matrix reflects speed, reliability, and efficiency.
 
 \subsection{Performance Metrics and Evaluation Criteria}
 We evaluate each format with:
@@ -1052,9 +1064,7 @@ For downstream selection, we compute normalized 0–100 scores per codec\(\times
     \item \textbf{Full-scan weights:} throughput 0.60 (higher), GETs/GiB 0.15 (lower), stored GiB 0.15 (lower), \(p_{95}\) 0.10 (lower).
 \end{itemize}
 
-League tables rare rankedby the primary objective (slice: GM latency; full: throughput) ,with tie-breakers matching the Results section.
-
-
+League tables are rankedby the primary objective (slice: GM latency; full: throughput), with tie-breakers matching the Results section.
 
 \subsection{Statistical methods}
 Timings are positive and multiplicative; we therefore analyze \(\ln(\text{time})\) per cell (format\(\times\)codec\(\times\)pattern). 
@@ -1070,27 +1080,32 @@ Within each codec\(\times\)pattern, cross-format contrasts are presented as GM t
 
 CloudWatch metrics (\texttt{GetRequestsSum}, \texttt{BytesDownloadedSum}, \texttt{FirstByteLatency\{Avg,p95\}}, \texttt{TotalRequestLatency\{Avg,p95\}}) are recorded per \emph{session} and used descriptively only. We do not average percentiles across sessions or attach inferential \glspl{CI}. Warm-ups are excluded by design; \(n{=}50\) timed runs per cell are analyzed.
 
-
 \subsection{Uncertainty and confounders in AWS}
 \Gls{AWS} introduces time-varying latency and variance that cannot be fully controlled. We mitigated this issue by using a single region with the \gls{SThree} bucket co-located, a Gateway VPC endpoint, fixed client settings, five warm-ups per session, and a randomized within-session order (with a fixed seed). Formats were executed in \emph{separate sessions} with no cross-format overlap. Consequently, cross-format contrasts are \textbf{descriptive, session-conditional}. Inference is limited to within-cell estimands (GM, \gls{Pninetyfive}, throughput) with dependence-robust bootstrap \glspl{CI}. CloudWatch aggregates are per session and are reported descriptively (no inference, no cross-session averaging of percentiles).
 
-\subsubsection*{Deviation: Parquet pilot-only}
+\paragraph{Deviation: Parquet pilot-only}
 Parquet was piloted but excluded from the timed results due to its single-object layout, which had a large metadata open time and object growth. The pilot and rationale are documented in Chapter \ref{ch:whatYouDid}, where Parquet remains as a qualitative discussion only. Timed comparisons cover four formats: \gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{RNTuple}.
 
 
-\section{Data Collection}
+
+\section{Data Collection and Reproducibility}
+\label{sec:methods-data-reprod}
+This section makes the study reproducible by specifying data sources, sampling, instrumentation, and release artifacts so anyone can rerun the experiments and verify the results.
+
+\subsection{Data Collection}
 \label{sec:dataCollection}
 The data‐collection plan for this thesis centers on a single dataset built from 80 real seed frames and synthetically expanded to \(\sim\)\SI{20}{\gibi\byte} (\(\sim\)1{,}300 frames). These frames statistically replicate the size, structure, and access patterns of real synchrotron and neutron experiments. Generating the datasets on demand based on a set of a few real frames (rather than distributing a whole raw beamline dataset) avoids licensing constraints and guarantees that every experiment can be reproduced bit-for-bit.
 
-\subsection{Data Sources}
+
+\subsubsection{Data Sources}
 Detector stack ($\sim$\SI{20}{\gibi\byte}): $\sim$1{,}300 \gls{CBF} frames at 16-bit depth. Eighty real frames from one experiment serve as seeds. A jitter–noise routine perturbs intensity, offset, spatial shifts, and noise to synthesize the remaining frames. Generation runs in two phases: (i) compute how many frames are required to reach the target size; (ii) synthesize them in parallel and write \gls{CBF} files. Seed paths and bit depth are parameterized for reproducibility.
 
 
-\subsection{Sampling Strategy}
+\subsubsection{Sampling Strategy}
 Two patterns were executed on the same dataset. For the slice workload, each run reads one randomly selected frame (\(\sim\)\SI{15.82}{\mebi\byte}); no cross-format chunk-alignment was enforced. For the scanning workload, the entire \SI{20}{\gibi\byte} dataset is read sequentially. Within-session run order was randomized with a fixed seed, and no cross-format concurrency occurred.
 
 
-\subsection{Instrumentation and Metric Logging}
+\subsubsection{Instrumentation and Metric Logging}
 Full-scan time is measured from the first GET dispatch to the last byte received, and slice-read time is per selected frame. Throughput equals bytes divided by time. We therefore collect the following data:
 
 \begin{enumerate}
@@ -1100,7 +1115,7 @@ Full-scan time is measured from the first GET dispatch to the last byte received
 \end{enumerate}
 
 
-\subsection{Validity and Reliability Measures}
+\subsubsection{Validity and Reliability Measures}
 \begin{itemize}
   \item \textbf{Warm-up runs}: The first five iterations are discarded.
   \item \textbf{Replication}: every \{\emph{format, codec, pattern}\} tuple is executed with 5 warm-ups then $n=50$ timed runs.
@@ -1109,7 +1124,7 @@ Full-scan time is measured from the first GET dispatch to the last byte received
 No explicit OS cache flushes were performed between runs. Five warm-ups amortize cold-start effects (DNS, TLS, \gls{TCP}, metadata caches).
 
 
-\subsection{Reproducibility and availability}
+\subsubsection{Reproducibility and availability}
 Random seeds are fixed and logged with per-run timers, and CloudWatch aggregates are saved as \gls{JSON} with run IDs. The code and notebooks will be released with a small public data subset sufficient to reproduce representative results via GitHub. Object paths, formats, and codec settings are documented to enable independent replication.
 
 

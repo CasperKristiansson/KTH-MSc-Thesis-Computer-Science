@@ -1,4 +1,7 @@
 1. [ ] Remove many subsections and flatten the document; maybe you could aim for 3–4 major sections per chapter instead and use subsubsections more sparingly, this simply stretches your document horizontally without creating structure and content. The overall appearance should resemble a book or a research paper.
+
+- While I reduced the major sections tag, it did result in more sections and using more \paragraph{} tags. Is this acceptable? Or should I simply try to merging more sections into each other?
+
 2. [ ] Reorganize experiments by research questions (RQs) with explicit subsections mapping to each RQ, rather than scattering results across format–codec combinations.
 3. [ ] Remove scientifically irrelevant configuration listings from the main text.
 4. [ ] Tighten prose: many sentences repeat information or contain some obvious points.
