@@ -377,9 +377,8 @@ Modern synchrotron and neutron experiments stream multi–GiB/s of multidimensio
 
 A family of cloud-native layouts has emerged to address this: chunked arrays (Zarr), dense/sparse arrays with immutable fragments (TileDB), and tree/column layouts (\gls{ROOT}/\gls{RNTuple}). Each makes different trade-offs in latency, throughput, compression, CPU cost, and request intensity. Despite numerous point studies, a consolidated, side-by-side evaluation of realistic scattering data on \gls{AWS} is lacking.
 
-\emph{How do four cloud storage backends—\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{RNTuple}—compare on \gls{AWS} for partial-retrieval workloads on a large scattering dataset under common compression (\texttt{gzip}, \texttt{lz4}, \texttt{zstd})?}
 
-\section{Background}
+\section{Motivation and Context}
 As synchrotron and neutron facilities have evolved, detector technologies and beamline instrumentation have driven data generation rates from megabytes to multiple gigabytes per second. Modern experiments frequently combine multiple detectors and scan axes, such as energy, angle, or polarization. This results in multidimensional datasets that can reach terabyte-scale within minutes, making traditional `download-then-analyze` workflows impossible during beam time \cite{celcer2018gigafrost}.
 
 \subsection{Limitations of Traditional HPC Storage}
@@ -392,8 +391,13 @@ Researchers have introduced a new generation of cloud-native data models to addr
 
 Each approach offers distinct trade‐offs in latency, throughput, compression efficiency, \gls{CPU} overhead, and cost. Although individual formats have been benchmarked in isolation or within specific domains, there is no comprehensive, side‐by‐side evaluation of realistic, terabyte‐scale scattering datasets in \gls{AWS}. Addressing this gap will inform both beamline scientists, seeking responsive, cost‐effective data access, and data‐intensive computing engineers, designing next‐generation, cloud‐native scientific platforms.
 
+\subsection{Research Question}
+\emph{How do four cloud storage backends—\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{RNTuple}—compare on \gls{AWS} for partial-retrieval workloads on a large scattering dataset under common compression (\texttt{gzip}, \texttt{lz4}, \texttt{zstd})?}
 
-\section{Problem}
+\section{Problem, Purpose, and Goals}
+This section defines the problem, states the purpose, and lists the goals. It sets the basis for the comparisons used later in the thesis.
+
+\subsection{Problem}
 \label{sec:problem}
 Handling large-scale scattering datasets on \gls{AWS} \gls{SThree} reveals several limitations in current data platforms. First, partial reads of beamline slices, such as retrieving a single detector channel or angular data segment, can result in high latency due to the need to perform hundreds, if not thousands, of GET operations and metadata lookups, leading to delayed experimental feedback. Secondly, existing prior prototype evaluations have focused on moderate‐scale workloads. There is limited empirical data on true terabyte-scale (1~TB+) scattering experiments. This thesis benchmarks each format on a single \SI{20}{\gibi\byte} detector dataset (\(\sim\)1{,}300 frames) to uncover performance, request behavior, and data ingestion considerations. Thirdly, the interaction between storage formats and compression algorithms (e.g., \texttt{zstd}, \texttt{lz4}, \texttt{gzip}) has not been systematically evaluated, making it unclear which format codec combinations best optimize latency and throughput for large-scale \gls{SThree}-based workflows.
 
@@ -413,17 +417,12 @@ Generalizing beyond the narrow industrial case leads to several key research que
 
 These questions are directly relevant to ongoing research in \gls{HPC} and data-intensive computing, where cloud adoption continues to challenge traditional storage paradigms.
 
-
-
-
-\section{Purpose}
+\subsection{Purpose}
 The purpose of this thesis is twofold. First, this study seeks to advance the scientific and engineering understanding of cloud‐native storage paradigms within the data‐intensive computing community. Drawing on design–science research methodologies \cite{hevner2004design}, it will experimentally quantify the trade‐offs among compression efficiency (\texttt{zstd}, \texttt{lz4}, \texttt{gzip}), performance of retrieval, and economic metrics (request fees, egress charges) for a \(\sim\)\SI{20}{\gibi\byte} multidimensional detector dataset, with scaling implications. The decision matrix and best‐practice recommendations will inform beamline scientists seeking rapid feedback during experiments and guide platform architects in building next‐generation, cloud‐optimized scientific workflows.
 
 Secondly, it aims to provide Scatterin AB with a practical, evidence-based framework to optimize its cloud-based data platform for large‐scale synchrotron and neutron scattering experiments. By implementing and benchmarking five distinct storage approaches (\gls{HDFfive}/\gls{HSDS}, Zarr, Parquet, TileDB, \gls{ROOT}/\gls{RNTuple}) on \gls{AWS} \gls{SThree}, this work will deliver concrete guidance on how to minimize latency for partial‐read use cases, maximize throughput, and control pay‐as‐you‐go costs under varying access patterns.
 
-
-
-\section{Goals}
+\subsection{Goals}
 This paper aims to develop a comprehensive, experimentally validated decision framework that guides the selection and configuration of cloud‐native storage solutions for large‐scale \gls{AWS} synchrotron and neutron scattering datasets. To achieve this, the following sub‐goals are defined:
 
 \begin{enumerate}
@@ -447,11 +446,10 @@ This paper aims to develop a comprehensive, experimentally validated decision fr
   \end{itemize}
 \end{enumerate}
 
+\section{Methodology and Scope}
+This section outlines the benchmarking methodology and the study scope. It specifies datasets, workloads, metrics, and the delimitations for reproducibility.
 
-
-
-\section{Research Methodology}
-
+\subsection{Research Methodology}
 We use an \emph{experimental benchmarking} approach within a design–science framework to evaluate four timed storage backends on \gls{AWS} (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}/\gls{RNTuple}). Parquet is included \emph{pilot-only} (no timed runs).
 
 \begin{enumerate}
@@ -466,10 +464,9 @@ We use an \emph{experimental benchmarking} approach within a design–science fr
   compression (stored bytes, ratio), request intensity (GETs/GiB), and decision-matrix summaries for selection. Code, seeds, and a small data subset are published for reproduction.
 \end{enumerate}
 
-\section{Delimitations}
-
-This thesis focuses exclusively on cloud-native, object-store–based workflows within the \gls{AWS} ecosystem. Specifically, four storage backends are \emph{timed} (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}/\gls{RNTuple}) where Parquet was \emph{pilot-only}. Benchmarks use one dense 3D detector dataset (∼20 GiB, 
-∼1{,}300 frames). The following boundaries apply:
+\subsection{Delimitations}
+This thesis focuses exclusively on cloud-native, object-store–based workflows within the \gls{AWS} ecosystem. Specifically, four storage backends are \emph{timed} (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}/\gls{RNTuple}) where Parquet was \emph{pilot-only}. Benchmarks use one dense 3D detector dataset ($\sim$20 GiB, 
+$\sim$1{,}300 frames). The following boundaries apply:
 
 \begin{itemize}
         \item \textbf{Cloud provider scope:} Only \gls{AWS} services (\gls{SThree}, \gls{ECtwo}) are considered. No experiments involve Azure, Google Cloud, or on-premises \gls{HPC} clusters.
@@ -481,9 +478,7 @@ This thesis focuses exclusively on cloud-native, object-store–based workflows 
 
 These delimitations ensure a focused, reproducible comparison of core performance and cost trade-offs for large-scale scientific data storage in \gls{AWS}.
 
-
-
-\section{Structure of the thesis}
+\section{Structure of the Thesis}
 
 This thesis is organized into seven main chapters, followed by appendices:
 
