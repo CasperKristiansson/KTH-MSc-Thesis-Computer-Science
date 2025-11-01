@@ -503,13 +503,6 @@ This thesis is organized into seven main chapters, followed by appendices:
 
 
 
-
-
-
-
-
-
-
 \cleardoublepage
 \chapter{Background}
 \label{ch:background}
@@ -519,12 +512,15 @@ First, this chapter will survey how modern beamlines generate and consume data, 
 
 
 
-\section{Scientific-Data Context}
+
+
+\section{Scientific Context and Workflows}
+\label{sec:scientific-context-workflows}
+% TODO
+
+\subsection{Scientific-Data Context}
 \label{sec:scientific-data-context}
 Synchrotron light sources and spallation/continuous‐beam neutron facilities have evolved into “mega‐pixel movies“ of matter that stream raw images at gigabytes per second speeds. This section sets the stage for the storage challenge by outlining how modern beamlines generate multi-\si{\tera\byte\per\day} data, describing the acquisition hardware that drives these rates, and giving a concrete, industry example that shows why fast, selective read-back of that data matters in practice.
-
-\subsection{Synchrotron and Neutron Facilities}
-\label{sec:synchrotron-neutron-facilities}
 
 Giant accelerator-based light and neutron sources act as kilometer-scale microscopes that let us “see through’’ centimeters of steel, polymers, or living tissue at kilohertz frame rates. By storing ultra-low-emittance electrons (or moderating proton-driven neutrons), the machines deliver beams that are \(\sim10^{10}\!-\!10^{12}\) times brighter than laboratory instruments, unlocking 3-D imaging and diffraction of virtually any material \cite{eriksson2014diffraction}. Each pulse is immediately converted into multi-megapixel images by high-speed area detectors, hybrid photon counters, \gls{CMOS} cameras, or time-pix neutron imagers. Capturing these data allows a single experiment to exceed \SI{10}{\giga\byte\per\second} of raw data.
 
@@ -620,267 +616,7 @@ Shanghai Synchrotron Radiation Facility pushes this concept further: automated p
 
 These workflow pressures dictate the performance metrics used later in this thesis and motivate the evaluation of cloud-native, chunk-addressable storage formats that promise millisecond-scale partial retrieval.
 
-
-\section{Traditional HPC Storage Paradigms}
-\label{sec:traditional-hpc-storage-paradigms}
-For the past decades, scientific supercomputers have relied on \emph{parallel file systems}, where Lustre and IBM’s \gls{GPFS} has stood out. These systems have allowed pushing checkpoint files and simulation outputs across hundreds of disks at tens of \si{\giga\byte\per\second} aggregate bandwidth \cite{schwan2003lustre,schmuck2002gpfs}. By stripping data over many objects, storage targets and coordinating access via distributed locks became ideally matched workloads that wrote multi-gigabyte files in large, contiguous chunks.
-
-Those design assumptions are strained when the I/O profile flips from “few huge checkpoints” to many tiny look-ups and interactive slices. A study from the Summit and Cori supercomputers shows that small transfers (<\SI{1}{\mega\byte}) still account for the overwhelming majority of read and write calls at both the file and process levels. At the same time, in large-scale \gls{HPC} deployments, metadata operations alone can account for a considerable part of the file-system requests, often saturating the metadata servers and emerging as a primary scalability bottleneck \cite{bez2022access}. As beamlines, AI workflows, and remote collaborators pile on, the gap between traditional parallel-file-system design and real-time, small-slice demands only widens.
-
-The remainder of this section revisits how parallel file systems achieve their impressive bulk throughput and why those mechanisms falter under modern, latency-sensitive access patterns. Thus, it motivates the cloud-native alternatives examined later in this chapter.
-
-
-\subsection{Parallel File Systems (Lustre, GPFS, BeeGFS)}
-\label{sec:parallel-file-systems}
-
-Lustre, IBM \gls{GPFS} (now Spectrum Scale) \cite{schmuck2002gpfs}, and \gls{BeeGFS} have dominated supercomputing storage for over two decades, consistently delivering hundreds of gigabytes per second of throughput. By striping data across hundreds of disks and coordinating access with distributed locks, these systems excelled at writing multi-gigabyte files sequentially. The same system, however, reveals hidden costs once workloads pivot to small, random reads or remote, \gls{WAN}-mounted access.
-
-\subsubsection{Architecture and striping model}
-Classic \gls{HPC} file systems split responsibility between \emph{metadata servers} (\gls{MDS}) and many \emph{object/data servers} (\gls{OSS} in Lustre, \gls{NSD} servers in \gls{GPFS}, storage targets in \gls{BeeGFS}). Files are \emph{striped} across a few to hundreds of disks in multi-megabyte chunks. Doing this allows a single sequential read or write to optimize the bandwidth of an entire system. \gls{PFS} uses token-based distributed locking to keep \gls{POSIX} consistency on a shared-disk \gls{SAN} \cite{schmuck2002gpfs}. \gls{BeeGFS} achieves similar semantics over Ethernet by separating data and metadata and scaling the service.
-
-\subsubsection{Bulk Sequential I/O: High Throughput on Parallel File Systems}
-Parallel file systems shine whenever an application issues long, contiguous transfers, checkpoints/restarts, volumes, and snapshots. NASA’s \emph{Pleiades} cluster still sustains, \(\sim\!1\)\,\si{\giga\byte\per\second} from disk for a single 512-rank IOR stream and bursts to \SI{9}{\giga\byte\per\second} when the same data are serviced out of the page cache \cite{6507507}. Modern flagships go far beyond that, where Los Alamos’ \emph{Trinity} Sonexion Lustre tops out near \SI{1.6}{\tera\byte\per\second} for a 78 PB pool \cite{osti_1367056}. Even a single E1000 \gls{OSS} inside NERSC’s \emph{Perlmutter} can saturate \SI{41}{\giga\byte\per\second} read and \SI{27}{\giga\byte\per\second} write to one \gls{OST} \cite{lockwood2024architecture}. These traits explain why parallel file systems remain the choice for bulk sequential scans and multi‐terabyte tomography stacks.
-
-Lustre separates responsibilities between dedicated \emph{metadata servers} (\gls{MDS}) that keep inodes and directory state on one or more \emph{metadata targets} (MDTs) and multiple \emph{object‑storage servers} (\gls{OSS}) that deliver the bulk data stored on \emph{object‑storage targets} (\gls{OST}s).  Files are \emph{striped} across a configurable number of \gls{OST}s (stripe count) with a tunable stripe width so a single sequential transfer can engage hundreds of disks in parallel. The design of flagship systems such as Oak Ridge’s Spider‐3 sustains more than \SI{1}{\tera\byte\per\second} aggregate read bandwidth \cite{braam2019lustre, oral2013olcf}.
-
-IBM \gls{GPFS} employs a distributed \emph{token‑based locking} protocol to coordinate metadata and data updates across all nodes, persisting mutations in replicated journals so that failed servers can recover without full replays. This mechanism provides stronger resilience and copes slightly better with so‑called metadata “storms” than Lustre, though at the cost of a more complex recovery state \cite{schmuck2002gpfs}.
-
-\subsubsection{Weaknesses for many-small reads}
-Parallel file systems raise aggregate bandwidth by slicing every file across many Object Storage Targets (\gls{OST}s/\gls{NSD}s). When workloads flip from multi-GB checkpoints to thousands of $4$–$64$\,\si{\kilo\byte} reads the same striping logic backfires when workloads issue thousands of sub-megabyte reads. Intel’s LUG-2018 “Small File I/O” report shows that files smaller than the \gls{DoM} threshold generate disproportionately more RPCs per MiB, leading to significantly reduced bandwidth on multi-\gls{OST} Lustre systems \cite{gmitter2018smallfile}.
-
-Even in a namespace-sharded file system like Lustre’s \gls{DNE}, a camera‐style “one-file-per-frame” workflow still concentrates its create/unlink traffic on one hot directory subtree. Production traces from 60 \gls{HPC} systems show that \SI{64}{\percent} of files are smaller than \SI{64}{\kilo\byte}. When a system gets flushed with thousands of tiny \gls{HDFfive} or JPEG files, the operations on the metadata will increase exponentially. Based on these 60 different \gls{HPC} systems, research shows that metadata operations can account for up to \SI{80}{\percent} of total file system operations \cite{9768784}.
-
-\Gls{HPC} administrators often impose per-user inode quotas because millions of tiny files overload Meta Target Devices \cite{carns2009small}. Therefore, monolithic containers such as \gls{HDFfive} can be preferred on-prem, whereas object stores favor chunk-per-object layouts (e.g., Zarr).
-
-\subsection{POSIX-Centric Scientific Formats}
-\label{sec:posix-centric-formats}
-Most \gls{HPC} codes write \emph{monolithic containers}, a single \gls{POSIX}-seekable file that includes raw arrays and metadata. \gls{HDFfive} popularised this approach, while NeXus adopts the same file structure with beamline-specific naming conventions. The design is perfect for bulk, sequential, local parallel file systems scans. However, the need to search through super-blocks and B-trees for every small slice makes it poorly suited to cloud object stores and interactive, many-small-read workflows, motivating the chunk-per-object formats.
-
-\subsubsection{Monolithic container philosophy}
-The Hierarchical Data Format~5 (\gls{HDFfive}) stores every dataset, chunk, and attribute in a single byte‐addressable file whose internal super-block, B-trees, and heap tables, with the help of \gls{POSIX}, seek for navigation \cite{howison2010tuning}. Nexus, the de facto standard at many photon and neutron sources, layers a domain system on top of the same \gls{HDFfive} container, retaining identical I/O semantics while prescribing beamline-specific group names and units \cite{konnecke2015nexus}. This “all-in-one” layout simplifies the file management, but couples performance to the underlying file-system block size and how well metadata caches handle random seeks.
-
-\subsubsection{Serial and MPIIO access}
-Out-of-the-box \gls{HDFfive} (used via h5py, MATLAB, etc.) issues are independent of \gls{POSIX}. Each rank that samples a \SIrange{4}{8}{\mega\byte} slice generates dozens of tiny, <\SI{64}{\kilo\byte} reads, leading to many metadata lookups. Performance tuning guides from the HDF Group note that such traffic can result in many minor accesses and that parallel file systems do not do well with small I/O \cite{Breitenfeld2022Parallel}. Parallel \gls{HDFfive} wraps the same container in \gls{MPIIO} so that all processes participate collectively. Doing so when users provide non-contiguous selections, \gls{ROMIO} gathers them into a single larger request (data sieving and collective buffering).
-
-Even when using collective metadata I/O, each \gls{HDFfive} read still must fetch the superblock and descriptive metadata before reading the raw data. In the CCGrid’21 benchmarks on Summit and Cori, metadata I/O alone accounted for as much as ~58\% of the total read time \cite{9499420}. \gls{HDFfive}/NeXus excels for large, sequential scans and single-node post-processing. However, their single-file, \gls{POSIX} heritage makes interactive, many-small-read workloads vulnerable to metadata hot spots. These limitations motivate the chunk-per-object designs of Zarr, Parquet, and the other cloud-native formats evaluated in this report.
-
-
-\section{Cloud Object Storage Fundamentals}
-\label{sec:cloud-object-storage-fundamentals}
-Cloud object stores, presented by Amazon \gls{SThree}, sit at the core of the storage formats benchmarked in this thesis. \gls{SThree}’s defining features are a flat, immutable-object namespace, global durability, and a pay-as-you-go pricing model. Amazon \gls{SThree}, therefore, removes local capacity provisioning constraints, but the system does introduce \gls{HTTP}S-level latency and per-request charges that do not exist in local \gls{NVMe} or parallel file systems. Grasping these trade-offs is therefore vital before interpreting the performance results.
-
-\subsection{Architectural model}
-Amazon Simple Storage Service (\gls{SThree}) organizes data in \emph{buckets} that share a \emph{flat global namespace}, and directory hierarchies are only a key-naming convention. Objects are \emph{immutable}, meaning any modification creates a new version of that object/file. Since December 2020, \gls{SThree} guarantees \emph{strong read-after-write consistency} for all operations, removing the race conditions that earlier eventual-consistency semantics introduced \cite{AWSConsistency2020}.
-
-
-\subsection{Request classes and cost drivers}
-Every interaction with \gls{SThree} is an \gls{HTTP}S \gls{API} call in one of four core request classes. Each call is billable in addition to storage (\si{GB}\,month) and data-egress charges \cite{AWSS3Pricing2025}.
-
-\begin{table}[ht]
-  \centering
-  \begin{tabular}{@{}p{3cm}p{2cm}p{6cm}@{}}
-    \toprule
-    \textbf{Class}    & & \textbf{Typical purpose} \\
-    \midrule
-    PUT/POST/COPY     & & Create or modify objects \\
-    GET               & & Retrieve object data (full or ranged) \\
-    LIST              & & Enumerate keys/prefixes \\
-    HEAD              & & Fetch metadata, tags, ACLs \\
-    \bottomrule
-  \end{tabular}
-  \caption{Core \gls{SThree} request classes}
-  \label{tab:s3-requests}
-\end{table}
-
-\subsection{Latency characteristics}
-Each request traverses a multi-AZ control plane and TLS handshake, giving time-to-first-byte latencies of \SIrange{100}{200}{\milli\second} for small objects \cite{AWSS3Performance2024}. In comparison, on-premises \gls{NVMe} RAID or parallel file systems typically deliver sub-millisecond metadata look-ups, and even \gls{AWS}’s own \gls{EFS} \gls{SSD} class reports $\approx\SI{0.25}{\milli\second}$ latencies \cite{AWSEFSLatency}. This gap explains why typical ported \gls{HPC} workloads feel slow and perform poorly on \gls{SThree}. Figure \ref{fig:latency-ladder} visualizes the comparison on a log scale, showing how the jump from \SI{0.1}{\milli\second} \gls{NVMe} reads \cite{haas2023modern} to \SI{0.25}{\milli\second} \gls{EFS} reads \cite{aws_efs_latency} and finally to \SIrange{100}{200}{\milli\second} \gls{SThree} requests \cite{aws_s3_latency} forces any cloud-native workflow to be able to handle round-trip cost through chunking, caching, and request batching.
-
-\begin{figure}[htbp]
-  \centering
-  \includegraphics[width=0.90\linewidth]{figures/latency_ladder.pdf}
-  \caption{Median time-to-first-byte read across common storage
-           tiers, plotted on a logarithmic axis. The three-order-of-magnitude gap between local NVMe and \gls{SThree} storage motivates the use of chunking and request strategies.}
-  \label{fig:latency-ladder}
-\end{figure}
-
-\subsection{Performance-optimisation layers}
-\begin{itemize}
-  \item \textbf{Multipart uploads}: split objects ($\ge\SI{100}{\mega\byte}$) into \SIrange{5}{5000}{\mega\byte} parts that upload in parallel and resume after failure \cite{AWSS3MultipartDoc}.
-  \item \textbf{Range GETs}: request only required byte spans, ideally aligned with the same \SIrange{8}{16}{\mega\byte} boundaries used during uploads \cite{AWSS3RangeGET}.
-  \item \textbf{Prefix parallelism}: \gls{SThree} scales to at least \num{5500} GET/HEAD and \num{3500} write requests per \emph{prefix}. Optimally sharding key lifts can aggregate throughput to multi \si{TB/s} \cite{AWSS3Performance2024}.
-\end{itemize}
-
-These optimization strategies allow object storage to approach \gls{HPC}-class \emph{throughput}. However, the inherent network-centric part of the system keeps \emph{latency} for small, random slice reads higher than local or \gls{NVMe}-backed file systems. This constraint motivates the chunking and indexing strategies evaluated in this report.
-
-
-
-\section{Cloud-Native Storage Models}
-\label{sec:cloud-native-storage-models}
-Cloud object stores such as Amazon \gls{SThree}, Azure Blob, and Google Cloud Storage deliver effectively unlimited capacity and global accessibility. But they do not come without many drawbacks, such as request latency, immutable‐object semantics, and per‐request billing. Some drawbacks clash with the low‐latency, mutable-file assumptions baked into traditional \gls{HPC} formats \cite{durbin2020cloud}. To exploit cloud elasticity without prohibitive slice-read costs, a new generation of \emph{cloud-native storage models} has emerged, each rethinking how scientific arrays or tables are partitioned, compressed, and addressed in an object store.
-
-The remainder of this section surveys five representative approaches: \gls{HDFfive} served through the Highly Scalable Data Service (\gls{HSDS}), Zarr's chunk-per-object layout, Apache Parquet's columnar row-group design, TileDB's dense/sparse array storage, and \gls{CERN}'s page-oriented \gls{ROOT}/\gls{RNTuple} format. Each part highlights how each approach maps its internal data units onto cloud objects, what compression and indexing strategies it employs, and which trade-offs in latency and throughput.
-
-
-\begin{table}[htbp]
-\centering
-\begin{threeparttable}
-\caption{Storage granularity, object‐count, and dominant pain‐point for each candidate format. Figures assume a 1~TB tomography volume stored with 16~MiB scientific chunks (all but Parquet) or 256~MiB Parquet row‐groups.}
-\label{tab:format-granularity}
-\footnotesize
-\begin{tabularx}{\linewidth}{@{}l l c c@{}}
-\toprule
-\textbf{Format} & \textbf{Storage type} & \textbf{Objects$^\dagger$} & \textbf{Key pain‐point} \\
-\midrule
-\gls{HDFfive} (single file)      & File‐per‐dataset                               & $1$                      & \tnote{a} \\
-\gls{HDFfive} + \gls{HSDS}             & Chunk‐per‐object                               & $\approx 65{,}536$       & \tnote{b} \\
-Zarr v3                 & Chunk‐per‐object                               & $\approx 65{,}536$       & \tnote{c} \\
-Parquet                 & Row‐group object (256~MiB)                     & $4{,}096$                & \tnote{d} \\
-TileDB                  & Fragment dir with per‐attribute tile files     & $\approx 4^\ddagger$     & \tnote{e} \\
-\gls{ROOT} / \gls{RNTuple}          & Single file with clustered pages               & $1$                     & \tnote{f} \\
-\bottomrule
-\end{tabularx}
-\begin{tablenotes}[flushleft]\footnotesize
-\item[$\dagger$] Approximate count of \gls{POSIX} inodes or \gls{SThree} objects, computed from $1\,\mathrm{TB}$ and the stated granularity.
-\item[$\ddagger$] TileDB stores many tiles per file; object count scales with fragments and attributes. The figure shown assumes one write fragment and one fixed‐size attribute (files: array schema, fragment metadata, one or two per‐attribute data files) \cite{TileDBDataLayout}.
-\item[a] Monolithic file on \gls{SThree} yields many Range‐GETs per small slice; metadata B-tree + data chunk require multiple RTTs; latency dominates \cite{kang2020predicting}.
-\item[b] Extra REST hop through \gls{HSDS}; opening large hierarchies fans out \gls{JSON} metadata reads before data access.
-\item[c] Large keyspaces cause LIST/HEAD storms on \gls{SThree} and inode pressure on \gls{POSIX}; use consolidated metadata to cut opens \cite{kang2020predicting}.
-\item[d] Sub–row-group slice pulls entire row group, causing over-fetch and higher egress for small selections \cite{vohra2016apache}.
-\item[e] Many small fragments increase first-open cost (fragment-metadata scans) and LIST/HEAD; mitigate with fragment/fragment-metadata consolidation and vacuuming \cite{TileDBConsolidateFragmentMeta}.
-\item[f] Single \gls{SThree} object; sparse event picks trigger many Range‐GETs against small pages and index lookups, so RTT dominates unless reads are batched.
-\end{tablenotes}
-\end{threeparttable}
-\end{table}
-
-
-
-
-\subsection{HDF5 + HSDS}
-\label{sec:hdf5-hsds}
-The \gls{HDFfive} ecosystem represents the most mature and widely adopted solution for storing complex scientific data, spanning disciplines from climate modeling to synchrotron beamline acquisition \cite{10.1145/1966895.1966900}. However, developers designed the format for low-latency, parallel file systems. When migrated naively to cloud object stores, its monolithic layout magnifies request latency and per-operation costs. To preserve \gls{HDFfive}’s rich data model while overcoming these cloud-specific bottlenecks, the Highly Scalable Data Service (\gls{HSDS}) was created as a stateless REST layer that shards chunks and metadata into individually addressable objects \cite{readey2020hsds}.
-
-\subsubsection{\texorpdfstring{\gls{HDFfive}}{HDF5} fundamentals}
-Hierarchical Data Format~5 (\gls{HDFfive}) is an open-source container, data model, and I/O library designed to store extensive, multidimensional scientific data efficiently \cite{10.1145/1966895.1966900}. An \gls{HDFfive} file consists of \emph{datasets} (n-dimensional arrays) organized in a \gls{POSIX}-style hierarchy of groups. Datasets may be either \emph{contiguously} or as fixed-size \emph{chunks}. Chunking enables transparent filter pipelines (e.g., \texttt{gzip}, \texttt{lz4}, \texttt{zstd}) and independent partial reads/writes. At the same time, the library’s \gls{MPIIO} pathway lets thousands of compute nodes access different chunks concurrently \cite{hdf5_chunking}. These strengths made \gls{HDFfive} the standard library/system used at X-ray, neutron, and electron facilities.
-
-\subsubsection{Cloud usage}
-Placing a monolithic \gls{HDFfive} file on Amazon \gls{SThree} causes each \gls{POSIX} \texttt{read()} call to issue a separate \gls{HTTP} Range GET. Therefore, a single \SI{1}{\mega\byte} slice triggers two network round-trips (metadata + data), amplifying latency and incurring request fee costs that traditional \gls{HPC} deployments never experience \cite{hdf5_ros3}. Moreover, the file's internal B-tree indices are optimized for low-latency block storage, not for the \SIrange{100}{200}{\milli\second} object-store round-trip typical of Amazon \gls{SThree}.
-
-\subsubsection{\texorpdfstring{\gls{HSDS}}{HSDS}: a layered service}
-The \emph{Highly Scalable Data Service} (\gls{HSDS}) re-implements the \gls{HDFfive} abstraction as a stateless REST \gls{API} \cite{readey2020hsds}. Internally, \gls{HSDS} maps every chunk and metadata into separate objects (\gls{SThree}, Azure Blob, \gls{MinIO}, or \gls{POSIX}) and maintains a small \gls{JSON} document that maps logical dataset coordinates to object keys. This approach allows traversing the \gls{HDFfive} “groups” and “datasets.” With \gls{HSDS}, reading or writing array slices and modifying attributes through standard \gls{HTTP} requests is possible.
-
-\subsubsection{Operational experience}
-Production \gls{HSDS} clusters are now back multi-hundred-terabyte public archives, for instance, \gls{NREL}’s 500 TB Wind Toolkit Long-Term Ensemble dataset, which users can subset without downloading entire files \cite{draxl2024wtkled}. \gls{HSDS} retains \gls{HDFfive}’s rich ecosystem yet promises proper cloud-native capabilities.
-
-\paragraph{\texorpdfstring{File-system considerations on \gls{HPC} clusters}{File-system considerations on HPC clusters}}
-Most Lustre and \gls{GPFS} installations cap the number of inodes a single user may allocate because millions of tiny files saturate the metadata target (MDT) servers long before disk bandwidth runs out \cite{gmitter2018smallfile}. Therefore, a monolithic \gls{HDFfive} container carries a practical on-prem advantage: \emph{one inode per file} and negligible directory pressure. By contrast, chunk-per-object formats such as Zarr can create $10^{5}$ $10^{7}$ objects for a single 1 TB tomography scan, a scenario many \gls{HPC} administrators actively discourage or block via strict inode quotas. The same characteristic becomes an asset in cloud object stores, where inodes do not exist, and latency can be hidden behind massive GET/PUT parallelism.
-
-\paragraph{Redundant indexing and its performance cost}
-\gls{HDFfive}’s internal super-block, heap tables, and fractal B-trees replicate several file-system duties to offer \gls{POSIX}-seekable random access \cite{howison2010tuning}. On low-latency local storage, this overhead is minor, yet when a single 4 MB slice is served from \gls{SThree}, it incurs two round-trips, first to fetch the B-tree node, then the data chunk, doubling both latency and request cost. Chunk-native layouts (Zarr, Parquet, \gls{ROOT}/\gls{RNTuple}) avoid this indirection because each chunk or page is already an independent object.
-
-\subsection{Zarr}
-\label{sec:zarr}
-
-Zarr is an open-source system that builds on the fundamentals of storing chunked, compressed $n$-dimensional arrays in a directory-type layout of small objects \cite{zarrspecv3}. The system partitions each array into regular \emph{chunks} and stores every chunk as an independent object (e.g., a file in a \gls{POSIX} system, a key in Amazon \gls{SThree}). Zarr supports compression with popular codecs such as \texttt{gzip}, \texttt{lz4}, or \texttt{zstd} and utilizes \gls{JSON} metadata files. The format requires no central server, making it attractive for cloud object stores where high-latency, high-throughput parallel access dominates.
-
-\subsubsection{Cloud-native performance}
-Because each chunk maps to a \gls{SThree} key, multiple parallel GETs can execute simultaneously, achieving high aggregate bandwidth. Time-to-first-byte per chunk on \gls{SThree} is typically \SIrange{100}{200}{\milli\second}; concurrency improves throughput rather than single-request latency. Write throughput scales similarly via thousands of concurrent PUTs (one per chunk), enabling real-time ingestion at modern beamlines without seeing too many performance drawbacks.
-
-\subsubsection{Growing ecosystem}
-Researchers across various fields have adopted Zarr; \gls{GDAL} provides a native driver for geospatial rasters \cite{gdal2024zarr} while the bioimaging community standardized on \gls{OME}-Zarr for petabyte-scale microscopy archives \cite{moore2023ome}. A NumFOCUS-backed governance model and a public Zarr-specs \gls{RFC} process ensure long-term stability in the system \cite{zarrspecv3}.
-
-Zarr’s chunk-per-object design aligns perfectly with the partial-read workloads studied in this report. However, its performance depends on chunk size, sharding, and metadata unification.
-
-\subsection{Apache Parquet}
-\label{sec:apache-parquet}
-Apache Parquet is an open, columnar storage format originally developed at Twitter and Cloudera to bring Google Dremel–style analytics to the Hadoop ecosystem. The Parquet format organizes a file into one or more \emph{row groups} where, within each row group, every column is stored contiguously as a \emph{column chunk} and encoded with lightweight compression and a dictionary encoding scheme. Because the system only reads the required columns and the row groups that satisfy a filter predicate, Parquet dramatically reduces I/O volume for wide, sparse tables. Parquet supports several compression codecs, such as Snappy, \texttt{gzip}, deflate, and BZIP2 \cite{vohra2016apache}. Within each row group, Parquet applies column-specific encodings—such as dictionary or run-length encoding—and independent compression, further shrinking the on-disk footprint and amplifying the format’s I/O-reduction advantage.
-
-\subsubsection{Cloud-native performance}
-On Amazon \gls{SThree}, each row group is laid out as a large (typically \SIrange{64}{256}{\mega\byte}) contiguous byte range, allowing clients such as Apache Arrow’s vectorized reader or \gls{AWS} Athena to fetch gigabyte-scale slices with a single Range GET. The \gls{AWS} Athena pricing page states that converting data to compressed, columnar formats like Parquet “can save up to \SI{90}{\percent} per query and improve performance” compared with raw \gls{CSV} \cite{aws_athena_pricing}.
-
-\subsubsection{Ecosystem adoption}
-Parquet has become the default on-disk file format throughout today’s analytics stack. Apache Spark uses Parquet as the \emph{default data source}, and Apache Iceberg likewise keeps its immutable data files in Parquet \cite{iceberg_spec}. In the in-memory layer, Pandas and Apache Arrow provide first-class readers/writers for Parquet \cite{pandas_read_parquet}. Primary cloud analytics services natively ingest Parquet, including Google BigQuery \cite{bq_parquet}, \gls{AWS} Glue \cite{aws_glue_parquet}, and Amazon Athena \cite{aws-athena-columnar}.
-
-Parquet’s columnar design is perfect for the tabular metadata portion of scattering experiments, where scientists frequently select a handful of columns across millions of rows. However, its row-group granularity (tens of MB) and lack of native $n$-D chunking can inflate latency for small pixel tiles.
-
-
-\subsection{TileDB}
-\label{sec:tiledb}
-TileDB is an open-source array storage engine for both dense and sparse data, organizing writes to immutable, timestamped \emph{fragments}. \cite{Papadopoulos2016TileDB,TileDBDataLayout}. Each fragment contains attribute data serialized into \emph{data tiles}. On object stores, TileDB uses a virtual filesystem with native backends for \gls{SThree}, Azure Blob, and GCS. On \gls{AWS} \gls{SThree}, it writes using multipart uploads to create append-only fragment objects \cite{TileDBBackends,TileDBS3}. The array directory contains the schema under \texttt{\_\_schema/}, per-fragment data, and fragment metadata. \cite{TileDBFragmentMeta}.
-
-\subsubsection{Cloud mapping and object count}
-Unlike chunk-per-object layouts, a single fragment typically produces a small, fixed set of objects. It generates one attribute file per attribute, one fragment-metadata file, one commit record, and the already-existing schema file. The total object count scales with the number of \emph{fragments} and attributes rather than the number of tiles, which reduces LIST/HEAD amplification on \gls{SThree} for large arrays \cite{TileDBDataLayout,TileDBFragmentMeta}. Excessive fragmentation, however, increases first-open overhead because readers must fetch per-fragment metadata \cite{TileDBConsolidateFragmentMeta}.
-
-\subsubsection{Reads and pruning}
-On open, TileDB loads fragment metadata and per-tile statistics/min-max bounds. The system then queries the pruned fragments and data tiles whose minimum-bounding rectangles (MBRs) do not intersect the requested subarray \cite{TileDBFragmentMeta,TileDBMBR}. Reads support ordered or unordered layouts, multi-range subarrays \cite{TileDBReadLayouts}.
-
-\subsubsection{Writes, immutability, and time travel}
-All writes create new immutable fragments and commit files, enabling lock-free multiple-reader/multiple-writer behavior and consistent reads at a chosen timestamp range (“time traveling”). Fragment merging helps compact many small fragments into larger ones, which allows reclaim space \cite{TileDBTimeTravel}.
-
-\subsubsection{Compression and filters.}
-TileDB applies a per-attribute filter pipeline to tiles. Supported compressors include \texttt{gzip}, Zstandard, \texttt{lz4}, RLE, BZIP2, and integer-oriented transforms (bit-shuffle, bit-width reduction, double-delta). Checksums (MD5/SHA-256) are available for integrity. Arrays can be encrypted at rest using AES-256-GCM \cite{TileDBCompression,TileDBChecksums,TileDBEncryption}.
-
-\subsection{ROOT / RNTuple}
-\label{sec:root-rntuple}
-\gls{ROOT} is an object-oriented C++ framework developed at \gls{CERN} to handle the petabyte-scale data streams of high-energy-physics experiments \cite{blomer2020evolution}. Its core storage abstraction, \gls{TTree}, stores events as rows and detector variables as \emph{branches}. The format splits each branch into contiguous \emph{baskets}, allowing readers to load them independently. This column-friendly layout lets analysis jobs load only the needed branches, minimizing I/O and deserialization overhead, a property directly relevant to slice-level scattering analysis.
-
-\subsubsection{\texorpdfstring{\gls{RNTuple}}{RNTuple} redesign}
-After two decades of incremental evolution, \emph{\gls{TTree}} showed architectural limits for modern heterogeneous hardware and cloud storage. The \gls{RNTuple} project, therefore, re-implements \gls{ROOT} I/O with a stricter columnar layout, page-based compression, and a self-describing, versioned metadata footer \cite{blomer2020evolution}. Pages (\(\approx\)\,\SIrange{8}{16}{\kilo\byte}) are grouped into clusters so that entirely columnar reads issue a single contiguous request, while sparse event selections fetch only the referenced pages. By decoupling metadata from data pages, \gls{RNTuple} avoids rewriting the entire file when appending events, which is critical for streaming detectors and results in improved partial reads.
-
-\subsubsection{Object-store back-end}
-Through the generic \gls{ROOT} Page Source interface, pages can reside in \gls{POSIX} files, over \gls{HTTP}(S), or as individual \gls{SThree} objects \cite{rootRNTuple2025}. Scaling studies by Blomer showed near-linear throughput up to \(\mathcal{O}(10^{2})\) concurrent readers on a >100‐core \gls{HPC} cluster served by a \gls{DAOS} object store, achieving an aggregated read rate above \SI{35}{\giga\byte\per\second} before the storage system became the bottleneck \cite{blomer2024root}.
-
-This architecture thus provides high-throughput, scalable, and selective access to petabyte-scale datasets, whether on \gls{HPC} or in the cloud, making \gls{RNTuple} a promising foundation for modern, slice-level scattering analyses.
-
-
-\section{Compression Algorithms Reviewed}
-\label{sec:compression-algorithms}
-Lossless compression is a first-order lever for improving performance and reducing costs in cloud object–store workflows. Smaller chunks reduce \gls{SThree} egress and request fees, while faster codecs shorten the latency that dominates interactive partial reads in synchrotron experiments.
-
-The focus is on three open-source codecs that form a spectrum of trade-offs: \emph{gzip/DEFLATE} (high ratio, high \gls{CPU}), \emph{\gls{LZfour}} (low ratio, ultra-low latency), and \emph{Zstandard} (\emph{\gls{ZSTD}}, balanced). All four backends under test (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}/\gls{RNTuple}) support \texttt{gzip}, \texttt{lz4}, and Zstandard (built-in or via standard filters/plugins).
-
-\subsection{gzip}
-\label{sec:compression-gzip}
-GNU \texttt{gzip} has been the default lossless compression tool on Unix-like systems since 1992. \gls{RFC}~1952 formalizes \texttt{gzip}’s file format and header/trailer structure, and those specifications have remained patent-free and backward-compatible across three decades of scientific workflows \cite{deutsch1996rfc1952}.
-
-\subsubsection{Algorithmic design}
-The compressor implements the \emph{DEFLATE} scheme, a cascade of \gls{LZseventyseven} sliding-window substitution followed by static/dynamic Huffman coding tunable via nine quality levels that trade compression time for ratio. Level 6 is the GNU default, while level 1 sacrifices a \(\approx\) 30\% ratio to gain 3–4\(\times\) speed \cite{deutsch1996rfc1952}.
-
-\subsubsection{Performance on scientific data}
-Benchmarks on floating-point climate and remote-sensing datasets stored in \gls{netCDF}-4/\gls{HDFfive} show typical space savings of 1.6–2.2\(\times\) at levels 4–6. However, this did show that with compression, the \gls{CPU} costs were 2–5\(\times\) higher than \texttt{lz4}, and decompression throughput that saturates a single \SI{10}{\giga\bit\per\second} core around \SI{500}{\mega\byte\per\second} \cite{delaunay2019evaluation,chen2023fcbench}.
-
-\subsubsection{Integration with chunked formats}
-Native support for \texttt{gzip} exists in all five tested backends. Because \texttt{gzip} compresses each chunk independently, its compression ratio varies with chunk size and needs to be considered during these experiments. In the experiments, \texttt{gzip} is used as a “high-ratio, high-\gls{CPU}” reference, and its mature ecosystem guarantees consistent behavior across all five storage back ends. Its well-characterized latency overhead provides a clear baseline against which to measure the partial-read performance gains of newer codecs like Zstandard and \texttt{lz4}.
-
-\subsection{LZ4}
-\label{sec:compression-lz4}
-Introduced in 2011, \texttt{lz4} emerged as a lightweight derivative of the Lempel–Ziv (\gls{LZseventyseven}) family, designed to maximize streaming throughput while keeping memory overhead to a minimum. Its open-source framing format defines a compact header, provides optional block and content checksums, and employs a skippable frame mechanism, allowing adding new features without breaking older decoders. These attributes have led to widespread adoption in operating systems, high-performance storage engines, and scientific data formats where sub-millisecond decode latency is critical.
-
-\subsubsection{Algorithmic profile}
-The codec emphasizes extremely fast byte-wise parsing and a greedy match-finder that limits back-references to \SI{64}{\kilo\byte}. Because of this, the compression runs at $>$\SI{500}{\mega\byte\per\second} per core while decompression routinely exceeds \SIrange{2}{3}{\giga\byte\per\second}, albeit with modest ratios (1.2–1.7\(\times\) on floating-point data) \cite{lz42025,7440278}. A high-compression variant \texttt{lz4hc} improves the ratio by $\sim$15\,\% at 3–5 \(\times\) the \gls{CPU} cost.
-
-\subsubsection{Empirical results on scientific workloads}
-Almeida \emph{et al.} compared \gls{LZfour} with \gls{ZLIB} on \gls{ROOT} HEP and climate grids, reporting \SIrange{1.0}{1.2}{\giga\byte\per\second} decompression (versus \SI{120}{\mega\byte\per\second} for \gls{ZLIB}) at the expense of only a 5–10\,\% ratio loss \cite{almeida2014two}. The \gls{VLDB}’24 “\gls{FCBench}” study recently measured the \gls{CPU} variant bitshuffle with \gls{LZfour} across 33 floating-point datasets. The study showed that it sustained \SI{0.9}{\giga\byte\per\second} compression and \SI{1.2}{\giga\byte\per\second} decompression on \SI{64}{\kilo\byte} blocks while achieving a median compression ratio of 1.43 \cite{chen2023fcbench}.
-
-\subsubsection{Integration in storage formats}
-As a codec, \texttt{lz4} filters are first-class options in \gls{HDFfive} (\texttt{H5Z\_LZ4}), Zarr v3, Parquet, and TileDB. Because the \texttt{lz4} \SI{64}{\kilo\byte} match window limits cross-chunk redundancy, chunk sizes above \SIrange{1}{2}{\mega\byte} yield diminishing returns, which for this study will align well with \gls{SThree} request-cost sweet spots.
-
-In our benchmarks, \texttt{lz4} represents the “low-latency, low-\gls{CPU}” option, serving as the low-latency reference alongside \texttt{gzip} and \texttt{zstd}. The extent to which compression ratio can be traded for sub-second partial reads without materially increasing monthly \gls{SThree} storage costs will be quantified.
-
-\subsection{zstd}
-\label{sec:compression-zstd}
-Zstandard (\texttt{zstd}) was released by Collet in 2016 and standardized by the IETF as \gls{RFC}~8878 \cite{collet2021rfc8878}. It combines an \gls{LZseventyseven} dictionary back-reference engine with Finite-State Entropy (\gls{FSE}) coding. It supports window sizes up to 128 MiB and offers 23 quality levels ($-7$ to 22), optional long-range mode, and trained dictionaries (negative values activate ultra-fast modes that trade ratio for speed). Decompression speed is deliberately kept almost constant across levels, whereas compression trades \gls{CPU} for ratio.
-
-\subsubsection{Throughput and ratio characteristics}
-According to the \texttt{zstd} manual, the fastest compression mode exceeds \SI{200}{\mega\byte\per\second} per core, while the decoder sustains $>$\SI{500}{\mega\byte\per\second} per core on commodity x86 \gls{CPU}s \cite{zstdman2025}.
-
-Promberger \emph{et al.}\ measured \texttt{zstd} level 2 on a 4.9 GB \gls{LHCb} collision dataset and found that its \emph{compression} throughput was roughly 2–3 \(\times\) higher than that of \emph{\gls{ZLIB}} level 2 while achieving an almost identical compression ratio, \cite{promberger2023characterization}.
-
-Delaunay et al. found that “Shuffle + Zstandard-2” compresses \gls{CFOSAT} and \gls{SWOT} remote-sensing files about 1.4 \(\times\) to 7 \(\times\) faster than the mission’s baseline “Shuffle + Deflate-3/4”. It delivers virtually identical space savings, accelerating decompression by up to seven-fold \cite{delaunay2019evaluation}. Across the full 33-dataset \gls{FCBench} suite, the \gls{VLDB}’24 study reports that a \emph{bitshuffle+}\texttt{zstd} pipeline achieves a harmonic-mean compression ratio of 1.47, while sustaining compression and decompression throughputs of $\sim\!\SI{1.4}{\giga\byte\per\second}$ and $\sim\!\SI{1.3}{\giga\byte\per\second}$, respectively  \cite{chen2023fcbench}.
-
-\subsubsection{Integration in scientific formats}
-As a codec, \texttt{zstd} is a first-class option in Parquet, TileDB, and available as extensions for \gls{HDFfive} and Zarr v3. With \gls{FSE} contexts resetting per block, 1–4 MiB chunks maximize the ratio without inflating \gls{SThree} request counts. \texttt{zstd} occupies the “balanced ratio/latency” middle ground between \texttt{gzip} (high ratio, high \gls{CPU}) and \texttt{lz4} (low ratio, low \gls{CPU}) in the study.
-
-\section{Access Patterns in Scattering Analysis}
+\subsection{Access Patterns in Scattering Analysis}
 \label{sec:access-patterns-scattering}
 Scattering experiments produce data consumed in different ways during and after beamtime. As workflows shift from millisecond feedback to terabyte re-processing, the dominant bottleneck moves from latency to bandwidth. This section classifies three representative access patterns, \emph{small-slice interactive reads}, \emph{full-dataset sequential scans}, and \emph{metadata-driven queries}, and illustrates how each stresses storage back ends in distinct ways.
 
@@ -903,21 +639,287 @@ Table \ref{tab:access-patterns} summarises the three access patterns discussed i
 \end{table}
 
 
-\subsection{Small-slice interactive reads}
+\subsubsection{Small-slice interactive reads}
 At many beamlines, an \emph{interactive slice} is a reconstructed tomographic plane or detector region of interest. For example, the GigaFRoST camera at \gls{SLS}--\gls{TOMCAT} streams \(2016\times1800\) px, 16-bit projections at \SI{7.7}{\giga\byte\per\second}, so a single projection (or a stack of a few tiled ROIs) naturally falls in this size window \cite{celcer2018gigafrost}. Likewise, the APS nanoprobe workflow achieves live neural-network inference on \(512\times512\) diffraction frames at \(100\,\mathrm{Hz}\) (one frame every \(\SI{10}{\milli\second}\)), establishing a practical millisecond-to-sub-second latency budget for feedback loops \cite{babu2023deep}.
 
 Partial reads are equally critical \emph{after} acquisition. For example, strain- and stress-mapping routines integrate Bragg peaks only within narrow azimuthal sectors (\(\Delta\chi\approx5^{\circ}\)) or select a handful of detector tiles, discarding the rest of the frame. High-energy diffraction microscopy at APS, for instance, reconstructs grain-resolved strain tensors by repeatedly loading just those angular wedges that intersect a given grain’s Debye–Scherrer rings, cutting I/O by an order of magnitude \cite{lienert2011high}. These workflows, therefore, see many benefits of simply loading in partial slices of data rather than complete datasets.
 
-\subsection{Full-dataset sequential scans}
+\subsubsection{Full-dataset sequential scans}
 A \emph{full-dataset scan} means streaming every projection or event record, typically \(10^{2}\)–\(10^{3}\,\mathrm{GB}\) per tomographic run or several terabytes per serial-crystallography campaign. Full dataset scans, therefore, require moving data from storage to the compute tier in a single, sequential pass.
 
 Complete reads underpin high-fidelity analyses that cannot tolerate missing frames. Iterative phase-retrieval and filtered back-projection algorithms in tomography require the entire sinogram for each refinement cycle. In serial femtosecond crystallography, clustering, indexing, and Monte Carlo integration need millions of patterns to converge on accurate structure factors \cite{maiden2009improved}. Full dataset scans are also required when, for example, doing \emph{reference re-processing} of an experiment. Tasks such as simply displaying the image in a single continuous video require loading the entire dataset. Sequential scans saturate available bandwidth, compression efficiency, and parallel read pipelines dominate time-to-solution.
 
 
-\subsection{Metadata-driven queries}
+\subsubsection{Metadata-driven queries}
 A \emph{metadata query} retrieves only descriptive information, sample-environment logs, scan parameters, detector geometry, or a limited set of columns/branches without accessing the large image stacks. Typical payloads are \(\mathcal{O}(10^{1}\!-\!10^{3})\,\mathrm{kB}\), which a live beamline dashboard may issue tens to hundreds of such queries per second during an experiment.
 
 Synchrotron and neutron facilities increasingly push raw detector frames straight into object stores (\gls{AWS} \gls{SThree}, \gls{Ceph}, \gls{MinIO}) to curb on-premise costs and enable remote collaboration. Brookhaven’s \gls{NSLSII}, for example, operates a {\small 5 PB} \gls{MinIO} cluster exposed via the \gls{SThree} \gls{API}; the Bluesky acquisition pipeline writes NeXus event documents there, and downstream notebooks read them over the \gls{WAN} \cite{Lancon2022}. The UK’s Rutherford Appleton Laboratory offers the \gls{ECHO} \gls{Ceph} object store, providing {\small 100 PB} of \gls{SThree} capacity that underpins \gls{IRIS} cloud analysis services and beamline portals \cite{ECHO2025}. In these environments, transferring even a few gigabytes across a \gls{WAN} to inspect scan headers is untenable, mainly when lightweight, metadata-only queries can satisfy the request.
+
+
+
+\section{Storage Foundations: HPC vs Object Stores}
+\label{sec:storage-foundations}
+% TODO
+
+\subsection{Traditional HPC Storage Paradigms}
+\label{sec:traditional-hpc-storage-paradigms}
+For the past decades, scientific supercomputers have relied on \emph{parallel file systems}, where Lustre and IBM’s \gls{GPFS} has stood out. These systems have allowed pushing checkpoint files and simulation outputs across hundreds of disks at tens of \si{\giga\byte\per\second} aggregate bandwidth \cite{schwan2003lustre,schmuck2002gpfs}. By stripping data over many objects, storage targets and coordinating access via distributed locks became ideally matched workloads that wrote multi-gigabyte files in large, contiguous chunks.
+
+Those design assumptions are strained when the I/O profile flips from “few huge checkpoints” to many tiny look-ups and interactive slices. A study from the Summit and Cori supercomputers shows that small transfers (<\SI{1}{\mega\byte}) still account for the overwhelming majority of read and write calls at both the file and process levels. At the same time, in large-scale \gls{HPC} deployments, metadata operations alone can account for a considerable part of the file-system requests, often saturating the metadata servers and emerging as a primary scalability bottleneck \cite{bez2022access}. As beamlines, AI workflows, and remote collaborators pile on, the gap between traditional parallel-file-system design and real-time, small-slice demands only widens.
+
+The remainder of this section revisits how parallel file systems achieve their impressive bulk throughput and why those mechanisms falter under modern, latency-sensitive access patterns. Thus, it motivates the cloud-native alternatives examined later in this chapter.
+
+\subsubsection{Parallel File Systems (Lustre, GPFS, BeeGFS)}
+\label{sec:parallel-file-systems}
+Lustre, IBM \gls{GPFS} (now Spectrum Scale) \cite{schmuck2002gpfs}, and \gls{BeeGFS} have dominated supercomputing storage for over two decades, consistently delivering hundreds of gigabytes per second of throughput. By striping data across hundreds of disks and coordinating access with distributed locks, these systems excelled at writing multi-gigabyte files sequentially. The same system, however, reveals hidden costs once workloads pivot to small, random reads or remote, \gls{WAN}-mounted access.
+
+
+\paragraph{Architecture and striping model}
+Classic \gls{HPC} file systems split responsibility between \emph{metadata servers} (\gls{MDS}) and many \emph{object/data servers} (\gls{OSS} in Lustre, \gls{NSD} servers in \gls{GPFS}, storage targets in \gls{BeeGFS}). Files are \emph{striped} across a few to hundreds of disks in multi-megabyte chunks. Doing this allows a single sequential read or write to optimize the bandwidth of an entire system. \gls{PFS} uses token-based distributed locking to keep \gls{POSIX} consistency on a shared-disk \gls{SAN} \cite{schmuck2002gpfs}. \gls{BeeGFS} achieves similar semantics over Ethernet by separating data and metadata and scaling the service.
+
+\paragraph{Bulk Sequential I/O: High Throughput on Parallel File Systems}
+Parallel file systems shine whenever an application issues long, contiguous transfers, checkpoints/restarts, volumes, and snapshots. NASA’s \emph{Pleiades} cluster still sustains, \(\sim\!1\)\,\si{\giga\byte\per\second} from disk for a single 512-rank IOR stream and bursts to \SI{9}{\giga\byte\per\second} when the same data are serviced out of the page cache \cite{6507507}. Modern flagships go far beyond that, where Los Alamos’ \emph{Trinity} Sonexion Lustre tops out near \SI{1.6}{\tera\byte\per\second} for a 78 PB pool \cite{osti_1367056}. Even a single E1000 \gls{OSS} inside NERSC’s \emph{Perlmutter} can saturate \SI{41}{\giga\byte\per\second} read and \SI{27}{\giga\byte\per\second} write to one \gls{OST} \cite{lockwood2024architecture}. These traits explain why parallel file systems remain the choice for bulk sequential scans and multi‐terabyte tomography stacks.
+
+Lustre separates responsibilities between dedicated \emph{metadata servers} (\gls{MDS}) that keep inodes and directory state on one or more \emph{metadata targets} (MDTs) and multiple \emph{object‑storage servers} (\gls{OSS}) that deliver the bulk data stored on \emph{object‑storage targets} (\gls{OST}s).  Files are \emph{striped} across a configurable number of \gls{OST}s (stripe count) with a tunable stripe width so a single sequential transfer can engage hundreds of disks in parallel. The design of flagship systems such as Oak Ridge’s Spider‐3 sustains more than \SI{1}{\tera\byte\per\second} aggregate read bandwidth \cite{braam2019lustre, oral2013olcf}.
+
+IBM \gls{GPFS} employs a distributed \emph{token‑based locking} protocol to coordinate metadata and data updates across all nodes, persisting mutations in replicated journals so that failed servers can recover without full replays. This mechanism provides stronger resilience and copes slightly better with so‑called metadata “storms” than Lustre, though at the cost of a more complex recovery state \cite{schmuck2002gpfs}.
+
+\paragraph{Weaknesses for many-small reads}
+Parallel file systems raise aggregate bandwidth by slicing every file across many Object Storage Targets (\gls{OST}s/\gls{NSD}s). When workloads flip from multi-GB checkpoints to thousands of $4$–$64$\,\si{\kilo\byte} reads the same striping logic backfires when workloads issue thousands of sub-megabyte reads. Intel’s LUG-2018 “Small File I/O” report shows that files smaller than the \gls{DoM} threshold generate disproportionately more RPCs per MiB, leading to significantly reduced bandwidth on multi-\gls{OST} Lustre systems \cite{gmitter2018smallfile}.
+
+Even in a namespace-sharded file system like Lustre’s \gls{DNE}, a camera‐style “one-file-per-frame” workflow still concentrates its create/unlink traffic on one hot directory subtree. Production traces from 60 \gls{HPC} systems show that \SI{64}{\percent} of files are smaller than \SI{64}{\kilo\byte}. When a system gets flushed with thousands of tiny \gls{HDFfive} or JPEG files, the operations on the metadata will increase exponentially. Based on these 60 different \gls{HPC} systems, research shows that metadata operations can account for up to \SI{80}{\percent} of total file system operations \cite{9768784}.
+
+\Gls{HPC} administrators often impose per-user inode quotas because millions of tiny files overload Meta Target Devices \cite{carns2009small}. Therefore, monolithic containers such as \gls{HDFfive} can be preferred on-prem, whereas object stores favor chunk-per-object layouts (e.g., Zarr).
+
+\subsubsection{POSIX-Centric Scientific Formats}
+\label{sec:posix-centric-formats}
+Most \gls{HPC} codes write \emph{monolithic containers}, a single \gls{POSIX}-seekable file that includes raw arrays and metadata. \gls{HDFfive} popularised this approach, while NeXus adopts the same file structure with beamline-specific naming conventions. The design is perfect for bulk, sequential, local parallel file systems scans. However, the need to search through super-blocks and B-trees for every small slice makes it poorly suited to cloud object stores and interactive, many-small-read workflows, motivating the chunk-per-object formats.
+
+\paragraph{Monolithic container philosophy}
+The Hierarchical Data Format~5 (\gls{HDFfive}) stores every dataset, chunk, and attribute in a single byte‐addressable file whose internal super-block, B-trees, and heap tables, with the help of \gls{POSIX}, seek for navigation \cite{howison2010tuning}. Nexus, the de facto standard at many photon and neutron sources, layers a domain system on top of the same \gls{HDFfive} container, retaining identical I/O semantics while prescribing beamline-specific group names and units \cite{konnecke2015nexus}. This “all-in-one” layout simplifies the file management, but couples performance to the underlying file-system block size and how well metadata caches handle random seeks.
+
+\paragraph{Serial and MPIIO access}
+Out-of-the-box \gls{HDFfive} (used via h5py, MATLAB, etc.) issues are independent of \gls{POSIX}. Each rank that samples a \SIrange{4}{8}{\mega\byte} slice generates dozens of tiny, <\SI{64}{\kilo\byte} reads, leading to many metadata lookups. Performance tuning guides from the HDF Group note that such traffic can result in many minor accesses and that parallel file systems do not do well with small I/O \cite{Breitenfeld2022Parallel}. Parallel \gls{HDFfive} wraps the same container in \gls{MPIIO} so that all processes participate collectively. Doing so when users provide non-contiguous selections, \gls{ROMIO} gathers them into a single larger request (data sieving and collective buffering).
+
+Even when using collective metadata I/O, each \gls{HDFfive} read still must fetch the superblock and descriptive metadata before reading the raw data. In the CCGrid’21 benchmarks on Summit and Cori, metadata I/O alone accounted for as much as ~58\% of the total read time \cite{9499420}. \gls{HDFfive}/NeXus excels for large, sequential scans and single-node post-processing. However, their single-file, \gls{POSIX} heritage makes interactive, many-small-read workloads vulnerable to metadata hot spots. These limitations motivate the chunk-per-object designs of Zarr, Parquet, and the other cloud-native formats evaluated in this report.
+
+
+
+\subsection{Cloud Object Storage Fundamentals}
+\label{sec:cloud-object-storage-fundamentals}
+Cloud object stores, presented by Amazon \gls{SThree}, sit at the core of the storage formats benchmarked in this thesis. \gls{SThree}’s defining features are a flat, immutable-object namespace, global durability, and a pay-as-you-go pricing model. Amazon \gls{SThree}, therefore, removes local capacity provisioning constraints, but the system does introduce \gls{HTTP}S-level latency and per-request charges that do not exist in local \gls{NVMe} or parallel file systems. Grasping these trade-offs is therefore vital before interpreting the performance results.
+
+\subsubsection{Architectural model}
+Amazon Simple Storage Service (\gls{SThree}) organizes data in \emph{buckets} that share a \emph{flat global namespace}, and directory hierarchies are only a key-naming convention. Objects are \emph{immutable}, meaning any modification creates a new version of that object/file. Since December 2020, \gls{SThree} guarantees \emph{strong read-after-write consistency} for all operations, removing the race conditions that earlier eventual-consistency semantics introduced \cite{AWSConsistency2020}.
+
+\subsubsection{Request classes and cost drivers}
+Every interaction with \gls{SThree} is an \gls{HTTP}S \gls{API} call in one of four core request classes. Each call is billable in addition to storage (\si{GB}\,month) and data-egress charges \cite{AWSS3Pricing2025}.
+
+\begin{table}[ht]
+  \centering
+  \begin{tabular}{@{}p{3cm}p{2cm}p{6cm}@{}}
+    \toprule
+    \textbf{Class}    & & \textbf{Typical purpose} \\
+    \midrule
+    PUT/POST/COPY     & & Create or modify objects \\
+    GET               & & Retrieve object data (full or ranged) \\
+    LIST              & & Enumerate keys/prefixes \\
+    HEAD              & & Fetch metadata, tags, ACLs \\
+    \bottomrule
+  \end{tabular}
+  \caption{Core \gls{SThree} request classes}
+  \label{tab:s3-requests}
+\end{table}
+
+\subsubsection{Latency characteristics}
+Each request traverses a multi-AZ control plane and TLS handshake, giving time-to-first-byte latencies of \SIrange{100}{200}{\milli\second} for small objects \cite{AWSS3Performance2024}. In comparison, on-premises \gls{NVMe} RAID or parallel file systems typically deliver sub-millisecond metadata look-ups, and even \gls{AWS}’s own \gls{EFS} \gls{SSD} class reports $\approx\SI{0.25}{\milli\second}$ latencies \cite{AWSEFSLatency}. This gap explains why typical ported \gls{HPC} workloads feel slow and perform poorly on \gls{SThree}. Figure \ref{fig:latency-ladder} visualizes the comparison on a log scale, showing how the jump from \SI{0.1}{\milli\second} \gls{NVMe} reads \cite{haas2023modern} to \SI{0.25}{\milli\second} \gls{EFS} reads \cite{aws_efs_latency} and finally to \SIrange{100}{200}{\milli\second} \gls{SThree} requests \cite{aws_s3_latency} forces any cloud-native workflow to be able to handle round-trip cost through chunking, caching, and request batching.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.90\linewidth]{figures/latency_ladder.pdf}
+  \caption{Median time-to-first-byte read across common storage
+           tiers, plotted on a logarithmic axis. The three-order-of-magnitude gap between local NVMe and \gls{SThree} storage motivates the use of chunking and request strategies.}
+  \label{fig:latency-ladder}
+\end{figure}
+
+\subsubsection{Performance-optimisation layers}
+\begin{itemize}
+  \item \textbf{Multipart uploads}: split objects ($\ge\SI{100}{\mega\byte}$) into \SIrange{5}{5000}{\mega\byte} parts that upload in parallel and resume after failure \cite{AWSS3MultipartDoc}.
+  \item \textbf{Range GETs}: request only required byte spans, ideally aligned with the same \SIrange{8}{16}{\mega\byte} boundaries used during uploads \cite{AWSS3RangeGET}.
+  \item \textbf{Prefix parallelism}: \gls{SThree} scales to at least \num{5500} GET/HEAD and \num{3500} write requests per \emph{prefix}. Optimally sharding key lifts can aggregate throughput to multi \si{TB/s} \cite{AWSS3Performance2024}.
+\end{itemize}
+
+These optimization strategies allow object storage to approach \gls{HPC}-class \emph{throughput}. However, the inherent network-centric part of the system keeps \emph{latency} for small, random slice reads higher than local or \gls{NVMe}-backed file systems. This constraint motivates the chunking and indexing strategies evaluated in this report.
+
+
+\section{Cloud-Native Models and Compression}
+\label{sec:cloud-native-models-compression}
+% TODO
+
+\subsection{Cloud-Native Storage Models}
+\label{sec:cloud-native-storage-models}
+Cloud object stores such as Amazon \gls{SThree}, Azure Blob, and Google Cloud Storage deliver effectively unlimited capacity and global accessibility. But they do not come without many drawbacks, such as request latency, immutable‐object semantics, and per‐request billing. Some drawbacks clash with the low‐latency, mutable-file assumptions baked into traditional \gls{HPC} formats \cite{durbin2020cloud}. To exploit cloud elasticity without prohibitive slice-read costs, a new generation of \emph{cloud-native storage models} has emerged, each rethinking how scientific arrays or tables are partitioned, compressed, and addressed in an object store.
+
+The remainder of this section surveys five representative approaches: \gls{HDFfive} served through the Highly Scalable Data Service (\gls{HSDS}), Zarr's chunk-per-object layout, Apache Parquet's columnar row-group design, TileDB's dense/sparse array storage, and \gls{CERN}'s page-oriented \gls{ROOT}/\gls{RNTuple} format. Each part highlights how each approach maps its internal data units onto cloud objects, what compression and indexing strategies it employs, and which trade-offs in latency and throughput.
+
+
+\begin{table}[htbp]
+  \centering
+  \begin{threeparttable}
+    \caption{Storage granularity, object‐count, and dominant pain‐point for each candidate format. Figures assume a 1~TB tomography volume stored with 16~MiB scientific chunks (all but Parquet) or 256~MiB Parquet row‐groups.}
+    \label{tab:format-granularity}
+    \footnotesize
+    \begin{tabularx}{\linewidth}{@{}l l c c@{}}
+      \toprule
+      \textbf{Format} & \textbf{Storage type} & \textbf{Objects$^\dagger$} & \textbf{Key pain‐point} \\
+      \midrule
+      \gls{HDFfive} (single file)      & File‐per‐dataset                               & $1$                      & \tnote{a} \\
+      \gls{HDFfive} + \gls{HSDS}             & Chunk‐per‐object                               & $\approx 65{,}536$       & \tnote{b} \\
+      Zarr v3                 & Chunk‐per‐object                               & $\approx 65{,}536$       & \tnote{c} \\
+      Parquet                 & Row‐group object (256~MiB)                     & $4{,}096$                & \tnote{d} \\
+      TileDB                  & Fragment dir with per‐attribute tile files     & $\approx 4^\ddagger$     & \tnote{e} \\
+      \gls{ROOT} / \gls{RNTuple}          & Single file with clustered pages               & $1$                     & \tnote{f} \\
+      \bottomrule
+    \end{tabularx}
+    \begin{tablenotes}[flushleft]\footnotesize
+      \item[$\dagger$] Approximate count of \gls{POSIX} inodes or \gls{SThree} objects, computed from $1\,\mathrm{TB}$ and the stated granularity.
+      \item[$\ddagger$] TileDB stores many tiles per file; object count scales with fragments and attributes. The figure shown assumes one write fragment and one fixed‐size attribute (files: array schema, fragment metadata, one or two per‐attribute data files) \cite{TileDBDataLayout}.
+      \item[a] Monolithic file on \gls{SThree} yields many Range‐GETs per small slice; metadata B-tree + data chunk require multiple RTTs; latency dominates \cite{kang2020predicting}.
+      \item[b] Extra REST hop through \gls{HSDS}; opening large hierarchies fans out \gls{JSON} metadata reads before data access.
+      \item[c] Large keyspaces cause LIST/HEAD storms on \gls{SThree} and inode pressure on \gls{POSIX}; use consolidated metadata to cut opens \cite{kang2020predicting}.
+      \item[d] Sub–row-group slice pulls entire row group, causing over-fetch and higher egress for small selections \cite{vohra2016apache}.
+      \item[e] Many small fragments increase first-open cost (fragment-metadata scans) and LIST/HEAD; mitigate with fragment/fragment-metadata consolidation and vacuuming \cite{TileDBConsolidateFragmentMeta}.
+      \item[f] Single \gls{SThree} object; sparse event picks trigger many Range‐GETs against small pages and index lookups, so RTT dominates unless reads are batched.
+    \end{tablenotes}
+  \end{threeparttable}
+\end{table}
+
+\subsubsection{HDF5 + HSDS}
+\label{sec:hdf5-hsds}
+The \gls{HDFfive} ecosystem represents the most mature and widely adopted solution for storing complex scientific data, spanning disciplines from climate modeling to synchrotron beamline acquisition \cite{10.1145/1966895.1966900}. However, developers designed the format for low-latency, parallel file systems. When migrated naively to cloud object stores, its monolithic layout magnifies request latency and per-operation costs. To preserve \gls{HDFfive}’s rich data model while overcoming these cloud-specific bottlenecks, the Highly Scalable Data Service (\gls{HSDS}) was created as a stateless REST layer that shards chunks and metadata into individually addressable objects \cite{readey2020hsds}.
+
+\paragraph{HDF5 fundamentals}
+Hierarchical Data Format~5 (\gls{HDFfive}) is an open-source container, data model, and I/O library designed to store extensive, multidimensional scientific data efficiently \cite{10.1145/1966895.1966900}. An \gls{HDFfive} file consists of \emph{datasets} (n-dimensional arrays) organized in a \gls{POSIX}-style hierarchy of groups. Datasets may be either \emph{contiguously} or as fixed-size \emph{chunks}. Chunking enables transparent filter pipelines (e.g., \texttt{gzip}, \texttt{lz4}, \texttt{zstd}) and independent partial reads/writes. At the same time, the library’s \gls{MPIIO} pathway lets thousands of compute nodes access different chunks concurrently \cite{hdf5_chunking}. These strengths made \gls{HDFfive} the standard library/system used at X-ray, neutron, and electron facilities.
+
+\paragraph{Cloud usage}
+Placing a monolithic \gls{HDFfive} file on Amazon \gls{SThree} causes each \gls{POSIX} \texttt{read()} call to issue a separate \gls{HTTP} Range GET. Therefore, a single \SI{1}{\mega\byte} slice triggers two network round-trips (metadata + data), amplifying latency and incurring request fee costs that traditional \gls{HPC} deployments never experience \cite{hdf5_ros3}. Moreover, the file's internal B-tree indices are optimized for low-latency block storage, not for the \SIrange{100}{200}{\milli\second} object-store round-trip typical of Amazon \gls{SThree}.
+
+\paragraph{HSDS: a layered service}
+The \emph{Highly Scalable Data Service} (\gls{HSDS}) re-implements the \gls{HDFfive} abstraction as a stateless REST \gls{API} \cite{readey2020hsds}. Internally, \gls{HSDS} maps every chunk and metadata into separate objects (\gls{SThree}, Azure Blob, \gls{MinIO}, or \gls{POSIX}) and maintains a small \gls{JSON} document that maps logical dataset coordinates to object keys. This approach allows traversing the \gls{HDFfive} “groups” and “datasets.” With \gls{HSDS}, reading or writing array slices and modifying attributes through standard \gls{HTTP} requests is possible.
+
+\paragraph{Operational experience}
+Production \gls{HSDS} clusters are now back multi-hundred-terabyte public archives, for instance, \gls{NREL}’s 500 TB Wind Toolkit Long-Term Ensemble dataset, which users can subset without downloading entire files \cite{draxl2024wtkled}. \gls{HSDS} retains \gls{HDFfive}’s rich ecosystem yet promises proper cloud-native capabilities.
+
+\paragraph{File-system considerations on HPC clusters}
+Most Lustre and \gls{GPFS} installations cap the number of inodes a single user may allocate because millions of tiny files saturate the metadata target (MDT) servers long before disk bandwidth runs out \cite{gmitter2018smallfile}. Therefore, a monolithic \gls{HDFfive} container carries a practical on-prem advantage: \emph{one inode per file} and negligible directory pressure. By contrast, chunk-per-object formats such as Zarr can create $10^{5}$ $10^{7}$ objects for a single 1 TB tomography scan, a scenario many \gls{HPC} administrators actively discourage or block via strict inode quotas. The same characteristic becomes an asset in cloud object stores, where inodes do not exist, and latency can be hidden behind massive GET/PUT parallelism.
+
+\paragraph{Redundant indexing and its performance cost}
+\gls{HDFfive}’s internal super-block, heap tables, and fractal B-trees replicate several file-system duties to offer \gls{POSIX}-seekable random access \cite{howison2010tuning}. On low-latency local storage, this overhead is minor, yet when a single 4 MB slice is served from \gls{SThree}, it incurs two round-trips, first to fetch the B-tree node, then the data chunk, doubling both latency and request cost. Chunk-native layouts (Zarr, Parquet, \gls{ROOT}/\gls{RNTuple}) avoid this indirection because each chunk or page is already an independent object.
+
+\subsubsection{Zarr}
+\label{sec:zarr}
+
+Zarr is an open-source system that builds on the fundamentals of storing chunked, compressed $n$-dimensional arrays in a directory-type layout of small objects \cite{zarrspecv3}. The system partitions each array into regular \emph{chunks} and stores every chunk as an independent object (e.g., a file in a \gls{POSIX} system, a key in Amazon \gls{SThree}). Zarr supports compression with popular codecs such as \texttt{gzip}, \texttt{lz4}, or \texttt{zstd} and utilizes \gls{JSON} metadata files. The format requires no central server, making it attractive for cloud object stores where high-latency, high-throughput parallel access dominates.
+
+\paragraph{Cloud-native performance}
+Because each chunk maps to a \gls{SThree} key, multiple parallel GETs can execute simultaneously, achieving high aggregate bandwidth. Time-to-first-byte per chunk on \gls{SThree} is typically \SIrange{100}{200}{\milli\second}; concurrency improves throughput rather than single-request latency. Write throughput scales similarly via thousands of concurrent PUTs (one per chunk), enabling real-time ingestion at modern beamlines without seeing too many performance drawbacks.
+
+\paragraph{Growing ecosystem}
+Researchers across various fields have adopted Zarr; \gls{GDAL} provides a native driver for geospatial rasters \cite{gdal2024zarr} while the bioimaging community standardized on \gls{OME}-Zarr for petabyte-scale microscopy archives \cite{moore2023ome}. A NumFOCUS-backed governance model and a public Zarr-specs \gls{RFC} process ensure long-term stability in the system \cite{zarrspecv3}.
+
+Zarr’s chunk-per-object design aligns perfectly with the partial-read workloads studied in this report. However, its performance depends on chunk size, sharding, and metadata unification.
+
+\subsubsection{Apache Parquet}
+\label{sec:apache-parquet}
+Apache Parquet is an open, columnar storage format originally developed at Twitter and Cloudera to bring Google Dremel–style analytics to the Hadoop ecosystem. The Parquet format organizes a file into one or more \emph{row groups} where, within each row group, every column is stored contiguously as a \emph{column chunk} and encoded with lightweight compression and a dictionary encoding scheme. Because the system only reads the required columns and the row groups that satisfy a filter predicate, Parquet dramatically reduces I/O volume for wide, sparse tables. Parquet supports several compression codecs, such as Snappy, \texttt{gzip}, deflate, and BZIP2 \cite{vohra2016apache}. Within each row group, Parquet applies column-specific encodings—such as dictionary or run-length encoding—and independent compression, further shrinking the on-disk footprint and amplifying the format’s I/O-reduction advantage.
+
+\paragraph{Cloud-native performance}
+On Amazon \gls{SThree}, each row group is laid out as a large (typically \SIrange{64}{256}{\mega\byte}) contiguous byte range, allowing clients such as Apache Arrow’s vectorized reader or \gls{AWS} Athena to fetch gigabyte-scale slices with a single Range GET. The \gls{AWS} Athena pricing page states that converting data to compressed, columnar formats like Parquet “can save up to \SI{90}{\percent} per query and improve performance” compared with raw \gls{CSV} \cite{aws_athena_pricing}.
+
+\paragraph{Ecosystem adoption}
+Parquet has become the default on-disk file format throughout today’s analytics stack. Apache Spark uses Parquet as the \emph{default data source}, and Apache Iceberg likewise keeps its immutable data files in Parquet \cite{iceberg_spec}. In the in-memory layer, Pandas and Apache Arrow provide first-class readers/writers for Parquet \cite{pandas_read_parquet}. Primary cloud analytics services natively ingest Parquet, including Google BigQuery \cite{bq_parquet}, \gls{AWS} Glue \cite{aws_glue_parquet}, and Amazon Athena \cite{aws-athena-columnar}.
+
+Parquet’s columnar design is perfect for the tabular metadata portion of scattering experiments, where scientists frequently select a handful of columns across millions of rows. However, its row-group granularity (tens of MB) and lack of native $n$-D chunking can inflate latency for small pixel tiles.
+
+
+\subsubsection{TileDB}
+\label{sec:tiledb}
+TileDB is an open-source array storage engine for both dense and sparse data, organizing writes to immutable, timestamped \emph{fragments}. \cite{Papadopoulos2016TileDB,TileDBDataLayout}. Each fragment contains attribute data serialized into \emph{data tiles}. On object stores, TileDB uses a virtual filesystem with native backends for \gls{SThree}, Azure Blob, and GCS. On \gls{AWS} \gls{SThree}, it writes using multipart uploads to create append-only fragment objects \cite{TileDBBackends,TileDBS3}. The array directory contains the schema under \texttt{\_\_schema/}, per-fragment data, and fragment metadata. \cite{TileDBFragmentMeta}.
+
+
+\paragraph{Cloud mapping and object count}
+Unlike chunk-per-object layouts, a single fragment typically produces a small, fixed set of objects. It generates one attribute file per attribute, one fragment-metadata file, one commit record, and the already-existing schema file. The total object count scales with the number of \emph{fragments} and attributes rather than the number of tiles, which reduces LIST/HEAD amplification on \gls{SThree} for large arrays \cite{TileDBDataLayout,TileDBFragmentMeta}. Excessive fragmentation, however, increases first-open overhead because readers must fetch per-fragment metadata \cite{TileDBConsolidateFragmentMeta}.
+
+\paragraph{Reads and pruning}
+On open, TileDB loads fragment metadata and per-tile statistics/min-max bounds. The system then queries the pruned fragments and data tiles whose minimum-bounding rectangles (MBRs) do not intersect the requested subarray \cite{TileDBFragmentMeta,TileDBMBR}. Reads support ordered or unordered layouts, multi-range subarrays \cite{TileDBReadLayouts}.
+
+\paragraph{Writes, immutability, and time travel}
+All writes create new immutable fragments and commit files, enabling lock-free multiple-reader/multiple-writer behavior and consistent reads at a chosen timestamp range (“time traveling”). Fragment merging helps compact many small fragments into larger ones, which allows reclaim space \cite{TileDBTimeTravel}.
+
+\paragraph{Compression and filters}
+TileDB applies a per-attribute filter pipeline to tiles. Supported compressors include \texttt{gzip}, Zstandard, \texttt{lz4}, RLE, BZIP2, and integer-oriented transforms (bit-shuffle, bit-width reduction, double-delta). Checksums (MD5/SHA-256) are available for integrity. Arrays can be encrypted at rest using AES-256-GCM \cite{TileDBCompression,TileDBChecksums,TileDBEncryption}.
+
+\subsubsection{ROOT / RNTuple}
+\label{sec:root-rntuple}
+\gls{ROOT} is an object-oriented C++ framework developed at \gls{CERN} to handle the petabyte-scale data streams of high-energy-physics experiments \cite{blomer2020evolution}. Its core storage abstraction, \gls{TTree}, stores events as rows and detector variables as \emph{branches}. The format splits each branch into contiguous \emph{baskets}, allowing readers to load them independently. This column-friendly layout lets analysis jobs load only the needed branches, minimizing I/O and deserialization overhead, a property directly relevant to slice-level scattering analysis.
+
+\paragraph{RNTuple redesign}
+After two decades of incremental evolution, \emph{\gls{TTree}} showed architectural limits for modern heterogeneous hardware and cloud storage. The \gls{RNTuple} project, therefore, re-implements \gls{ROOT} I/O with a stricter columnar layout, page-based compression, and a self-describing, versioned metadata footer \cite{blomer2020evolution}. Pages (\(\approx\)\,\SIrange{8}{16}{\kilo\byte}) are grouped into clusters so that entirely columnar reads issue a single contiguous request, while sparse event selections fetch only the referenced pages. By decoupling metadata from data pages, \gls{RNTuple} avoids rewriting the entire file when appending events, which is critical for streaming detectors and results in improved partial reads.
+
+\paragraph{Object-store back-end}
+Through the generic \gls{ROOT} Page Source interface, pages can reside in \gls{POSIX} files, over \gls{HTTP}(S), or as individual \gls{SThree} objects \cite{rootRNTuple2025}. Scaling studies by Blomer showed near-linear throughput up to \(\mathcal{O}(10^{2})\) concurrent readers on a >100‐core \gls{HPC} cluster served by a \gls{DAOS} object store, achieving an aggregated read rate above \SI{35}{\giga\byte\per\second} before the storage system became the bottleneck \cite{blomer2024root}.
+
+This architecture thus provides high-throughput, scalable, and selective access to petabyte-scale datasets, whether on \gls{HPC} or in the cloud, making \gls{RNTuple} a promising foundation for modern, slice-level scattering analyses.
+
+\subsection{Compression Algorithms Reviewed}
+\label{sec:compression-algorithms}
+Lossless compression is a first-order lever for improving performance and reducing costs in cloud object–store workflows. Smaller chunks reduce \gls{SThree} egress and request fees, while faster codecs shorten the latency that dominates interactive partial reads in synchrotron experiments.
+
+The focus is on three open-source codecs that form a spectrum of trade-offs: \emph{gzip/DEFLATE} (high ratio, high \gls{CPU}), \emph{\gls{LZfour}} (low ratio, ultra-low latency), and \emph{Zstandard} (\emph{\gls{ZSTD}}, balanced). All four backends under test (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}/\gls{RNTuple}) support \texttt{gzip}, \texttt{lz4}, and Zstandard (built-in or via standard filters/plugins).
+
+\subsubsection{gzip}
+\label{sec:compression-gzip}
+GNU \texttt{gzip} has been the default lossless compression tool on Unix-like systems since 1992. \gls{RFC}~1952 formalizes \texttt{gzip}’s file format and header/trailer structure, and those specifications have remained patent-free and backward-compatible across three decades of scientific workflows \cite{deutsch1996rfc1952}.
+
+\paragraph{Algorithmic design}
+The compressor implements the \emph{DEFLATE} scheme, a cascade of \gls{LZseventyseven} sliding-window substitution followed by static/dynamic Huffman coding tunable via nine quality levels that trade compression time for ratio. Level 6 is the GNU default, while level 1 sacrifices a \(\approx\) 30\% ratio to gain 3–4\(\times\) speed \cite{deutsch1996rfc1952}.
+
+\paragraph{Performance on scientific data}
+Benchmarks on floating-point climate and remote-sensing datasets stored in \gls{netCDF}-4/\gls{HDFfive} show typical space savings of 1.6–2.2\(\times\) at levels 4–6. However, this did show that with compression, the \gls{CPU} costs were 2–5\(\times\) higher than \texttt{lz4}, and decompression throughput that saturates a single \SI{10}{\giga\bit\per\second} core around \SI{500}{\mega\byte\per\second} \cite{delaunay2019evaluation,chen2023fcbench}.
+
+\paragraph{Integration with chunked formats}
+Native support for \texttt{gzip} exists in all five tested backends. Because \texttt{gzip} compresses each chunk independently, its compression ratio varies with chunk size and needs to be considered during these experiments. In the experiments, \texttt{gzip} is used as a “high-ratio, high-\gls{CPU}” reference, and its mature ecosystem guarantees consistent behavior across all five storage back ends. Its well-characterized latency overhead provides a clear baseline against which to measure the partial-read performance gains of newer codecs like Zstandard and \texttt{lz4}.
+
+\subsubsection{LZ4}
+\label{sec:compression-lz4}
+Introduced in 2011, \texttt{lz4} emerged as a lightweight derivative of the Lempel–Ziv (\gls{LZseventyseven}) family, designed to maximize streaming throughput while keeping memory overhead to a minimum. Its open-source framing format defines a compact header, provides optional block and content checksums, and employs a skippable frame mechanism, allowing adding new features without breaking older decoders. These attributes have led to widespread adoption in operating systems, high-performance storage engines, and scientific data formats where sub-millisecond decode latency is critical.
+
+\paragraph{Algorithmic profile}
+The codec emphasizes extremely fast byte-wise parsing and a greedy match-finder that limits back-references to \SI{64}{\kilo\byte}. Because of this, the compression runs at $>$\SI{500}{\mega\byte\per\second} per core while decompression routinely exceeds \SIrange{2}{3}{\giga\byte\per\second}, albeit with modest ratios (1.2–1.7\(\times\) on floating-point data) \cite{lz42025,7440278}. A high-compression variant \texttt{lz4hc} improves the ratio by $\sim$15\,\% at 3–5 \(\times\) the \gls{CPU} cost.
+
+\paragraph{Empirical results on scientific workloads}
+Almeida \emph{et al.} compared \gls{LZfour} with \gls{ZLIB} on \gls{ROOT} HEP and climate grids, reporting \SIrange{1.0}{1.2}{\giga\byte\per\second} decompression (versus \SI{120}{\mega\byte\per\second} for \gls{ZLIB}) at the expense of only a 5–10\,\% ratio loss \cite{almeida2014two}. The \gls{VLDB}’24 “\gls{FCBench}” study recently measured the \gls{CPU} variant bitshuffle with \gls{LZfour} across 33 floating-point datasets. The study showed that it sustained \SI{0.9}{\giga\byte\per\second} compression and \SI{1.2}{\giga\byte\per\second} decompression on \SI{64}{\kilo\byte} blocks while achieving a median compression ratio of 1.43 \cite{chen2023fcbench}.
+
+\paragraph{Integration in storage formats}
+As a codec, \texttt{lz4} filters are first-class options in \gls{HDFfive} (\texttt{H5Z\_LZ4}), Zarr v3, Parquet, and TileDB. Because the \texttt{lz4} \SI{64}{\kilo\byte} match window limits cross-chunk redundancy, chunk sizes above \SIrange{1}{2}{\mega\byte} yield diminishing returns, which for this study will align well with \gls{SThree} request-cost sweet spots.
+
+In our benchmarks, \texttt{lz4} represents the “low-latency, low-\gls{CPU}” option, serving as the low-latency reference alongside \texttt{gzip} and \texttt{zstd}. The extent to which compression ratio can be traded for sub-second partial reads without materially increasing monthly \gls{SThree} storage costs will be quantified.
+
+\subsubsection{zstd}
+\label{sec:compression-zstd}
+Zstandard (\texttt{zstd}) was released by Collet in 2016 and standardized by the IETF as \gls{RFC}~8878 \cite{collet2021rfc8878}. It combines an \gls{LZseventyseven} dictionary back-reference engine with Finite-State Entropy (\gls{FSE}) coding. It supports window sizes up to 128 MiB and offers 23 quality levels ($-7$ to 22), optional long-range mode, and trained dictionaries (negative values activate ultra-fast modes that trade ratio for speed). Decompression speed is deliberately kept almost constant across levels, whereas compression trades \gls{CPU} for ratio.
+
+\paragraph{Throughput and ratio characteristics}
+According to the \texttt{zstd} manual, the fastest compression mode exceeds \SI{200}{\mega\byte\per\second} per core, while the decoder sustains $>$\SI{500}{\mega\byte\per\second} per core on commodity x86 \gls{CPU}s \cite{zstdman2025}.
+
+Promberger \emph{et al.}\ measured \texttt{zstd} level 2 on a 4.9 GB \gls{LHCb} collision dataset and found that its \emph{compression} throughput was roughly 2–3 \(\times\) higher than that of \emph{\gls{ZLIB}} level 2 while achieving an almost identical compression ratio, \cite{promberger2023characterization}.
+
+Delaunay et al. found that “Shuffle + Zstandard-2” compresses \gls{CFOSAT} and \gls{SWOT} remote-sensing files about 1.4 \(\times\) to 7 \(\times\) faster than the mission’s baseline “Shuffle + Deflate-3/4”. It delivers virtually identical space savings, accelerating decompression by up to seven-fold \cite{delaunay2019evaluation}. Across the full 33-dataset \gls{FCBench} suite, the \gls{VLDB}’24 study reports that a \emph{bitshuffle+}\texttt{zstd} pipeline achieves a harmonic-mean compression ratio of 1.47, while sustaining compression and decompression throughputs of $\sim\!\SI{1.4}{\giga\byte\per\second}$ and $\sim\!\SI{1.3}{\giga\byte\per\second}$, respectively  \cite{chen2023fcbench}.
+
+\paragraph{Integration in scientific formats}
+As a codec, \texttt{zstd} is a first-class option in Parquet, TileDB, and available as extensions for \gls{HDFfive} and Zarr v3. With \gls{FSE} contexts resetting per block, 1–4 MiB chunks maximize the ratio without inflating \gls{SThree} request counts. \texttt{zstd} occupies the “balanced ratio/latency” middle ground between \texttt{gzip} (high ratio, high \gls{CPU}) and \texttt{lz4} (low ratio, low \gls{CPU}) in the study.
+
+
 
 \section{Summary and Link to Problem Statement}
 \label{sec:summary-problem-statement}
