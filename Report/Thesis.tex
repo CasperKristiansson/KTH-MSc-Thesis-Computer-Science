@@ -801,16 +801,13 @@ The \gls{HDFfive} ecosystem represents the most mature and widely adopted soluti
 \paragraph{HDF5 fundamentals}
 Hierarchical Data Format~5 (\gls{HDFfive}) is an open-source container, data model, and I/O library designed to store extensive, multidimensional scientific data efficiently \cite{10.1145/1966895.1966900}. An \gls{HDFfive} file consists of \emph{datasets} (n-dimensional arrays) organized in a \gls{POSIX}-style hierarchy of groups. Datasets may be either \emph{contiguously} or as fixed-size \emph{chunks}. Chunking enables transparent filter pipelines (e.g., \texttt{gzip}, \texttt{lz4}, \texttt{zstd}) and independent partial reads/writes. At the same time, the library’s \gls{MPIIO} pathway lets thousands of compute nodes access different chunks concurrently \cite{hdf5_chunking}. These strengths made \gls{HDFfive} the standard library/system used at X-ray, neutron, and electron facilities.
 
-\paragraph{Cloud usage}
 Placing a monolithic \gls{HDFfive} file on Amazon \gls{SThree} causes each \gls{POSIX} \texttt{read()} call to issue a separate \gls{HTTP} Range GET. Therefore, a single \SI{1}{\mega\byte} slice triggers two network round-trips (metadata + data), amplifying latency and incurring request fee costs that traditional \gls{HPC} deployments never experience \cite{hdf5_ros3}. Moreover, the file's internal B-tree indices are optimized for low-latency block storage, not for the \SIrange{100}{200}{\milli\second} object-store round-trip typical of Amazon \gls{SThree}.
 
-\paragraph{HSDS: a layered service}
 The \emph{Highly Scalable Data Service} (\gls{HSDS}) re-implements the \gls{HDFfive} abstraction as a stateless REST \gls{API} \cite{readey2020hsds}. Internally, \gls{HSDS} maps every chunk and metadata into separate objects (\gls{SThree}, Azure Blob, \gls{MinIO}, or \gls{POSIX}) and maintains a small \gls{JSON} document that maps logical dataset coordinates to object keys. This approach allows traversing the \gls{HDFfive} “groups” and “datasets.” With \gls{HSDS}, reading or writing array slices and modifying attributes through standard \gls{HTTP} requests is possible.
 
 \paragraph{Operational experience}
 Production \gls{HSDS} clusters are now back multi-hundred-terabyte public archives, for instance, \gls{NREL}’s 500 TB Wind Toolkit Long-Term Ensemble dataset, which users can subset without downloading entire files \cite{draxl2024wtkled}. \gls{HSDS} retains \gls{HDFfive}’s rich ecosystem yet promises proper cloud-native capabilities.
 
-\paragraph{File-system considerations on HPC clusters}
 Most Lustre and \gls{GPFS} installations cap the number of inodes a single user may allocate because millions of tiny files saturate the metadata target (MDT) servers long before disk bandwidth runs out \cite{gmitter2018smallfile}. Therefore, a monolithic \gls{HDFfive} container carries a practical on-prem advantage: \emph{one inode per file} and negligible directory pressure. By contrast, chunk-per-object formats such as Zarr can create $10^{5}$ $10^{7}$ objects for a single 1 TB tomography scan, a scenario many \gls{HPC} administrators actively discourage or block via strict inode quotas. The same characteristic becomes an asset in cloud object stores, where inodes do not exist, and latency can be hidden behind massive GET/PUT parallelism.
 
 \paragraph{Redundant indexing and its performance cost}
@@ -1137,10 +1134,21 @@ Random seeds are fixed and logged with per-run timers, and CloudWatch aggregates
 
 
 
+
+
+
+
+
+
+
+
+
+
 \cleardoublepage
 \chapter{What you did}
 \label{ch:whatYouDid}
 This chapter documents the experiment setup from start to finish, independent of any analysis. It specifies the dataset and augmentation strategy of the data. It explains the \gls{AWS} environment and client software used and how each backend (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}, and Parquet) was laid out and ingested on \gls{SThree}. It also documents monitoring (bucket analytics and CloudWatch request/latency metrics), filenames and logs, and the inclusion/exclusion rules applied during runs. Deviations from the plan are noted, including the pilot-only evaluation of Parquet due to operational constraints.
+
 
 \section{Dataset and preprocessing}
 This section specifies the dataset used in all experiments and the exact preprocessing applied. It states the raw frame geometry and encoding, then documents how we scaled from 80 real \texttt{CBF} frames to a $\sim$20\,GiB stack (\,$\sim$1{,}300 frames\,).
@@ -1247,8 +1255,7 @@ This section defines how the array was mapped to \gls{SThree} for each format an
 \subsection{HDF5 via HSDS}
 \gls{HSDS} serves \gls{HDFfive} on the \gls{ECtwo} node; we record domain paths, dataset geometry, chunking and codec settings. \gls{HSDS} manages \gls{SThree} keys and metadata; one frame per chunk preserves parity with other stores.
 
-
-\subsubsection{Layout}
+\textbf{Layout:}
 \begin{itemize}
   \item \gls{HSDS} domains: \texttt{/hdf5/\{gzip|lz4|zstd\}/all\_data.h5}.
   \item Dataset: \texttt{/data}, shape $(N,2880,2880)$, chunks $(1,2880,2880)$, \texttt{uint16}.
@@ -1256,7 +1263,7 @@ This section defines how the array was mapped to \gls{SThree} for each format an
   \item Objectization: $\sim N$ chunk objects plus \gls{HSDS} metadata/index objects.
 \end{itemize}
 
-\subsubsection{Ingestion}
+\textbf{Ingestion:}
 \begin{itemize}
   \item Writer: \texttt{h5pyd} client to \gls{HSDS} endpoint.
   \item Batching: frames loaded in batches of $64$; assigned as \texttt{dset[start:end,:,:] = stack}.
@@ -1264,11 +1271,10 @@ This section defines how the array was mapped to \gls{SThree} for each format an
   \item Notes: \gls{HSDS} manages \gls{SThree} keys; no client-side chunk cache tuning recorded.
 \end{itemize}
 
-
 \subsection{Zarr on S3}
 Zarr uses one chunk per frame; here we record store paths, array geometry, chunking parity, codecs, and the write procedure.
 
-\subsubsection{Layout}
+\textbf{Layout:}
 \begin{itemize}
   \item Stores: \texttt{s3://scatterin-thesis/zarr/\{gzip|lz4|zstd\}.zarr}.
   \item Array: \texttt{/data}, shape $(N,2880,2880)$, chunks $(1,2880,2880)$, \texttt{uint16}.
@@ -1277,18 +1283,17 @@ Zarr uses one chunk per frame; here we record store paths, array geometry, chunk
   \item Objectization: $\sim N$ chunk objects plus store metadata files.
 \end{itemize}
 
-\subsubsection{Ingestion}
+\textbf{Ingestion:}
 \begin{itemize}
   \item Writer: \texttt{zarr} with \texttt{FsspecStore} using \gls{SThree} credentials.
   \item Batching: $64$ frames per batch; contiguous slice writes.
   \item Concurrency: threaded frame loading; assignment to array per batch.
 \end{itemize}
 
-
 \subsection{Apache Parquet on S3}
 Frames were tabularized as rows with 2D rows as fixed-size lists. \textit{Note:} Parquet was piloted only and is excluded from timed results due to an operational stop (see section \ref{subsubsec:parquet-pilot-exclusion}).
 
-\subsubsection{Layout}
+\textbf{Layout:}
 \begin{itemize}
   \item Files: \texttt{s3://scatterin-thesis/parquet/\{gzip|lz4\}.parquet}.
   \item Schema: $2880$ columns \texttt{row\_0}\dots\texttt{row\_2879}, each \texttt{list<fixed\_size=2880, uint16>}.
@@ -1297,7 +1302,7 @@ Frames were tabularized as rows with 2D rows as fixed-size lists. \textit{Note:}
   \item Objectization: single Parquet object per codec.
 \end{itemize}
 
-\subsubsection{Ingestion}
+\textbf{Ingestion:}
 \begin{itemize}
   \item Writer: \texttt{pyarrow.parquet.ParquetWriter} on \gls{SThree}.
   \item Loop: for each frame, build per-row arrays, assemble one-row table, write.
@@ -1310,14 +1315,14 @@ Frames were tabularized as rows with 2D rows as fixed-size lists. \textit{Note:}
 
 Parquet was implemented as a single file with $2880$ list-of-$2880$ \texttt{uint16} columns (\texttt{row\_0}\dots\texttt{row\_2879}), one appended row per frame, with \texttt{gzip} and \texttt{lz4} compression; dictionaries disabled.
 
-\paragraph{Observed during pilot}
+\textbf{Observed during pilot:}
 \begin{itemize}
   \item File size: a single Parquet object of $\sim$\SI{34}{\gibi\byte} for a $\sim$\SI{20}{\gibi\byte} raw stack.
   \item Metadata open: \SIrange{3}{4}{\minute} to load schema, footer, and column indexes on the \gls{ECtwo} test node. The \gls{ECtwo} instance ended up crashing and hanging three times while trying to load \texttt{gzip} parquet file.
   \item Read smoke test: one frame decoded after metadata load; further timing runs were halted.
 \end{itemize}
 
-\paragraph{Decision}
+\textbf{Decision:}
 \begin{itemize}
   \item Operational stop after writing two frames and one read. Rationale: metadata load time and object size would make the full benchmark impractical within the experiment budget.
   \item Consequence: Parquet is omitted from timed latency/throughput results; artifacts are retained for transparency and discussed qualitatively in chapter \ref{ch:discussion}.
@@ -1327,17 +1332,18 @@ Parquet was implemented as a single file with $2880$ list-of-$2880$ \texttt{uint
 \subsection{TileDB dense array}
 TileDB stores a dense array with frame-sized tiles and immutable fragments; this records the domain, filters, and fragment layout.
 
-\subsubsection{Domain and tiles}
 \begin{itemize}
   \item URIs: \texttt{s3://scatterin-thesis/tiledb/\{gzip|lz4|zstd\}.tdb}.
   \item Domain dims: \texttt{file: [0,N-1]}, \texttt{y: [0,2879]}, \texttt{x: [0,2879]}.
   \item Tile extents: $(1,2880,2880)$ (full-frame tiles).
 \end{itemize}
-\subsubsection{Filters}
+
+\textbf{Filters:}
 \begin{itemize}
   \item \texttt{gzip} (\texttt{level=3}), \texttt{lz4} (\texttt{level=3}), \texttt{zstd} (\texttt{level=3}) as attribute filter lists.
 \end{itemize}
-\subsubsection{Fragments and objectization}
+
+\textbf{Fragments and objectization:}
 \begin{itemize}
   \item Writes executed in batches of $64$ frames per task; each task produced a fragment.
   \item Expected fragments: $\lceil N/64\rceil$ (no post-write consolidation or vacuum).
@@ -1347,31 +1353,38 @@ TileDB stores a dense array with frame-sized tiles and immutable fragments; this
 \subsection{ROOT / RNTuple}
 \gls{ROOT} encodes all frames into a single file per codec; this notes the tree layout, compression, and access pattern.
 
-\subsubsection{Tree layout}
+\textbf{Tree layout:}
 \begin{itemize}
   \item Files: \texttt{s3://scatterin-thesis/root/\{gzip|lz4|zstd\}.root}.
   \item \texttt{TTree} \texttt{img\_tree} with one branch \texttt{data} of length $2880\times2880$ \texttt{uint16}; one entry per frame.
 \end{itemize}
-\subsubsection{Compression}
+
+\textbf{Compression:}
 \begin{itemize}
   \item \texttt{gzip}: algorithm \texttt{kZLIB}, level $3$; \texttt{lz4}: \texttt{kLZ4} (default level); \texttt{zstd}: \texttt{kZSTD} (default level).
 \end{itemize}
-\subsubsection{Objectization}
+
+\textbf{Objectization:}
 \begin{itemize}
   \item Single \gls{ROOT} object per codec. Selective reads use \gls{HTTP}/\gls{SThree} range-GETs into baskets/pages.
 \end{itemize}
 
-\subsection{Read mapping (planned behavior, qualitative)}
+\textbf{Read mapping (planned behavior, qualitative):}
 \begin{itemize}
   \item Frame-sized slice: \gls{HDFfive}/\gls{HSDS}, Zarr, TileDB $\Rightarrow$ one chunk/tile read per frame $+$ small metadata; Parquet and \gls{ROOT} $\Rightarrow$ range reads within a single object.
   \item Full scan: \gls{HDFfive}/\gls{HSDS} and Zarr $\Rightarrow$ $\sim N$ chunk reads; TileDB $\Rightarrow$ sequential tile reads across fragments; Parquet and \gls{ROOT} $\Rightarrow$ sequential range reads within one object.
 \end{itemize}
 
 
-\section{Execution protocol}
+
+\section{Execution, logging, and quality control}
+\label{sec:execution-logging-qc}
+This section specifies the run protocol for every \{format$\times$codec$\times$pattern\} cell, the logging surfaces, and the checks that guarantee data integrity. It covers session structure, randomization and seeding, timer definitions, CloudWatch capture, and inclusion/exclusion rules.
+
+\subsection{Execution protocol}
 All reads ran on a single \gls{ECtwo} node in \texttt{eu-north-1}. For each \emph{format}~$\times$~\emph{codec}~$\times$~\emph{pattern}, the notebook executed a fixed warm-up. There is a fixed time gap between the real execution and warm-ups to keep the metrics out of \gls{SThree}. No cross-format concurrency.
 
-\subsection{Sessions and schedule}
+\subsubsection{Sessions and schedule}
 Each \emph{session} targeted one cell (format, codec, pattern). Order within a session:
 
 \begin{enumerate}
@@ -1382,7 +1395,7 @@ Each \emph{session} targeted one cell (format, codec, pattern). Order within a s
 
 Between sessions, formats did not overlap. \Gls{HSDS}, Zarr, TileDB, and \gls{ROOT} were run in separate sessions.
 
-\subsection{Randomization and seeding}
+\subsubsection{Randomization and seeding}
 A fixed seed ensured reproducibility (\texttt{SEED = 979969114}).
 
 \begin{itemize}
@@ -1390,14 +1403,14 @@ A fixed seed ensured reproducibility (\texttt{SEED = 979969114}).
   \item Full scans, scans all the files in the dataset, so no index list is being used.
 \end{itemize}
 
-
-\subsection{Timing definition}
+\subsubsection{Timing definition}
 Per run, we measured wall-clock time using \texttt{time.perf\_counter\_ns}. The timer encloses a single read call. It includes network transfer, decompression, and client decode. Log serialization is outside the timer.
 
-\subsection{Pattern procedures}
-\subsubsection{Full scan}
 
-Exactly one complete pass over all frames per repetition.
+\subsubsection{Pattern procedures}
+This section defines the exact read calls issued for each backend under the two workloads. Full scans iterate over all frames, while slice reads fetch a single frame by index with identical selection semantics across the different formats.
+
+For the Full scans, exactly one complete pass over all frames per repetition.
 
 \begin{itemize}
   \item Zarr: \texttt{data[:, :, :]}.
@@ -1406,8 +1419,8 @@ Exactly one complete pass over all frames per repetition.
   \item \gls{ROOT}/\gls{RNTuple}: for \(i=0\dots n-1\) call \texttt{br.array(entry\_start=i, entry\_stop=i+1, library="np")}.
 \end{itemize}
 
-\subsubsection{Slice (single-frame) reads}
-Exactly one frame per repetition, using the precomputed index list.
+For the slice (single-frame) reads, exactly one frame per repetition, using the precomputed index list.
+
 \begin{itemize}
   \item Zarr: \texttt{data[idx, :, :]}.
   \item TileDB: \texttt{data[idx, :, :]}.
@@ -1415,8 +1428,7 @@ Exactly one frame per repetition, using the precomputed index list.
   \item \gls{ROOT}/\gls{RNTuple}: \texttt{br.array(entry\_start=idx, entry\_stop=idx+1, library="np")}.
 \end{itemize}
 
-
-\subsection{CloudWatch capture}
+\subsubsection{CloudWatch capture}
 \gls{SThree} bucket request metrics were enabled with the dimensions \{\texttt{BucketName= scatterin-thesis}, \texttt{FilterId= root}\}. For each session, we queried and stored:
 
 \begin{itemize}
@@ -1427,14 +1439,13 @@ Exactly one frame per repetition, using the precomputed index list.
 
 Warm-ups precede the timed window by \(\ge\)2\, minutes to keep aggregates attributable to the timed runs.
 
-\subsection{Inclusion, failures, and retries}
-Warm-ups are excluded by design. A timed run is included if the read returns successfully. If a read raised an exception or timed out, that repetition was re-attempted.å
+\subsubsection{Inclusion, failures, and retries}
+Warm-ups are excluded by design. A timed run is included if the read returns successfully. If a read raised an exception or timed out, that repetition was re-attempted.
 
-\subsection{Caching and connections}
+\subsubsection{Caching and connections}
 Default client behavior was used. No explicit OS page-cache flushes. \Gls{HTTP} keep-alive and connection pooling are left to \texttt{fsspec/s3fs}, \texttt{boto3}, \texttt{h5pyd}, \texttt{tiledb} VFS, and \texttt{uproot}. No application-level prefetching was enabled in the read loops.
 
-
-\subsection{Run IDs, filenames, and logs}
+\subsubsection{Run IDs, filenames, and logs}
 Each session emits a monotonic \texttt{run\_id} (UTC \texttt{YYYYMMDD-HHMMSS}). Timed samples are written as \gls{JSON}:
 
 \begin{itemize}
@@ -1446,22 +1457,19 @@ Each session emits a monotonic \texttt{run\_id} (UTC \texttt{YYYYMMDD-HHMMSS}). 
 
 Each file contains \gls{JSON} rows of the form:
 \begin{verbatim}
-[ {"i": <rep>, "t_total_ns": <int>}, ... ]
+  [ {"i": <rep>, "t_total_ns": <int>}, ... ]
 \end{verbatim}
 
 CloudWatch aggregates for the same cell are saved as
 \begin{verbatim}
-logs/<format>_<codec>_<pattern>_cloudwatch.json
+  logs/<format>_<codec>_<pattern>_cloudwatch.json
 \end{verbatim}
 
 
-
-
-
-\section{Quality control, exclusions, and deviations}
+\subsection{Quality control, exclusions, and deviations}
 Runs followed a fixed warm-up and timing protocol. Integrity checks verified shapes and dtypes. Only successful timed reads were included.
 
-\subsection{Quality control}
+\textbf{Quality control:}
 \begin{itemize}
   \item Inclusion: $5$ warm-ups excluded; $50$ timed repetitions included per cell.
   \item Isolation for \gls{SThree} metrics: warm-ups \(\rightarrow\) idle gap \(\ge\)2\,min \(\rightarrow\) timed runs.
@@ -1469,15 +1477,13 @@ Runs followed a fixed warm-up and timing protocol. Integrity checks verified sha
   \item CloudWatch capture: session-scoped queries saved as \gls{JSON}; notebook timers saved per run.
 \end{itemize}
 
-
-\subsection{Exclusion rules}
+\textbf{Exclusion rules:}
 \begin{itemize}
   \item Exclude if: timeout, \gls{HTTP} 5xx, partial read, decode error.
   \item Handling: Abort, and re-run the entire execution test.
 \end{itemize}
 
-
-\subsection{Deviations from plan}
+\textbf{Deviations from plan:}
 \begin{itemize}
   \item \textbf{Parquet pilot-only} Writing and a smoke read revealed impractical metadata open times and a single huge object; Parquet was omitted from timed results and kept for qualitative discussion.
 \end{itemize}
