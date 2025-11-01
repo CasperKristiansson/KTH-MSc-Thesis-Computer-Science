@@ -1507,7 +1507,6 @@ Runs followed a fixed warm-up and timing protocol. Integrity checks verified sha
 
 
 
-
 \cleardoublepage
 \chapter{Results and Analysis}
 \label{ch:resultsAndAnalysis}
@@ -1519,71 +1518,74 @@ Cross-format contrasts are \textbf{descriptive, session-conditional} because for
 
 
 
-
-
-\section{Experimental inventory and data hygiene}
+\section{Inventory and data hygiene}
+\label{sec:results-inventory}
 This section checks the executed runs and verifies data hygiene before analysis. We report run coverage per {format $\times$ codec $\times$ pattern}, assess distributional shape and run-order drift on $\ln(\text{time})$.
 
 \subsection{Run inclusion and coverage}
 \label{sec:run-inclusion-and-coverage}
 All planned timed runs completed successfully. For every \{format $\times$ codec $\times$ pattern\} cell we had planned $n=50$ where  $n=50$ runs where included and retried $n=0$, failures $n=0$. Across the 24 cells: planned $1{,}200$, included $1{,}200$; warm-ups ($5$ per cell; total $120$) were excluded by design. Potential failure modes would have included \gls{SThree} throttling (\gls{HTTP} 429 SlowDown), request timeouts, transient \gls{HTTP} 5xx from \gls{SThree}/\gls{HSDS}, connection resets, or client decode errors. None of these errors was observed during the execution of the experiment.
 
-
 \subsection{Timing diagnostics (distributional shape and drift)}
 We assess per-run timing on the log scale. Table \ref{tab:timing_diag_main} summarizes, for each {format $\times$ codec $\times$ pattern} cell, the Shapiro $p$ on $\ln(\text{time})$, lag-1 autocorrelation $\rho_1$, the $\mathrm{p95}/\mathrm{GM}$ ratio, and a Spearman trend $p$. Shape diagnostics are Q–Q plots of $\ln(\text{time})$ against a Normal reference (Figure \ref{fig:appendix_qq_grid}). Drift diagnostics are run-order traces of $\ln(\text{time})$ with a fixed smoother (Figure \ref{fig:appendix_drift_grid}). These artifacts are descriptive; they motivate the log transform and dependence-robust \glspl{CI}.
 
 \begin{table}[H]
-\centering
-\caption{Summary diagnostics by cell: Shapiro $p$ on $\ln(\text{time})$ and lag-1 autocorrelation $\rho_1$.}
-\label{tab:timing_diag_main}
-\begin{tabular}{l r r r r}
-\hline
-Cell (format–codec–pattern) & Shapiro $p$ & $\rho_1$ & $\mathrm{p95}/\mathrm{GM}$ & Spearman $p$ \\
-\hline
-\gls{HDFfive}–gzip–full    & 3.43e-09 & 0.66  & 1.02 & 0.837 \\
-\gls{ROOT}–gzip–full    & 0.305    & 0.75  & 1.05 & 8.09e-06 \\
-tiledb–gzip–full  & 0.067    & 0.61  & 1.10 & 0.531 \\
-zarr–gzip–full    & 0.0571   & 0.79  & 1.02 & 4.63e-15 \\
-\gls{HDFfive}–gzip–slice   & 0.00656  & -0.12 & 1.42 & 0.337 \\
-\gls{ROOT}–gzip–slice   & 0.983    & 0.02  & 1.16 & 0.161 \\
-tiledb–gzip–slice & 0.334    & 0.03  & 1.34 & 0.00376 \\
-zarr–gzip–slice   & 0.773    & -0.19 & 1.23 & 0.786 \\
-\gls{HDFfive}–\gls{LZfour}–full     & 0.249    & 0.34  & 1.01 & 0.831 \\
-\gls{ROOT}–\gls{LZfour}–full     & 0.0396   & 0.77  & 1.03 & 0.036 \\
-tiledb–\gls{LZfour}–full   & 0.07     & 0.69  & 1.06 & 0.0948 \\
-zarr–\gls{LZfour}–full     & 0.311    & 0.71  & 1.03 & 0.689 \\
-\gls{HDFfive}–\gls{LZfour}–slice    & 0.481    & 0.07  & 1.23 & 0.509 \\
-\gls{ROOT}–\gls{LZfour}–slice    & 0.432    & 0.32  & 1.16 & 0.00312 \\
-tiledb–\gls{LZfour}–slice  & 0.00033  & 0.05  & 1.28 & 0.178 \\
-zarr–\gls{LZfour}–slice    & 0.0164   & -0.09 & 1.99 & 0.585 \\
-\gls{HDFfive}–\gls{ZSTD}–full    & 0.000154 & 0.57  & 1.01 & 0.00385 \\
-\gls{ROOT}–\gls{ZSTD}–full    & 0.556    & 0.60  & 1.17 & 0.395 \\
-tiledb–\gls{ZSTD}–full  & 0.00838  & 0.75  & 1.11 & 0.33 \\
-zarr–\gls{ZSTD}–full    & 0.0821   & 0.57  & 1.02 & 0.00347 \\
-\gls{HDFfive}–\gls{ZSTD}–slice   & 0.0038   & -0.21 & 1.21 & 0.625 \\
-\gls{ROOT}–\gls{ZSTD}–slice   & 0.101    & -0.17 & 1.16 & 0.0225 \\
-tiledb–\gls{ZSTD}–slice & 0.339    & 0.01  & 1.41 & 0.0662 \\
-zarr–\gls{ZSTD}–slice   & 0.00425  & 0.00  & 1.26 & 0.236 \\
-\hline
-\end{tabular}
+  \centering
+  \caption{Summary diagnostics by cell: Shapiro $p$ on $\ln(\text{time})$ and lag-1 autocorrelation $\rho_1$.}
+  \label{tab:timing_diag_main}
+  \begin{tabular}{l r r r r}
+    \hline
+    Cell (format–codec–pattern) & Shapiro $p$ & $\rho_1$ & $\mathrm{p95}/\mathrm{GM}$ & Spearman $p$ \\
+    \hline
+    \gls{HDFfive}–gzip–full    & 3.43e-09 & 0.66  & 1.02 & 0.837 \\
+    \gls{ROOT}–gzip–full    & 0.305    & 0.75  & 1.05 & 8.09e-06 \\
+    tiledb–gzip–full  & 0.067    & 0.61  & 1.10 & 0.531 \\
+    zarr–gzip–full    & 0.0571   & 0.79  & 1.02 & 4.63e-15 \\
+    \gls{HDFfive}–gzip–slice   & 0.00656  & -0.12 & 1.42 & 0.337 \\
+    \gls{ROOT}–gzip–slice   & 0.983    & 0.02  & 1.16 & 0.161 \\
+    tiledb–gzip–slice & 0.334    & 0.03  & 1.34 & 0.00376 \\
+    zarr–gzip–slice   & 0.773    & -0.19 & 1.23 & 0.786 \\
+    \gls{HDFfive}–\gls{LZfour}–full     & 0.249    & 0.34  & 1.01 & 0.831 \\
+    \gls{ROOT}–\gls{LZfour}–full     & 0.0396   & 0.77  & 1.03 & 0.036 \\
+    tiledb–\gls{LZfour}–full   & 0.07     & 0.69  & 1.06 & 0.0948 \\
+    zarr–\gls{LZfour}–full     & 0.311    & 0.71  & 1.03 & 0.689 \\
+    \gls{HDFfive}–\gls{LZfour}–slice    & 0.481    & 0.07  & 1.23 & 0.509 \\
+    \gls{ROOT}–\gls{LZfour}–slice    & 0.432    & 0.32  & 1.16 & 0.00312 \\
+    tiledb–\gls{LZfour}–slice  & 0.00033  & 0.05  & 1.28 & 0.178 \\
+    zarr–\gls{LZfour}–slice    & 0.0164   & -0.09 & 1.99 & 0.585 \\
+    \gls{HDFfive}–\gls{ZSTD}–full    & 0.000154 & 0.57  & 1.01 & 0.00385 \\
+    \gls{ROOT}–\gls{ZSTD}–full    & 0.556    & 0.60  & 1.17 & 0.395 \\
+    tiledb–\gls{ZSTD}–full  & 0.00838  & 0.75  & 1.11 & 0.33 \\
+    zarr–\gls{ZSTD}–full    & 0.0821   & 0.57  & 1.02 & 0.00347 \\
+    \gls{HDFfive}–\gls{ZSTD}–slice   & 0.0038   & -0.21 & 1.21 & 0.625 \\
+    \gls{ROOT}–\gls{ZSTD}–slice   & 0.101    & -0.17 & 1.16 & 0.0225 \\
+    tiledb–\gls{ZSTD}–slice & 0.339    & 0.01  & 1.41 & 0.0662 \\
+    zarr–\gls{ZSTD}–slice   & 0.00425  & 0.00  & 1.26 & 0.236 \\
+    \hline
+  \end{tabular}
 \end{table}
 
 \noindent\textit{Note.} Positive $\rho_1$ indicates serial dependence within sessions, the $\mathrm{p95}/\mathrm{GM}$ ratio summarizes tail heaviness.
 
 
 
-\section{Compression and objectization outcomes}
+\section{Footprint and service behavior}
+\label{sec:footprint-service}
+This section discusses the storage footprint and objectization and summarizes \gls{SThree} service behavior. We report stored bytes and compression ratios, object counts and average bytes per object, GETs per repetition and per GiB, and per-session FirstByte and TotalRequest latencies.
+
+\subsection{Compression and objectization outcomes}
 This section quantifies the storage footprint and objectization of each format–codec combination on \gls{SThree}. It reports metadata-inclusive stored bytes and compression ratios relative to the raw array, and lists object counts with derived bytes per object that feed the request intensity.
 
-\subsection{S3 object sizes and compression ratios}
- \label{subsec:comp_ratio}
+
+\subsubsection{S3 object sizes and compression ratios}
+\label{subsec:comp_ratio}
 This section enumerates the total stored bytes on \gls{SThree} for each {format, codec} and reports compression ratios relative to the uncompressed array baseline. Stored bytes are computed by summing the sizes of all objects under the format–codec prefix (data and metadata files included). The compression baseline is the raw pixel payload of the logical array, not container files. Let $N$ be the number of frames. With frame shape $(2880,2880)$ and 16-bit depth, the baseline size is
 
- \begin{equation}
- \label{eq:compression_ratio}
-    R_{f,c} \coloneqq \frac{B_{\text{raw}}}{B^{\text{stored}}_{f,c}},\qquad
-    B_{\text{raw}} \coloneqq N \times 2880 \times 2880 \times 2~\text{bytes}.
- \end{equation}
+\begin{equation}
+\label{eq:compression_ratio}
+  R_{f,c} \coloneqq \frac{B_{\text{raw}}}{B^{\text{stored}}_{f,c}},\qquad
+  B_{\text{raw}} \coloneqq N \times 2880 \times 2880 \times 2~\text{bytes}.
+\end{equation}
 
 For $N=1{,}300$, $B_{\text{raw}}=21{,}565{,}440{,}000\ \text{bytes}$ ($\approx 20.08\,\text{GiB}$). Figure \ref{fig:stored_bytes} reports absolute stored size and Figure \ref{fig:compression_rates} shows the corresponding compression ratios.
 
@@ -1601,8 +1603,7 @@ For $N=1{,}300$, $B_{\text{raw}}=21{,}565{,}440{,}000\ \text{bytes}$ ($\approx 2
   \label{fig:compression_rates}
 \end{figure}
 
-
-\subsection{Object counts and layout footprint}
+\subsubsection{Object counts and layout footprint}
 Table \ref{tab:object_counts} lists total \gls{SThree} object counts per family (format~$\times$~codec) and the derived average bytes per object, computed as \emph{stored bytes}/\emph{object count}. Counts were taken after ingestion and before any readings, and they remained constant across repetitions. Figure \ref{fig:object_counts} visualizes the counts and annotates the expected layout type for each format. Objectization follows Chapter~\ref{ch:whatYouDid}: \gls{HDFfive}/\gls{HSDS} and Zarr use chunk-per-frame/object layouts, so counts scale with $N$ plus metadata. TileDB writes immutable fragments (batches of 64 frames $\Rightarrow$ $\lceil N/64\rceil$ fragments, each with internal files), and lastly \gls{ROOT}/\gls{RNTuple} produces a single large object per codec. The codec choice does not affect object counts for Zarr, \gls{HSDS}, or \gls{ROOT}/\gls{RNTuple}; however, the stored bytes vary. TileDB fragment counts are batching-driven and codec-independent.
 
 \begin{table}[H]
@@ -1637,27 +1638,23 @@ Table \ref{tab:object_counts} lists total \gls{SThree} object counts per family 
   \label{fig:object_counts}
 \end{figure}
 
-
-
-
-
-
-\section{Request intensity and S3 service latencies}
+\subsection{Request intensity and S3 service latencies}
 This section summarizes \gls{SThree} request behavior and service-side latencies to provide context for client timings. We report the number of GETs per session, per repetition, and per GiB. CloudWatch FirstByte/TotalRequest averages and $p_{95}$ are considered descriptive because they are aggregated, session-conditional metrics. Because these are session aggregates, we report \emph{point estimates only}.
 
-\subsection{GETs per repetition and per GiB}
+
+\subsubsection{GETs per repetition and per GiB}
 We summarize request intensity from CloudWatch \emph{session} aggregates. All $n$ timed runs in a cell (format$\times$codec$\times$pattern) contribute to one set of counts. Let $G$ be \texttt{GetRequestsSum} and $B$ be \texttt{BytesDownloadedSum}. Counts include \gls{SThree} \texttt{GET} only; \texttt{HEAD}/\texttt{LIST}/\texttt{PUT} are excluded. Warm-ups are excluded and separated temporally from the timed window.
 
-Per-repetition intensity:
+\textbf{Per-repetition intensity}:
 \begin{equation}
-\label{eq:gets_per_rep}
-\widehat{\lambda}_{\mathrm{rep}}=\frac{G}{n}.
+  \label{eq:gets_per_rep}
+  \widehat{\lambda}_{\mathrm{rep}}=\frac{G}{n}.
 \end{equation}
 
-Volume-normalized intensity:
-\begin{equation}
-\label{eq:gets_per_gib}
-\widehat{\lambda}_{\mathrm{GiB}}=\frac{G\,2^{30}}{B}.
+\textbf{Volume-normalized intensity}:
+  \begin{equation}
+  \label{eq:gets_per_gib}
+  \widehat{\lambda}_{\mathrm{GiB}}=\frac{G\,2^{30}}{B}.
 \end{equation}
 
 Here $n$ is the number of timed repetitions in the cell; $\widehat{\lambda}_{\mathrm{GiB}}$ is measured in GETs per GiB.
@@ -1679,9 +1676,8 @@ Rates are descriptive and session-conditional. Table \ref{tab:req_intensity} lis
 \end{figure}
 
 
-
-\subsection{CloudWatch FirstByte and TotalRequest latencies}
-We report \gls{SThree} service-side latency summaries \emph{per session} (format$\times$codec$\times$pattern): \emph{FirstByteLatency} and \emph{TotalRequestLatency} (average and \gls{Pninetyfive}, ms). These are provider-defined aggregates over the timed window and are used descriptively only. We do not calculate the $p_{95}$ across sessions and make no statistical inferences. Values reflect \gls{SThree} service timing, not end-to-end client timers. Exact per-session values appear in Appendix~\ref{tab:cw_latencies}.
+\subsubsection{CloudWatch FirstByte and TotalRequest latencies}
+We report \gls{SThree} service-side latency summaries \emph{per session} (format$\times$codec$\times$pattern): \emph{FirstByteLatency} and \emph{TotalRequestLatency} (average and \gls{Pninetyfive}, ms). These are provider-defined aggregates over the timed window and are used descriptively only. We do not calculate the $p_{95}$ across sessions and make no statistical inferences. Values reflect \gls{SThree} service timing, not end-to-end client timers. Exact per-session values appear in Appendix \ref{tab:cw_latencies}.
 
 \begin{figure}[H]
   \centering
@@ -1699,12 +1695,15 @@ We report \gls{SThree} service-side latency summaries \emph{per session} (format
 
 
 
+\section{Core performance results}
+\label{sec:core-results}
+This section reports client-observed timings for partial (single-frame) retrievals and full-dataset scans across formats and codecs. We present geometric-mean time with dependence-robust 95\% confidence intervals, $p_{95}$ latency, and for scans also throughput, with all cross-format contrasts described as session-conditional.
 
-\section{Partial retrieval (single-frame) latency results}
+\subsection{Partial retrieval (single-frame) latency results}
 This section presents slice (single-frame) latency by format within each codec. We report geometric mean time with dependence-robust 95\% \glspl{CI} and $p_{95}$ using the same bootstrap. Cross-format contrasts are provided for descriptive and session-conditional purposes.
 
 
-\subsection{gzip}
+\subsubsection{gzip}
 For \texttt{gzip}/slice, geometric-mean (GM) latencies with dependence-robust 95\% \glspl{CI} (moving-block bootstrap; $\ell\in\{4,6,8\}$; $B{=}10{,}000$) are in Table~\ref{tab:slice_gzip_mbb}. TileDB is fastest; \gls{ROOT} is slowest. Cross-format contrasts are \textbf{descriptive, session-conditional}.
 
 
@@ -1745,8 +1744,7 @@ For \texttt{gzip}/slice, geometric-mean (GM) latencies with dependence-robust 95
   \label{fig:slice_gzip_ratios_point}
 \end{figure}
 
-
-\subsection{LZ4}
+\subsubsection{LZ4}
 
 For \texttt{lz4}/slice, geometric-mean (GM) latencies with dependence-robust 95\% \glspl{CI} (moving-block bootstrap; $\ell\in\{4,6,8\}$; $B{=}10{,}000$) appear in Table~\ref{tab:slice_lz4_mbb}. Zarr is fastest; \gls{ROOT} is slowest. Cross-format contrasts are \textbf{descriptive, session-conditional}.
 
@@ -1787,11 +1785,7 @@ For \texttt{lz4}/slice, geometric-mean (GM) latencies with dependence-robust 95\
   \label{fig:slice_lz4_ratios_point}
 \end{figure}
 
-
-
-
-
-\subsection{zstd}
+\subsubsection{zstd}
 For \texttt{zstd}/slice, geometric-mean (GM) latencies with dependence-robust 95\% \glspl{CI} (moving-block bootstrap; $\ell\in\{4,6,8\}$; $B{=}10{,}000$) appear in Table~\ref{tab:slice_zstd_mbb}. Zarr is fastest; \gls{ROOT} is slowest. Cross-format contrasts are \textbf{descriptive, session-conditional}.
 
 \begin{table}[H]
@@ -1831,15 +1825,10 @@ For \texttt{zstd}/slice, geometric-mean (GM) latencies with dependence-robust 95
   \label{fig:slice_zstd_ratios_point}
 \end{figure}
 
-
-
-\section{Full scan time and throughput results}
+\subsection{Full scan time and throughput results}
 Throughput (GiB/s) is derived from GM time on the log scale with the same dependence-robust bootstrap; summary values appear alongside times in Table \ref{tab:cross_full_throughput_vs_gets} and Figure \ref{fig:cross_full_throughput_vs_gets}.
 
-
-
-
-\subsection{gzip}
+\subsubsection{gzip}
 For \texttt{gzip}/full-scan, geometric-mean (GM) times with dependence-robust 95\% \glspl{CI} (moving-block bootstrap; $\ell\in\{4,6,8\}$; $B{=}10{,}000$) appear in Table~\ref{tab:full_gzip_mbb}. TileDB is fastest; \gls{ROOT} is slowest. Cross-format contrasts are \textbf{descriptive, session-conditional}.
 
 \begin{table}[H]
@@ -1881,8 +1870,7 @@ For \texttt{gzip}/full-scan, geometric-mean (GM) times with dependence-robust 95
 
 
 
-
-\subsection{LZ4}
+\subsubsection{LZ4}
 For \texttt{lz4}/full-scan, geometric-mean (GM) times with dependence-robust 95\% \glspl{CI} (moving-block bootstrap; $\ell\in\{4,6,8\}$; $B{=}10{,}000$) appear in Table~\ref{tab:full_lz4_mbb}. TileDB is fastest; \gls{ROOT} is slowest. Cross-format contrasts are \textbf{descriptive, session-conditional}.
 
 \begin{table}[H]
@@ -1924,7 +1912,7 @@ For \texttt{lz4}/full-scan, geometric-mean (GM) times with dependence-robust 95\
 
 
 
-\subsection{zstd}
+\subsubsection{zstd}
 For \texttt{zstd}/full-scan, geometric-mean (GM) times with dependence-robust 95\% \glspl{CI} (moving-block bootstrap; $\ell\in\{4,6,8\}$; $B{=}10{,}000$) appear in Table~\ref{tab:full_zstd_mbb}. TileDB is fastest; \gls{ROOT} is slowest. Cross-format contrasts are \textbf{descriptive, session-conditional}.
 
 \begin{table}[H]
@@ -1969,13 +1957,15 @@ For \texttt{zstd}/full-scan, geometric-mean (GM) times with dependence-robust 95
 
 
 
+\section{Synthesis, sensitivity, and decision support}
+\label{sec:synthesis-sensitivity}
+This section links performance to request intensity and service latencies, then tests robustness using nonparametric centers and tail sensitivity. We finish with per-codec league tables and normalized score matrices to support configuration choices.
 
-
-\section{Cross‑metric views}
+\subsection{Cross-metric views}
 This section links client performance to request intensity and service latencies to clarify mechanisms behind observed differences. All relationships are descriptive and session-conditional. Figures show per-session points with dependence-robust \glspl{CI}.
 
 
-\subsection{Slice: latency vs GETs per GiB}
+\subsubsection{Slice: latency vs GETs per GiB}
 Relate client-observed latency to \gls{SThree} request intensity. GETs/GiB are session-level descriptors from CloudWatch. All relationships are \textbf{descriptive, session-conditional}.
 
 \begin{figure}[H]
@@ -2013,7 +2003,7 @@ Fewer GETs/GiB often aligns with lower GM latency for chunked stores (Zarr/TileD
 
 
 
-\subsection{Scan: throughput vs GETs per GiB}
+\subsubsection{Scan: throughput vs GETs per GiB}
 Relate full-scan throughput to request intensity. Throughput uses GM time on the log scale. GETs/GiB are session aggregates. \textbf{Descriptive only}.
 
 \begin{figure}[H]
@@ -2051,7 +2041,7 @@ Lower GETs/GiB often coincides with higher throughput for TileDB and Zarr. \Gls{
 
 
 
-\section{Sensitivity analyses and robustness checks}
+\subsection{Sensitivity analyses and robustness checks}
 We apply the robustness procedures to all cells and fix the resampling settings as follows:
 
 \begin{itemize}
@@ -2063,10 +2053,10 @@ We apply the robustness procedures to all cells and fix the resampling settings 
 \end{itemize}
 
 
-\subsection{Nonparametric confirmation}
+\subsubsection{Nonparametric confirmation}
 This subsection cross-checks central tendency with nonparametric centers. We report medians with 95\% \glspl{CI} obtained using the moving-block bootstrap and compare descriptive median ratios and rankings to the GM-based results.
 
-\subsubsection{Slice}
+\paragraph{Slice}
 We confirm central tendency using the sample median with moving–block bootstrap (MBB) 95\% \glspl{CI} (\(\ell\in\{4,6,8,10\}\), \(B{=}10{,}000\)). Rankings align with geometric means where ratios are descriptive and session–conditional (reference = Zarr).
 
 \begin{figure}[H]
@@ -2173,8 +2163,7 @@ We confirm central tendency using the sample median with moving–block bootstra
   \end{tabular}
 \end{table}
 
-
-\subsubsection{Full Scan}
+\paragraph{Full Scan}
 We confirm central tendency using the sample median with moving–block bootstrap (MBB) 95\% \glspl{CI} (\(\ell\in\{4,6,8,10\}\), \(B{=}10{,}000\)). Cross-format differences are descriptive and session-conditional (reference = Zarr), and rankings match geometric-mean results for all codecs.
 
 \begin{figure}[H]
@@ -2282,10 +2271,10 @@ We confirm central tendency using the sample median with moving–block bootstra
 \end{table}
 
 
-\subsection{Tail sensitivity}
+\subsubsection{Tail sensitivity}
 This subsection tests tail estimate robustness. We re-estimate $p_{95}$ (and nearby quantiles) with the Harrell–Davis quantile and a block-length grid, reporting the widest dependence-robust \gls{CI} per format.
 
-\subsubsection{Slice}
+\paragraph{Slice}
 We estimate $p_{95}$ with the Harrell–Davis quantile and dependence-robust 95\% \glspl{CI} via a moving-block bootstrap (\(\ell\in\{4,6,8,10\}\), \(B{=}10{,}000\)). Ordering is stable across \(\ell\) and we report the widest \gls{CI} per format and show \(\ell\)–sensitivity curves.
 
 \begin{figure}[H]
@@ -2343,7 +2332,8 @@ We estimate $p_{95}$ with the Harrell–Davis quantile and dependence-robust 95\
   \end{tabular}
 \end{table}
 
-\subsubsection{Full Scan}
+
+\paragraph{Full Scan}
 We estimate $p_{95}$ with the Harrell–Davis quantile and dependence-robust 95\% \glspl{CI} via a moving-block bootstrap ($\ell\in\{4,6,8,10\}$, $B{=}10{,}000$). Ordering is stable across $\ell$ and we report the widest \gls{CI} per format and show $\ell$-sensitivity curves.
 
 \begin{figure}[H]
@@ -2403,126 +2393,121 @@ We estimate $p_{95}$ with the Harrell–Davis quantile and dependence-robust 95\
 \end{table}
 
 
-
-\section{Summary tables for downstream decision matrix}
+\subsection{Summary tables for downstream decision matrix}
 This section compiles summary tables for each codec $ \ times$ pattern combination to support the downstream decision matrix. Entries are \emph{session-conditional} and descriptive, where we report geometric mean (GM) latency with dependence-robust 95\% \glspl{CI} and $p_{95}$ (\gls{CI}). For full scans, we also include GM throughput (GiB/s, \gls{CI}), and each table lists \gls{SThree} GETs/GiB and stored size (GiB).
 
-\subsection{Per‑codec league tables}
+
+\subsubsection{Per-codec league tables}
 This subsection presents per-codec league tables to summarize practical rankings. Rankings are descriptive and session-conditional, using the stated primary objective and tie-breakers.
 
-\subsubsection{Slice}
+\paragraph{Slice}
 Rankings use lower GM latency (tie-break: $p_{95}\!\rightarrow$ GETs/GiB $\rightarrow$ stored GiB), which are descriptive and session-conditional.
 
 \begin{table}[H]
-\centering
-\caption{Slice — \texttt{gzip}: league table.}
-\label{tab:league-slice-gzip}
-\begin{tabular}{rlllll}
-\toprule
-Rank & Format & GM (ms) [\gls{CI}] & $p_{95}$ (ms) [\gls{CI}] & GETs/GiB & Stored GiB \\
-\midrule
-1 & tiledb & 195 \ [181, 210] & 262 \ [232, 318] & 113.3 & 11.44 \\
-2 & zarr   & 229 \ [223, 236] & 283 \ [262, 314] & 126.7 & 11.09 \\
-3 & \gls{HDFfive}   & 241 \ [232, 252] & 342 \ [295, 364] & 482.2 & 11.11 \\
-4 & \gls{ROOT}   & 406 \ [397, 416] & 471 \ [451, 501] & 61.3  & 11.09 \\
-\bottomrule
-\end{tabular}
+  \centering
+  \caption{Slice — \texttt{gzip}: league table.}
+  \label{tab:league-slice-gzip}
+  \begin{tabular}{rlllll}
+    \toprule
+    Rank & Format & GM (ms) [\gls{CI}] & $p_{95}$ (ms) [\gls{CI}] & GETs/GiB & Stored GiB \\
+    \midrule
+    1 & tiledb & 195 \ [181, 210] & 262 \ [232, 318] & 113.3 & 11.44 \\
+    2 & zarr   & 229 \ [223, 236] & 283 \ [262, 314] & 126.7 & 11.09 \\
+    3 & \gls{HDFfive}   & 241 \ [232, 252] & 342 \ [295, 364] & 482.2 & 11.11 \\
+    4 & \gls{ROOT}   & 406 \ [397, 416] & 471 \ [451, 501] & 61.3  & 11.09 \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
 \begin{table}[H]
-\centering
-\caption{Slice — \texttt{lz4}: league table.}
-\label{tab:league-slice-lz4}
-\begin{tabular}{rlllll}
-\toprule
-Rank & Format & GM (ms) [\gls{CI}] & $p_{95}$ (ms) [\gls{CI}] & GETs/GiB & Stored GiB \\
-\midrule
-1 & zarr   & 176 \ [159, 195] & 349 \ [281, 414] & 135.0 & 10.40 \\
-2 & tiledb & 214 \ [203, 227] & 274 \ [261, 403] & 83.2  & 15.56 \\
-3 & \gls{HDFfive}   & 222 \ [215, 230] & 273 \ [251, 281] & 270.5 & 19.17 \\
-4 & \gls{ROOT}   & 328 \ [314, 344] & 380 \ [369, 429] & 51.1  & 13.31 \\
-\bottomrule
-\end{tabular}
+  \centering
+  \caption{Slice — \texttt{lz4}: league table.}
+  \label{tab:league-slice-lz4}
+  \begin{tabular}{rlllll}
+    \toprule
+    Rank & Format & GM (ms) [\gls{CI}] & $p_{95}$ (ms) [\gls{CI}] & GETs/GiB & Stored GiB \\
+    \midrule
+    1 & zarr   & 176 \ [159, 195] & 349 \ [281, 414] & 135.0 & 10.40 \\
+    2 & tiledb & 214 \ [203, 227] & 274 \ [261, 403] & 83.2  & 15.56 \\
+    3 & \gls{HDFfive}   & 222 \ [215, 230] & 273 \ [251, 281] & 270.5 & 19.17 \\
+    4 & \gls{ROOT}   & 328 \ [314, 344] & 380 \ [369, 429] & 51.1  & 13.31 \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
 \begin{table}[H]
-\centering
-\caption{Slice — \texttt{zstd}: league table.}
-\label{tab:league-slice-zstd}
-\begin{tabular}{rlllll}
-\toprule
-Rank & Format & GM (ms) [\gls{CI}] & $p_{95}$ (ms) [\gls{CI}] & GETs/GiB & Stored GiB \\
-\midrule
-1 & zarr   & 155 \ [149, 162] & 195 \ [177, 243] & 135.0 & 10.51 \\
-2 & tiledb & 177 \ [165, 190] & 250 \ [205, 312] & 120.7 & 10.74 \\
-3 & \gls{HDFfive}   & 210 \ [205, 215] & 255 \ [236, 286] & 488.0 & 10.67 \\
-4 & \gls{ROOT}   & 269 \ [264, 275] & 311 \ [292, 341] & 66.2  & 10.26 \\
-\bottomrule
-\end{tabular}
+  \centering
+  \caption{Slice — \texttt{zstd}: league table.}
+  \label{tab:league-slice-zstd}
+  \begin{tabular}{rlllll}
+    \toprule
+    Rank & Format & GM (ms) [\gls{CI}] & $p_{95}$ (ms) [\gls{CI}] & GETs/GiB & Stored GiB \\
+    \midrule
+    1 & zarr   & 155 \ [149, 162] & 195 \ [177, 243] & 135.0 & 10.51 \\
+    2 & tiledb & 177 \ [165, 190] & 250 \ [205, 312] & 120.7 & 10.74 \\
+    3 & \gls{HDFfive}   & 210 \ [205, 215] & 255 \ [236, 286] & 488.0 & 10.67 \\
+    4 & \gls{ROOT}   & 269 \ [264, 275] & 311 \ [292, 341] & 66.2  & 10.26 \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
-
-\subsubsection{Full Scan}
+\paragraph{Full Scan}
 Rankings use higher GM throughput (tie-break GM time $\!\rightarrow$ GETs/GiB $\rightarrow$ stored GiB), which are descriptive and session-conditional.
 
 \begin{table}[H]
-\centering
-\caption{Full — \texttt{gzip}: league table.}
-\label{tab:league-full-gzip}
-\begin{tabular}{rlllll}
-\toprule
-Rank & Format & GM thr (GiB/s) [\gls{CI}] & GM time (ms) [\gls{CI}] & GETs/GiB & Stored GiB \\
-\midrule
-1 & tiledb & \makecell[r]{1.037\\\footnotesize([1.013, 1.062])} & \makecell[r]{11\,254\\\footnotesize([10\,994, 11\,529])} & 94.6  & 11.44 \\
-2 & zarr   & \makecell[r]{0.318\\\footnotesize([0.315, 0.321])} & \makecell[r]{35\,598\\\footnotesize([35\,280, 35\,926])} & 116.8 & 11.09 \\
-3 & \gls{HDFfive}   & \makecell[r]{0.072\\\footnotesize([0.072, 0.072])} & \makecell[r]{156\,966\\\footnotesize([156\,394, 157\,761])} & 137.7 & 11.11 \\
-4 & \gls{ROOT}   & \makecell[r]{0.051\\\footnotesize([0.050, 0.052])} & \makecell[r]{442\,484\\\footnotesize([434\,012, 451\,398])} & 58.5  & 11.09 \\
-\bottomrule
-\end{tabular}
+  \centering
+  \caption{Full — \texttt{gzip}: league table.}
+  \label{tab:league-full-gzip}
+  \begin{tabular}{rlllll}
+    \toprule
+    Rank & Format & GM thr (GiB/s) [\gls{CI}] & GM time (ms) [\gls{CI}] & GETs/GiB & Stored GiB \\
+    \midrule
+    1 & tiledb & \makecell[r]{1.037\\\footnotesize([1.013, 1.062])} & \makecell[r]{11\,254\\\footnotesize([10\,994, 11\,529])} & 94.6  & 11.44 \\
+    2 & zarr   & \makecell[r]{0.318\\\footnotesize([0.315, 0.321])} & \makecell[r]{35\,598\\\footnotesize([35\,280, 35\,926])} & 116.8 & 11.09 \\
+    3 & \gls{HDFfive}   & \makecell[r]{0.072\\\footnotesize([0.072, 0.072])} & \makecell[r]{156\,966\\\footnotesize([156\,394, 157\,761])} & 137.7 & 11.11 \\
+    4 & \gls{ROOT}   & \makecell[r]{0.051\\\footnotesize([0.050, 0.052])} & \makecell[r]{442\,484\\\footnotesize([434\,012, 451\,398])} & 58.5  & 11.09 \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
 \begin{table}[H]
-\centering
-\caption{Full — \texttt{lz4}: league table.}
-\label{tab:league-full-lz4}
-\begin{tabular}{rlllll}
-\toprule
-Rank & Format & GM thr (GiB/s) [\gls{CI}] & GM time (ms) [\gls{CI}] & GETs/GiB & Stored GiB \\
-\midrule
-1 & tiledb & \makecell[r]{1.167\\\footnotesize([1.144, 1.197])} & \makecell[r]{13\,602\\\footnotesize([13\,265, 13\,871])} & 93.7  & 15.56 \\
-2 & zarr   & \makecell[r]{0.368\\\footnotesize([0.365, 0.371])} & \makecell[r]{29\,483\\\footnotesize([29\,255, 29\,741])} & 124.5 & 10.40 \\
-3 & \gls{HDFfive}   & \makecell[r]{0.129\\\footnotesize([0.129, 0.129])} & \makecell[r]{151\,427\\\footnotesize([151\,201, 151\,666])} & 79.6  & 19.17 \\
-4 & \gls{ROOT}   & \makecell[r]{0.075\\\footnotesize([0.074, 0.076])} & \makecell[r]{363\,490\\\footnotesize([358\,672, 367\,871])} & 48.7  & 13.31 \\
-\bottomrule
-\end{tabular}
+  \centering
+  \caption{Full — \texttt{lz4}: league table.}
+  \label{tab:league-full-lz4}
+  \begin{tabular}{rlllll}
+    \toprule
+    Rank & Format & GM thr (GiB/s) [\gls{CI}] & GM time (ms) [\gls{CI}] & GETs/GiB & Stored GiB \\
+    \midrule
+    1 & tiledb & \makecell[r]{1.167\\\footnotesize([1.144, 1.197])} & \makecell[r]{13\,602\\\footnotesize([13\,265, 13\,871])} & 93.7  & 15.56 \\
+    2 & zarr   & \makecell[r]{0.368\\\footnotesize([0.365, 0.371])} & \makecell[r]{29\,483\\\footnotesize([29\,255, 29\,741])} & 124.5 & 10.40 \\
+    3 & \gls{HDFfive}   & \makecell[r]{0.129\\\footnotesize([0.129, 0.129])} & \makecell[r]{151\,427\\\footnotesize([151\,201, 151\,666])} & 79.6  & 19.17 \\
+    4 & \gls{ROOT}   & \makecell[r]{0.075\\\footnotesize([0.074, 0.076])} & \makecell[r]{363\,490\\\footnotesize([358\,672, 367\,871])} & 48.7  & 13.31 \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
 \begin{table}[H]
-\centering
-\caption{Full — \texttt{zstd}: league table.}
-\label{tab:league-full-zstd}
-\begin{tabular}{rlllll}
-\toprule
-Rank & Format & GM thr (GiB/s) [\gls{CI}] & GM time (ms) [\gls{CI}] & GETs/GiB & Stored GiB \\
-\midrule
-1 & tiledb & \makecell[r]{1.055\\\footnotesize([1.025, 1.082])} & \makecell[r]{10\,384\\\footnotesize([10\,123, 10\,687])} & 96.9  & 10.74 \\
-2 & zarr   & \makecell[r]{0.353\\\footnotesize([0.351, 0.356])} & \makecell[r]{30\,365\\\footnotesize([30\,167, 30\,555])} & 123.2 & 10.51 \\
-3 & \gls{HDFfive}   & \makecell[r]{0.072\\\footnotesize([0.072, 0.072])} & \makecell[r]{151\,497\\\footnotesize([151\,071, 151\,996])} & 142.2 & 10.67 \\
-4 & \gls{ROOT}   & \makecell[r]{0.056\\\footnotesize([0.054, 0.059])} & \makecell[r]{373\,589\\\footnotesize([357\,497, 390\,216])} & 63.2  & 10.26 \\
-\bottomrule
-\end{tabular}
+  \centering
+  \caption{Full — \texttt{zstd}: league table.}
+  \label{tab:league-full-zstd}
+  \begin{tabular}{rlllll}
+    \toprule
+    Rank & Format & GM thr (GiB/s) [\gls{CI}] & GM time (ms) [\gls{CI}] & GETs/GiB & Stored GiB \\
+    \midrule
+    1 & tiledb & \makecell[r]{1.055\\\footnotesize([1.025, 1.082])} & \makecell[r]{10\,384\\\footnotesize([10\,123, 10\,687])} & 96.9  & 10.74 \\
+    2 & zarr   & \makecell[r]{0.353\\\footnotesize([0.351, 0.356])} & \makecell[r]{30\,365\\\footnotesize([30\,167, 30\,555])} & 123.2 & 10.51 \\
+    3 & \gls{HDFfive}   & \makecell[r]{0.072\\\footnotesize([0.072, 0.072])} & \makecell[r]{151\,497\\\footnotesize([151\,071, 151\,996])} & 142.2 & 10.67 \\
+    4 & \gls{ROOT}   & \makecell[r]{0.056\\\footnotesize([0.054, 0.059])} & \makecell[r]{373\,589\\\footnotesize([357\,497, 390\,216])} & 63.2  & 10.26 \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
 
-
-
-
-
-\subsection{Normalized scores matrix}
+\subsubsection{Normalized scores matrix}
 This subsection aggregates metrics into 0–100 scores per codec$\times$pattern to support selection. Scores use robust min–max normalization and predefined weights, and totals are descriptive and session-conditional.
 
 
-\subsubsection{Slice}
+\paragraph{Slice}
 Scores are 0–100 per metric using robust min–max (5th–95th percentiles) within each codec$\times$pattern where higher is better. Weights: GM 0.60, $p_{95}$ 0.20, GETs/GiB 0.10, Stored 0.10.
 
 
@@ -2534,19 +2519,19 @@ Scores are 0–100 per metric using robust min–max (5th–95th percentiles) wi
 \end{figure}
 
 \begin{table}[H]
-\centering
-\caption{Slice/\texttt{gzip}: score matrix (normalized 0–100).}
-\label{tab:scores-slice-gzip}
-\begin{tabular}{lrrrrrl}
-\toprule
-Format & GM & $p_{95}$ & GETs & Stored & Total & \gls{DoM}. /by \\
-\midrule
-tiledb & 100.0 & 100.0 & 87.7 & 0.0  & 88.8 & / \\
-zarr   & 84.1  & 90.6  & 84.0 & 100.0 & 86.9 & \gls{HDFfive} / \\
-\gls{HDFfive}   & 77.5  & 59.0  & 0.0  & 93.3  & 67.6 & / zarr \\
-\gls{ROOT}   & 0.0   & 0.0   & 100.0& 100.0 & 20.0 & / \\
-\bottomrule
-\end{tabular}
+  \centering
+  \caption{Slice/\texttt{gzip}: score matrix (normalized 0–100).}
+  \label{tab:scores-slice-gzip}
+  \begin{tabular}{lrrrrrl}
+    \toprule
+    Format & GM & $p_{95}$ & GETs & Stored & Total & \gls{DoM}. /by \\
+    \midrule
+    tiledb & 100.0 & 100.0 & 87.7 & 0.0  & 88.8 & / \\
+    zarr   & 84.1  & 90.6  & 84.0 & 100.0 & 86.9 & \gls{HDFfive} / \\
+    \gls{HDFfive}   & 77.5  & 59.0  & 0.0  & 93.3  & 67.6 & / zarr \\
+    \gls{ROOT}   & 0.0   & 0.0   & 100.0& 100.0 & 20.0 & / \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
 \begin{figure}[H]
@@ -2557,19 +2542,19 @@ zarr   & 84.1  & 90.6  & 84.0 & 100.0 & 86.9 & \gls{HDFfive} / \\
 \end{figure}
 
 \begin{table}[H]
-\centering
-\caption{Slice/\texttt{lz4}: score matrix (normalized 0–100).}
-\label{tab:scores-slice-lz4}
-\begin{tabular}{lrrrrrl}
-\toprule
-Format & GM & $p_{95}$ & GETs & Stored & Total & \gls{DoM}. /by \\
-\midrule
-zarr   & 100.0 & 25.9 & 59.3 & 100.0 & 81.1 & / \\
-tiledb & 75.0  & 99.0 & 85.9 & 39.4  & 77.3 & / \\
-\gls{HDFfive}   & 68.8  & 100.0& 0.0  & 0.0   & 61.3 & / \\
-\gls{ROOT}   & 0.0   & 0.0  & 100.0& 68.3  & 16.8 & / \\
-\bottomrule
-\end{tabular}
+  \centering
+  \caption{Slice/\texttt{lz4}: score matrix (normalized 0–100).}
+  \label{tab:scores-slice-lz4}
+  \begin{tabular}{lrrrrrl}
+    \toprule
+    Format & GM & $p_{95}$ & GETs & Stored & Total & \gls{DoM}. /by \\
+    \midrule
+    zarr   & 100.0 & 25.9 & 59.3 & 100.0 & 81.1 & / \\
+    tiledb & 75.0  & 99.0 & 85.9 & 39.4  & 77.3 & / \\
+    \gls{HDFfive}   & 68.8  & 100.0& 0.0  & 0.0   & 61.3 & / \\
+    \gls{ROOT}   & 0.0   & 0.0  & 100.0& 68.3  & 16.8 & / \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
 \begin{figure}[H]
@@ -2580,22 +2565,23 @@ tiledb & 75.0  & 99.0 & 85.9 & 39.4  & 77.3 & / \\
 \end{figure}
 
 \begin{table}[H]
-\centering
-\caption{Slice/\texttt{zstd}: score matrix (normalized 0–100).}
-\label{tab:scores-slice-zstd}
-\begin{tabular}{lrrrrrl}
-\toprule
-Format & GM & $p_{95}$ & GETs & Stored & Total & \gls{DoM}. /by \\
-\midrule
-zarr   & 100.0 & 100.0 & 83.2 & 50.8 & 93.4 & \gls{HDFfive} / \\
-tiledb & 81.9  & 53.1  & 87.2 & 0.0  & 68.4 & / \\
-\gls{HDFfive}   & 49.3  & 48.1  & 0.0  & 13.8 & 40.6 & / zarr \\
-\gls{ROOT}   & 0.0   & 0.0   & 100.0& 100.0& 20.0 & / \\
-\bottomrule
-\end{tabular}
+  \centering
+  \caption{Slice/\texttt{zstd}: score matrix (normalized 0–100).}
+  \label{tab:scores-slice-zstd}
+  \begin{tabular}{lrrrrrl}
+    \toprule
+    Format & GM & $p_{95}$ & GETs & Stored & Total & \gls{DoM}. /by \\
+    \midrule
+    zarr   & 100.0 & 100.0 & 83.2 & 50.8 & 93.4 & \gls{HDFfive} / \\
+    tiledb & 81.9  & 53.1  & 87.2 & 0.0  & 68.4 & / \\
+    \gls{HDFfive}   & 49.3  & 48.1  & 0.0  & 13.8 & 40.6 & / zarr \\
+    \gls{ROOT}   & 0.0   & 0.0   & 100.0& 100.0& 20.0 & / \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
-\subsubsection{Full Scan}
+
+\paragraph{Full Scan}
 Scores are 0–100 per metric, using robust min–max normalization within codec$\times$  pattern where higher scores are better. Weights: throughput 0.60, GETs/GiB 0.15, Stored 0.15, $p_{95}$ 0.10.
 
 
@@ -2607,19 +2593,19 @@ Scores are 0–100 per metric, using robust min–max normalization within codec
 \end{figure}
 
 \begin{table}[H]
-\centering
-\caption{Full/\texttt{gzip}: score matrix (normalized 0–100).}
-\label{tab:scores-full-gzip}
-\begin{tabular}{lrrrrrl}
-\toprule
-Format & Thr & $p_{95}$ & GETs/GiB & Stored & Total & \gls{DoM}. /by \\
-\midrule
-tiledb & 100.0 & 100.0 & 56.6 & 0.0  & 78.5 & / \\
-zarr   & 30.1  & 94.9  & 25.2 & 100.0& 46.3 & \gls{HDFfive} / \\
-\gls{ROOT}   & 0.0   & 0.0   & 100.0& 100.0& 30.0 & / \\
-\gls{HDFfive}   & 2.1   & 64.3  & 0.0  & 93.3 & 21.7 & / zarr \\
-\bottomrule
-\end{tabular}
+  \centering
+  \caption{Full/\texttt{gzip}: score matrix (normalized 0–100).}
+  \label{tab:scores-full-gzip}
+  \begin{tabular}{lrrrrrl}
+    \toprule
+    Format & Thr & $p_{95}$ & GETs/GiB & Stored & Total & \gls{DoM}. /by \\
+    \midrule
+    tiledb & 100.0 & 100.0 & 56.6 & 0.0  & 78.5 & / \\
+    zarr   & 30.1  & 94.9  & 25.2 & 100.0& 46.3 & \gls{HDFfive} / \\
+    \gls{ROOT}   & 0.0   & 0.0   & 100.0& 100.0& 30.0 & / \\
+    \gls{HDFfive}   & 2.1   & 64.3  & 0.0  & 93.3 & 21.7 & / zarr \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
 \begin{figure}[H]
@@ -2630,19 +2616,19 @@ zarr   & 30.1  & 94.9  & 25.2 & 100.0& 46.3 & \gls{HDFfive} / \\
 \end{figure}
 
 \begin{table}[H]
-\centering
-\caption{Full/\texttt{lz4}: score matrix (normalized 0–100).}
-\label{tab:scores-full-lz4}
-\begin{tabular}{lrrrrrl}
-\toprule
-Format & Thr & $p_{95}$ & GETs/GiB & Stored & Total & \gls{DoM}. /by \\
-\midrule
-tiledb & 100.0 & 100.0 & 39.4 & 39.4 & 81.8 & / \\
-zarr   & 29.6  & 95.8  & 0.0  & 100.0& 42.3 & / \\
-\gls{ROOT}   & 0.0   & 0.0   & 100.0& 68.3 & 25.2 & / \\
-\gls{HDFfive}   & 4.8   & 58.1  & 60.5 & 0.0  & 17.8 & / \\
-\bottomrule
-\end{tabular}
+  \centering
+  \caption{Full/\texttt{lz4}: score matrix (normalized 0–100).}
+  \label{tab:scores-full-lz4}
+  \begin{tabular}{lrrrrrl}
+    \toprule
+    Format & Thr & $p_{95}$ & GETs/GiB & Stored & Total & \gls{DoM}. /by \\
+    \midrule
+    tiledb & 100.0 & 100.0 & 39.4 & 39.4 & 81.8 & / \\
+    zarr   & 29.6  & 95.8  & 0.0  & 100.0& 42.3 & / \\
+    \gls{ROOT}   & 0.0   & 0.0   & 100.0& 68.3 & 25.2 & / \\
+    \gls{HDFfive}   & 4.8   & 58.1  & 60.5 & 0.0  & 17.8 & / \\
+    \bottomrule
+  \end{tabular}
 \end{table}
 
 \begin{figure}[H]
@@ -2653,20 +2639,38 @@ zarr   & 29.6  & 95.8  & 0.0  & 100.0& 42.3 & / \\
 \end{figure}
 
 \begin{table}[H]
-\centering
-\caption{Full/\texttt{zstd}: score matrix (normalized 0–100).}
-\label{tab:scores-full-zstd}
-\begin{tabular}{lrrrrrl}
-\toprule
-Format & Thr & $p_{95}$ & GETs/GiB & Stored & Total & \gls{DoM}. /by \\
-\midrule
-tiledb & 100.0 & 100.0 & 59.7 & 0.0  & 79.0 & / \\
-zarr   & 33.1  & 95.6  & 22.7 & 50.8 & 40.4 & \gls{HDFfive} / \\
-\gls{ROOT}   & 0.0   & 0.0   & 100.0& 100.0& 30.0 & / \\
-\gls{HDFfive}   & 1.5   & 63.5  & 0.0  & 13.8 & 9.3  & / zarr \\
-\bottomrule
-\end{tabular}
+  \centering
+  \caption{Full/\texttt{zstd}: score matrix (normalized 0–100).}
+  \label{tab:scores-full-zstd}
+  \begin{tabular}{lrrrrrl}
+    \toprule
+    Format & Thr & $p_{95}$ & GETs/GiB & Stored & Total & \gls{DoM}. /by \\
+    \midrule
+    tiledb & 100.0 & 100.0 & 59.7 & 0.0  & 79.0 & / \\
+    zarr   & 33.1  & 95.6  & 22.7 & 50.8 & 40.4 & \gls{HDFfive} / \\
+    \gls{ROOT}   & 0.0   & 0.0   & 100.0& 100.0& 30.0 & / \\
+    \gls{HDFfive}   & 1.5   & 63.5  & 0.0  & 13.8 & 9.3  & / zarr \\
+    \bottomrule
+  \end{tabular}
 \end{table}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
