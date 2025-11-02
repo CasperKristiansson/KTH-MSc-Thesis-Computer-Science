@@ -1,8 +1,9 @@
-1. [ ] Remove many subsections and flatten the document; maybe you could aim for 3–4 major sections per chapter instead and use subsubsections more sparingly, this simply stretches your document horizontally without creating structure and content. The overall appearance should resemble a book or a research paper.
+1. [x] Remove many subsections and flatten the document; maybe you could aim for 3–4 major sections per chapter instead and use subsubsections more sparingly, this simply stretches your document horizontally without creating structure and content. The overall appearance should resemble a book or a research paper.
 
-- I reduced the major sections tag and restructured the document. When I did this it initially resulted in more sections and using more \paragraph{} tags. I did put some effort into merging sections. But I'm wondering is the current state acceptable? Or should I simply try to merging more sections into each other?
+- Q: I reduced the major sections tag and restructured the document. When I did this it initially resulted in more sections and using more \paragraph{} tags. I did put some effort into merging sections. But I'm wondering is the current state acceptable? Or should I simply try to merging more sections into each other?
+- Changes: https://github.com/CasperKristiansson/KTH-MSc-Thesis-Computer-Science/compare/c414bea9c2f30e3b6c034e90a2d6b1ef7809560c...f2d4c375e7af513ccb859a13b94ce27ad22fa561
 
-2. [ ] Reorganize experiments by research questions (RQs) with explicit subsections mapping to each RQ, rather than scattering results across format–codec combinations.
+2. [x] Reorganize experiments by research questions (RQs) with explicit subsections mapping to each RQ, rather than scattering results across format–codec combinations.
 3. [ ] Remove scientifically irrelevant configuration listings from the main text.
 4. [ ] Tighten prose: many sentences repeat information or contain some obvious points.
 5. [ ] Eliminate vague statements like "seems to be limited to" in favor of precise claims backed by quantitative evidence.

@@ -446,6 +446,15 @@ This paper aims to develop a comprehensive, experimentally validated decision fr
   \end{itemize}
 \end{enumerate}
 
+\subsection{Research Questions (RQs)}
+To structure the investigation, the following research questions are posed:
+
+\begin{itemize}
+  \item \textbf{RQ1:} Interactive latency: For random single-frame reads on S3, which backend and codec minimize geometric-mean latency and control p95?
+  \item \textbf{RQ2:} Bulk throughput: For full-dataset scans, which backend and codec maximize geometric-mean throughput with stable p95?
+  \item \textbf{RQ3:} Cost posture and mechanisms: How do layout and codec choices change GETs/GiB and stored size, and how do these factors explain client timings?
+\end{itemize}
+
 \section{Methodology and Scope}
 This section outlines the benchmarking methodology and the study scope. It specifies datasets, workloads, metrics, and the delimitations for reproducibility.
 
@@ -964,7 +973,7 @@ The research paradigm for this thesis is grounded in an experimental research ap
 
 The design science research paradigm is particularly suited for this study because it enables the creation and evaluation of artifacts, such as storage and compression systems used for large-scale scattering data in the cloud. Design science emphasizes the building and assessment of solutions to practical problems through the design and development of artifacts. This approach aligns well with the thesis's goal of designing a decision matrix that helps beamline scientists and engineers optimize storage formats and compression techniques in cloud environments, such as \gls{AWS} \gls{SThree}.
 
-Design science research places significant emphasis on both problem-driven and solution-driven research. The study focuses on the challenges researchers and engineers face in handling massive scattering datasets in the problem-driven component. These challenges include the high volume of data produced by modern synchrotron and neutron facilities, rapid, selective data retrieval, and the cost efficiency required for managing large datasets in the cloud. The solution-driven aspect involves implementing and benchmarking various cloud-native storage models and compression algorithms to address these problems effectively.
+Design science research emphasizes both problem-driven and solution-driven research. The study focuses on the challenges researchers and engineers face in handling massive scattering datasets in the problem-driven component. These challenges include the high volume of data produced by modern synchrotron and neutron facilities, rapid, selective data retrieval, and the cost efficiency required for managing large datasets in the cloud. The solution-driven aspect involves implementing and benchmarking various cloud-native storage models and compression algorithms to address these problems effectively.
 
 This research paradigm allows for an iterative experimentation cycle. For each cycle, the findings from one phase can influence the setup of subsequent tests. The decision point "Results Consistent?" reflects this iterative process, where the experimental setup may be adjusted based on preliminary results, ensuring continuous refinement throughout the research.
 
@@ -975,7 +984,7 @@ The research process for this thesis follows a structured methodology, as descri
 \subsubsection{Step 1: Planning the Experiment}
 The planning stage involved several crucial tasks. First, the objectives of the experiment were defined, focusing on the comparison of four timed storage formats (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}/\gls{RNTuple}) with Parquet as a pilot-only artifact (no timed runs) and three compression algorithms (\texttt{gzip}, \texttt{lz4}, \texttt{zstd}) concerning performance, scalability, and compression efficiency for partial retrieval of large-scale scattering data. Subsequently, appropriate datasets were selected for ingestion, using a single \SI{20}{\gibi\byte} detector dataset (\(\sim\)1{,}300 frames) expanded from 80 real seed frames standard in synchrotron and neutron facilities.
 
-Key variables, such as read latency, derived throughput, and request/byte-based outputs, are identified as suitable metrics for benchmarking. As discussed in prior studies, compression algorithms were selected based on their widespread use in scientific workflows and cloud-native environments. This stage also included the decision to utilize \gls{AWS} infrastructure for its flexibility, and scalability.
+Key variables, such as read latency, derived throughput, and request/byte-based outputs, are identified as suitable metrics for benchmarking. As discussed in prior studies, compression algorithms were selected based on their widespread use in scientific workflows and cloud-native environments. This stage also included the decision to utilize \gls{AWS} infrastructure for its flexibility and scalability.
 
 \subsubsection{Step 2: Conducting the Experiment}
 The second step of the research process involved executing the experiment. This included setting up Amazon \gls{ECtwo} instances and \gls{SThree} Buckets.
@@ -986,7 +995,7 @@ For each format, three datasets were created—one for each codec (\texttt{gzip}
 This step summarizes run-level timings and \gls{SThree} aggregates. Warm-ups are excluded by default, and all successful timed runs are retained. Timings are analyzed on the log scale. For each {format$\times$codec$\times$pattern} cell we report (i) geometric mean (GM) time with dependence-robust 95\% \glspl{CI} via a moving-block bootstrap (MBB; $\ell\in\{4,6,8\}$; $B{=}10{,}000$; we then report the widest \gls{CI} across $\ell$) and (ii) $p_{95}$ latency with the same bootstrap. For full scans, throughput is analyzed on the log scale as the reciprocal of time, with the same bootstrap. Cross-format contrasts within a codec$\times$pattern are presented as GM time \emph{ratios} versus a reference format (zarr) and are labeled \textbf{descriptive, session-conditional}. CloudWatch request counts and latencies are per-session descriptive context (no inference). Compression is reported as the number of stored bytes and the compression ratio. Tail sensitivity recomputes $p_{95}$ with the Harrell–Davis estimator and the extended block grid \(\ell\in\{4,6,8,10\}\).
 
 \subsubsection{Step 4: Discussing the Results}
-The last research stage will involve evaluating the study's findings and creating recommendations for beamline scientists and data engineers. The results are thoroughly examined, considering the trade-offs between performance, and compression efficiency when working with the five different storage configurations.
+The last research stage will involve evaluating the study's findings and creating recommendations for beamline scientists and data engineers. The results are thoroughly examined, considering trade-offs between performance and compression efficiency across the five storage configurations.
 
 Recommendations on the optimal configuration of storage formats and compression algorithms, tailored to use cases prioritizing either high throughput or low-latency access, are provided. The research will conclude with the formulation of practical guidelines for future investigations into cloud-native storage solutions for data-intensive scientific experiments.
 
@@ -999,9 +1008,46 @@ Recommendations on the optimal configuration of storage formats and compression 
 
 
 
+\subsection{RQ map and estimands}
+\label{sec:methods-rq-map}
+This section maps the three research questions to their experimental units and estimands. For each RQ we state the workload, the primary and secondary estimands, and the interpretation scope. The shared testbed and run protocol are fixed in sections \ref{sec:methods-testbed} and \ref{sec:execution-logging-qc}.
+
+
+\subsubsection{RQ1 — Interactive slice latency}
+\label{sec:methods-rq1}
+\begin{itemize}
+  \item \textbf{Workload.} Random single-frame reads of $\sim$15.82~MiB per repetition, as defined in §\ref{sec:methods-testbed}. Five warm-ups, then $n{=}50$ timed runs per \{format, codec\} cell; fixed seed; session-isolated.
+  \item \textbf{Estimands.} Primary: geometric-mean (GM) latency on the log scale with 95\% CIs via a moving-block bootstrap (MBB; $\ell\in\{4,6,8\}$; $B{=}10{,}000$; report the widest CI across $\ell$). Secondary: $p_{95}$ latency with the same MBB settings.
+  \item \textbf{Scope.} Cross-format contrasts are \emph{descriptive, session-conditional}.
+\end{itemize}
+
+
+\subsubsection{RQ2 — Full-dataset throughput}
+\begin{itemize}
+  \item \textbf{Workload.} Full sequential scans over the $\sim$20~GiB array; same warm-up and $n{=}50$ timing; session isolation.
+  \item \textbf{Estimands.} Primary: GM throughput (GiB/s) derived from bytes/time on the log scale with MBB 95\% CIs ($\ell\in\{4,6,8\}$, $B{=}10{,}000$). Secondary: $p_{95}$ of total scan time.
+  \item \textbf{Scope.} Descriptive, session-conditional.
+\end{itemize}
+\label{sec:methods-rq2}
+
+
+\subsubsection{RQ3 — Cost posture and mechanisms}
+\label{sec:methods-rq3}
+
+\begin{itemize}
+  \item \textbf{Service/request metrics.} From S3 CloudWatch per session: \texttt{GetRequestsSum}, \texttt{BytesDownloadedSum}, \texttt{FirstByteLatency\{Average,p95\}}, \texttt{TotalRequestLatency\{Average,p95\}} (1~min granularity). Derive GETs per repetition and GETs per GiB (descriptive only).
+  \item \textbf{Storage metrics.} Stored bytes on S3 per \{format, codec\}, counting data+metadata objects; compression ratios relative to raw baseline; object counts to characterise layout/objectization.
+  \item \textbf{Linkage.} Relate GM latency (RQ1) and GM throughput (RQ2) to GETs/GiB and objectization. CloudWatch latencies are contextual, not causal; no inference on service/request metrics.
+\end{itemize}
+
+
+
+
+
+
 \section{Experimental Testbed and Protocols}
 \label{sec:methods-testbed}
-The experimental design for this thesis focuses on evaluating and comparing four timed cloud-native storage formats (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{RNTuple}) where Parquet was treated as pilot-only (no timed runs) when applied to large-scale scattering datasets in \gls{AWS} \gls{SThree}. This section describes the methodologies used to carry out the experiments, including data collection, infrastructure setup, experimental parameters, and performance benchmarking.
+The experimental design for this thesis focuses on evaluating and comparing four timed cloud-native storage formats (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{RNTuple}) where Parquet was treated as pilot-only (no timed runs) when applied to large-scale scattering datasets in \gls{AWS} \gls{SThree}. This section describes the methodologies used to carry out the experiments, including data collection, infrastructure setup, experimental parameters, and performance benchmarking. The hardware, region, libraries, ingestion, and run protocol in this section are identical across RQ1–RQ3 where the only difference is in the workload unit (slice vs full scan), as defined in \ref{sec:methods-rq1}–\ref{sec:methods-rq2}.
 
 
 \subsection{Test Environment and Infrastructure Setup}
@@ -1039,7 +1085,7 @@ In this pattern, a sequential read of the entire \SI{20}{\gibi\byte} dataset for
 
 \section{Metrics, Statistics, and Scoring}
 \label{sec:methods-metrics}
-This section turns measurements into evidence by defining estimands, quantifying uncertainty, and scoring alternatives so the decision matrix reflects speed, reliability, and efficiency.
+This section turns measurements into evidence by defining estimands, quantifying uncertainty, and scoring alternatives so the decision matrix reflects speed, reliability, and efficiency. The estimators and uncertainty procedures here apply unchanged to RQ1–RQ3 as specified in \ref{sec:methods-rq-map}.
 
 \subsection{Performance Metrics and Evaluation Criteria}
 We evaluate each format with:
@@ -1147,7 +1193,7 @@ Random seeds are fixed and logged with per-run timers, and CloudWatch aggregates
 \cleardoublepage
 \chapter{What you did}
 \label{ch:whatYouDid}
-This chapter documents the experiment setup from start to finish, independent of any analysis. It specifies the dataset and augmentation strategy of the data. It explains the \gls{AWS} environment and client software used and how each backend (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}, and Parquet) was laid out and ingested on \gls{SThree}. It also documents monitoring (bucket analytics and CloudWatch request/latency metrics), filenames and logs, and the inclusion/exclusion rules applied during runs. Deviations from the plan are noted, including the pilot-only evaluation of Parquet due to operational constraints.
+This chapter documents how the artifacts were built and run; it underpins RQ1 (slice latency), RQ2 (scan throughput), and RQ3 (cost posture) without introducing new analyses. It specifies the dataset and augmentation strategy of the data. It explains the \gls{AWS} environment and client software used and how each backend (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}, and Parquet) was laid out and ingested on \gls{SThree}. It also documents monitoring (bucket analytics and CloudWatch request/latency metrics), filenames and logs, and the inclusion/exclusion rules applied during runs. Deviations from the plan are noted, including the pilot-only evaluation of Parquet due to operational constraints.
 
 
 \section{Dataset and preprocessing}
@@ -1375,6 +1421,14 @@ TileDB stores a dense array with frame-sized tiles and immutable fragments; this
   \item Full scan: \gls{HDFfive}/\gls{HSDS} and Zarr $\Rightarrow$ $\sim N$ chunk reads; TileDB $\Rightarrow$ sequential tile reads across fragments; Parquet and \gls{ROOT} $\Rightarrow$ sequential range reads within one object.
 \end{itemize}
 
+\subsection{RQ hooks (layouts)}
+\begin{itemize}
+  \item \textbf{RQ1 (interactive slices):} Frame-aligned chunks/tiles $(1,2880,2880)$ to match the slice unit.
+  \item \textbf{RQ2 (full scans):} Fragmenting and page/cluster settings that enable long sequential reads.
+  \item \textbf{RQ3 (cost posture):} Object counts per backend, metadata consolidation status (e.g., Zarr consolidated metadata; TileDB fragment consolidation), and stored bytes per codec.
+\end{itemize}
+
+
 
 
 \section{Execution, logging, and quality control}
@@ -1465,6 +1519,14 @@ CloudWatch aggregates for the same cell are saved as
   logs/<format>_<codec>_<pattern>_cloudwatch.json
 \end{verbatim}
 
+\subsubsection{RQ hooks (protocol \& logging)}
+\begin{itemize}
+  \item \textbf{RQ1:} Timer scope per slice; exclude 5 warm-ups; include $n{=}50$ timed runs; log per-run times.
+  \item \textbf{RQ2:} Timer scope per full scan; compute bytes/time to derive throughput; log per-run times.
+  \item \textbf{RQ3:} Per-session CloudWatch exports (\texttt{GetRequestsSum}, \texttt{BytesDownloadedSum}, FirstByte/TotalRequest \{avg,$p_{95}$\}) and S3 inventory for stored bytes and object counts.
+\end{itemize}
+
+
 
 \subsection{Quality control, exclusions, and deviations}
 Runs followed a fixed warm-up and timing protocol. Integrity checks verified shapes and dtypes. Only successful timed reads were included.
@@ -1505,8 +1567,6 @@ Runs followed a fixed warm-up and timing protocol. Integrity checks verified sha
 
 
 
-
-
 \cleardoublepage
 \chapter{Results and Analysis}
 \label{ch:resultsAndAnalysis}
@@ -1516,7 +1576,7 @@ Metrics encompass client-observed timing, service-side behavior, and storage foo
 
 Cross-format contrasts are \textbf{descriptive, session-conditional} because formats run in separate sessions. Warm-ups are excluded; $n=50$ timed repetitions per cell are analyzed. Exploratory nonparametric summaries and tail-sensitivity checks are provided.
 
-
+This chapter is organised by \emph{RQ1} (interactive slice latency, §\ref{sec:rq1-results}), \emph{RQ2} (full-dataset throughput, §\ref{sec:rq2-results}), and \emph{RQ3} (cost posture and mechanisms, §\ref{sec:rq3-results}).
 
 \section{Inventory and data hygiene}
 \label{sec:results-inventory}
@@ -1567,11 +1627,9 @@ We assess per-run timing on the log scale. Table \ref{tab:timing_diag_main} summ
 
 \noindent\textit{Note.} Positive $\rho_1$ indicates serial dependence within sessions, the $\mathrm{p95}/\mathrm{GM}$ ratio summarizes tail heaviness.
 
-
-
-\section{Footprint and service behavior}
-\label{sec:footprint-service}
-This section discusses the storage footprint and objectization and summarizes \gls{SThree} service behavior. We report stored bytes and compression ratios, object counts and average bytes per object, GETs per repetition and per GiB, and per-session FirstByte and TotalRequest latencies.
+\section{Footprint and service behavior — RQ3 context}
+\label{sec:rq3-results}
+This section summarizes storage footprint and objectization and \gls{SThree} service behavior. It provides storage/request context for RQ1–RQ2 and defines the quantities used in RQ3’s mechanistic links. We report stored bytes and compression ratios; object counts and average bytes per object; GETs per repetition and per GiB; and per-session FirstByte and TotalRequest latencies.
 
 \subsection{Compression and objectization outcomes}
 This section quantifies the storage footprint and objectization of each format–codec combination on \gls{SThree}. It reports metadata-inclusive stored bytes and compression ratios relative to the raw array, and lists object counts with derived bytes per object that feed the request intensity.
@@ -1693,13 +1751,16 @@ We report \gls{SThree} service-side latency summaries \emph{per session} (format
   \label{fig:cw_total_grid}
 \end{figure}
 
-
+\subsection{Mechanistic links (RQ3)}
+This subsection links request intensity and objectization to client timings. It provides RQ3 mechanism context for interpreting RQ1 (latency) and RQ2 (throughput).
 
 \section{Core performance results}
 \label{sec:core-results}
 This section reports client-observed timings for partial (single-frame) retrievals and full-dataset scans across formats and codecs. We present geometric-mean time with dependence-robust 95\% confidence intervals, $p_{95}$ latency, and for scans also throughput, with all cross-format contrasts described as session-conditional.
 
-\subsection{Partial retrieval (single-frame) latency results}
+
+\subsection{RQ1 — Interactive slice latency}
+\label{sec:rq1-results}
 This section presents slice (single-frame) latency by format within each codec. We report geometric mean time with dependence-robust 95\% \glspl{CI} and $p_{95}$ using the same bootstrap. Cross-format contrasts are provided for descriptive and session-conditional purposes.
 
 
@@ -1825,7 +1886,9 @@ For \texttt{zstd}/slice, geometric-mean (GM) latencies with dependence-robust 95
   \label{fig:slice_zstd_ratios_point}
 \end{figure}
 
-\subsection{Full scan time and throughput results}
+
+\subsection{RQ2 — Full-dataset throughput}
+\label{sec:rq2-results}
 Throughput (GiB/s) is derived from GM time on the log scale with the same dependence-robust bootstrap; summary values appear alongside times in Table \ref{tab:cross_full_throughput_vs_gets} and Figure \ref{fig:cross_full_throughput_vs_gets}.
 
 \subsubsection{gzip}
@@ -2675,16 +2738,21 @@ Scores are 0–100 per metric, using robust min–max normalization within codec
 
 
 
+
+
+
 \cleardoublepage
 \chapter{Discussion}
 \label{ch:discussion}
-This chapter interprets the results, links them to layout and request behavior, and states the limits. Note that all cross‑format contrasts remain descriptive and session‑conditional.
 
-\section{Bottom-line outcomes}
+This chapter interprets the results, links them to layout and request behavior, and states the limits; all cross-format contrasts remain descriptive and session-conditional. It then answers \emph{RQ1} (slice latency; Section~\ref{sec:rq1-results}), \emph{RQ2} (scan throughput; Section~\ref{sec:rq2-results}), and \emph{RQ3} (cost posture; Section~\ref{sec:rq3-results}), followed by the decision matrix and threats to validity.
+
+\section{Answers to the research questions}
 \label{sec:discussion-bottomline}
 This section reports winners by workload and codec, using GM latency (slices) and GM throughput (full scans) with dependence-robust 95\% \glspl{CI} and $p_{95}$ checks tail risk. All contrasts are \emph{descriptive} and \emph{session-conditional}.
 
-\subsection{Slices: winners by codec}
+\subsection{Answer to RQ1 — Interactive slice latency}
+\label{sec:ans-rq1}
 Single‑frame reads have two stress areas: (i) layout/objectization, which sets how many objects and round–trips each request touches, and (ii) decode cost, which depends on the codec and the library path. We judge the winners by geometric mean (GM) latency with dependence robust 95\% \glspl{CI} and use $p_{95}$ to flag tail risk. All cross–format contrasts are \emph{descriptive} and \emph{session–conditional}. References below point back to the Slice tables and figures for each codec.
 
 \textbf{Zarr is the clear winner} for \texttt{zstd} slices. Its GM \gls{CI} lies fully below TileDB’s, which is second, followed by \gls{HDFfive}/\gls{HSDS} and then \gls{ROOT}. The $p_{95}$ ordering mirrors the center, indicating Zarr combines a fast typical latency with controlled tails. Mechanistically, this matches a chunk–per–frame layout that amortizes \gls{SThree} RTT via client concurrency, while \texttt{zstd} keeps the decode cost moderate. See Table~\ref{tab:slice_zstd_mbb} and Figs. \ref{fig:slice_zstd_gm_mbb}, \ref{fig:slice_zstd_p95_mbb}, \ref{fig:slice_zstd_ratios_point}. GM delta show that Zarr is $\approx 12\%$ faster than TileDB (Table \ref{tab:slice_zstd_mbb}).
@@ -2697,8 +2765,8 @@ Across codecs, the winner patterns above align with request intensity evidence f
 
 Nonparametric confirmations reproduce the same slice rankings by codec, and Harrell–Davis $p_{95}$ with an $\ell$–grid preserves ordering, with the \texttt{lz4}/Zarr heavier–tail observation intact. See Fig. \ref{fig:np_slice_ratios_grid}; Tables \ref{tab:np_slice_gzip_median}, \ref{tab:np_slice_lz4_median}, \ref{tab:np_slice_zstd_median}, and the tail–sensitivity artifacts in Fig. \ref{fig:tail-slice-p95-hd-ci-vs-L} and Tables \ref{tab:tail-slice-gzip-p95-selected}–\ref{tab:tail-slice-zstd-p95-selected}.
 
-
-\subsection{Full scans: throughput ordering}
+\subsection{Answer to RQ2 — Full-dataset throughput}
+\label{sec:ans-rq2}
 Full–dataset reads test sustained sequential delivery and decode under continuous concurrency. We judge winners by geometric mean (GM) \emph{throughput} (GiB/s) with dependence–robust 95\% \glspl{CI} derived from GM time on the log scale, where $p_{95}$ times are used to check stability. All cross–format contrasts are \emph{descriptive} and \emph{session–conditional}. The key result is simple: across \texttt{zstd}, \texttt{lz4}, and \texttt{gzip}, \textbf{TileDB leads by a wide margin}, \textbf{Zarr is consistently second}, and \textbf{\gls{HDFfive}/\gls{HSDS} and \gls{ROOT} come last}.
 
 Effect sizes vs Zarr show that TileDB is $\approx$3.16$\times$ faster under \texttt{gzip} (11{,}254 ms vs 35{,}598 ms), $\approx$2.17$\times$ under \texttt{lz4} (13{,}602 ms vs 29{,}483 ms), and $\approx$2.92$\times$ under \texttt{zstd} (10{,}384 ms vs 30{,}365 ms); Table \ref{tab:full_gzip_mbb}, \ref{tab:full_lz4_mbb}, \ref{tab:full_zstd_mbb}.
@@ -2715,10 +2783,13 @@ CloudWatch FirstByte and TotalRequest latencies are stable by session and do not
 
 Nonparametric centers reproduce the same ranks across codecs, and the HD $p_{95}$ sensitivity keeps the ordering intact. See Fig. \ref{fig:np_full_ratios_grid} and Tables \ref{tab:np_full_gzip_median}, \ref{tab:np_full_lz4_median}, \ref{tab:np_full_zstd_median}, see also Fig. \ref{fig:tail-full-p95-hd-ci-vs-L} and Tables \ref{tab:tail-full-gzip-p95-selected}–\ref{tab:tail-full-zstd-p95-selected}.
 
+\subsection{RQ3 — Cost posture and mechanisms (summary)}
+\label{sec:ans-rq3}
+Chunk/fragment layouts (\emph{Zarr}, TileDB) produce low–to–moderate GETs/GiB and align with lower GM slice latency and higher scan throughput. In contrast, \emph{HSDS} drives higher GETs/GiB and \emph{ROOT} remains a counterexample: few GETs yet slow due to single-object paging and decode; see §\ref{sec:rq3-results}, Fig. \ref{fig:cross_slice_latency_vs_gets} and Fig. \ref{fig:cross_full_throughput_vs_gets}. Storage posture is codec-driven (zstd~$\approx$~gzip~$<$~lz4), with a notable inflation for lz4+HSDS compared to Zarr/TileDB at the same payload; see Table~\ref{tab:object_counts}, Fig.~\ref{fig:stored_bytes}, and Fig.~\ref{fig:compression_rates}. S3 FirstByte/TotalRequest latencies are stable across sessions and do not explain cross-format gaps; they serve as context only (Fig.~\ref{fig:cw_firstbyte_grid}, Fig.~\ref{fig:cw_total_grid}). Mechanistically, objectization determines request patterns, codec determines the number of bytes, and the pair explains the client timings observed in \ref{sec:rq1-results}–\ref{sec:rq2-results}.
 
 
 
-\section{Mechanisms and cost posture}
+\section{RQ3 interpretation: mechanisms and cost posture}
 \label{sec:discussion-mechanisms-cost}
 We explain the observed rankings by linking objectization and GETs per GiB to client timings. CloudWatch service latencies are treated as context, where codec trade-offs and request and storage posture complete the picture.
 
@@ -2752,10 +2823,8 @@ Stored size is mainly \emph{codec-driven}, where \texttt{zstd} and \texttt{gzip}
 \textbf{\gls{ROOT}} shows that a few requests do not imply speed or efficiency. It has the lowest \emph{GETs/GiB} yet poor slice latency and scan throughput due to single-object paging and decode overhead. See Tables \ref{tab:cross_slice_latency_vs_gets}, \ref{tab:cross_full_throughput_vs_gets} and the per-codec MBB results (slices: Tables \ref{tab:slice_gzip_mbb}, \ref{tab:slice_lz4_mbb}, \ref{tab:slice_zstd_mbb}; full scans: Tables \ref{tab:full_gzip_mbb}, \ref{tab:full_lz4_mbb}, \ref{tab:full_zstd_mbb}).
 
 
-
-
-\section{Robustness and validity}
-\label{sec:discussion-robustness-validity}
+\section{Threats to validity and limits}
+\label{sec:threats-validity}
 We test whether conclusions hold under alternative centers and dependence. We check shape and serial dependence, confirm medians, and probe tails with the Harrell-Davis estimator.
 
 \subsection{Distribution shape and robustness}
@@ -2814,7 +2883,7 @@ The mechanism for each backend technology is divided into its layout and request
 
 Winners are judged by geometric-mean (GM) latency for slices and GM throughput for full scans, with dependence-robust 95\% \glspl{CI} via a moving-block bootstrap (block lengths $\ell\in\{4,6,8,10\}$; $B{=}10{,}000$) and Harrell–Davis $p_{95}$ for tails. Findings reflect one $\sim$20\, GiB dataset, one region (eu-north-1), and one client; CloudWatch service latencies are used as context, not as causal drivers.
 
-The remainder of the chapter provides a closing synthesis, decision-oriented recommendations, operational implications per backend (metadata consolidation, fragment management, cache and paging settings), and a prioritized agenda for future work: multi-client scaling and caches, consolidation strategies, codec/filter and layout sweeps, broader datasets and access patterns, cross-platform cost surfaces, and decision-matrix v2.
+The remainder of the chapter provides a closing synthesis, decision-oriented recommendations, operational implications per backend (metadata consolidation, fragment management, cache and paging settings), and a prioritized agenda for future work: multi-client scaling and caches, consolidation strategies, codec/filter and layout sweeps, broader datasets and access patterns, cross-platform cost surfaces, and decision-matrix v2. Conclusions map to RQ1–RQ3 and reference Chapter \ref{ch:resultsAndAnalysis} (sections \ref{sec:rq1-results}, \ref{sec:rq2-results}, \ref{sec:rq3-results}).
 
 
 
@@ -2829,7 +2898,7 @@ This section turns the empirical rankings into concrete decisions. Choices are r
 
 
 
-\subsection{Interactive slices (latency–first)}
+\subsection{RQ1 — Interactive slice latency (latency–first)}
 \begin{itemize}
     \item \textbf{Default:} \emph{Zarr + \texttt{zstd}}. It delivers the lowest slice GM with controlled tails across our setting, and scales with client concurrency (Tables~\ref{tab:league-slice-zstd}, \ref{tab:slice_zstd_mbb}).
     \item \textbf{If gzip is mandated:} \emph{TileDB + \texttt{gzip}}. TileDB’s fragment layout offsets \texttt{gzip}’s \gls{CPU} cost and wins on GM with non-overlapping \glspl{CI} versus Zarr (Tables \ref{tab:league-slice-gzip}, \ref{tab:slice_gzip_mbb}).
@@ -2838,7 +2907,7 @@ This section turns the empirical rankings into concrete decisions. Choices are r
 \end{itemize}
 
 
-\subsection{Bulk scans (throughput–first)}
+\subsection{RQ2 — Full-dataset throughput (throughput–first)}
 \begin{itemize}
     \item \textbf{Default:} \emph{TileDB + \gls{ZSTD} or \gls{LZfour}}. TileDB dominates full-scan throughput across codecs. Choose \texttt{lz4} if \gls{CPU} is tight, \texttt{zstd} if space matters (Tables \ref{tab:league-full-zstd}, \ref{tab:league-full-lz4} and Tables \ref{tab:full_zstd_mbb}, \ref{tab:full_lz4_mbb}).
     \item \textbf{Second choice when ecosystem fit matters:} \emph{Zarr} (any of \texttt{zstd}/\texttt{lz4}/\texttt{gzip}) trades some throughput for broader tooling while retaining stable streaming of data (Tables \ref{tab:league-full-gzip}, \ref{tab:league-full-lz4}, \ref{tab:league-full-zstd} and Tables \ref{tab:full_gzip_mbb}, \ref{tab:full_lz4_mbb}, \ref{tab:full_zstd_mbb}).  
