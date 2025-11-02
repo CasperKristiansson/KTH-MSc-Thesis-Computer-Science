@@ -4,6 +4,9 @@
 - Changes: https://github.com/CasperKristiansson/KTH-MSc-Thesis-Computer-Science/compare/c414bea9c2f30e3b6c034e90a2d6b1ef7809560c...f2d4c375e7af513ccb859a13b94ce27ad22fa561
 
 2. [x] Reorganize experiments by research questions (RQs) with explicit subsections mapping to each RQ, rather than scattering results across format–codec combinations.
+
+- Changes: https://github.com/CasperKristiansson/KTH-MSc-Thesis-Computer-Science/commit/2b33953a82759b13ba85385201a097c6e7529978
+
 3. [ ] Remove scientifically irrelevant configuration listings from the main text.
 4. [ ] Tighten prose: many sentences repeat information or contain some obvious points.
 5. [ ] Eliminate vague statements like "seems to be limited to" in favor of precise claims backed by quantitative evidence.
