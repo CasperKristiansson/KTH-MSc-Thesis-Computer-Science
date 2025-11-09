@@ -7,7 +7,7 @@
 
 - Changes: https://github.com/CasperKristiansson/KTH-MSc-Thesis-Computer-Science/commit/2b33953a82759b13ba85385201a097c6e7529978
 
-3. [ ] Remove scientifically irrelevant configuration listings from the main text.
+3. [x] Remove scientifically irrelevant configuration listings from the main text.
 4. [ ] Tighten prose: many sentences repeat information or contain some obvious points.
 5. [ ] Eliminate vague statements like "seems to be limited to" in favor of precise claims backed by quantitative evidence.
 6. [ ] Focus on the scientific aspects; move most listings, bucket id, technical details, notebook environment descriptions, and "real" code snippets to the appendix; keep in mind that your code is part of the degree project, not just the document.
