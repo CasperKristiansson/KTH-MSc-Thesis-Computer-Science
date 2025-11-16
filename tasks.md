@@ -18,8 +18,26 @@
 
 - Changes for 4-7: https://github.com/CasperKristiansson/KTH-MSc-Thesis-Computer-Science/compare/ec2f4ffb380f8ef6bfd981a1223b952b4cbcbc17...1c632dece8fd9d26269f33a619555dbbc37d0b52
 
-8. [ ] Decrease plot label font sizes using (e.g., `set_size_inches`) appropriately; tiny labels make e.g., figures 5.2, 5.4 and others rather unreadable.
-9. [ ] Consider merging figures 5.4 and 5.5 by grouping box plots with respect to file formats.
+8. [x] Decrease plot label font sizes using (e.g., `set_size_inches`) appropriately; tiny labels make e.g., figures 5.2, 5.4 and others rather unreadable.
+
+- I did this;
+  mpl.rcParams.update({
+  "font.size": 8, # base font
+  "axes.labelsize": 8,
+  "axes.titlesize": 9,
+  "xtick.labelsize": 7,
+  "ytick.labelsize": 7,
+  "legend.fontsize": 7,
+  })
+
+TEXTWIDTH_IN = 5.8 (figures width)
+
+Some graphs was also broken down into multiple plots to make them more readable. Also tried to improve with using tight_layout() and adjusting figure sizes. But as you mentioned, I sat the set_size_inches to match the text width.
+
+- Q: Is this acceptable? Or should I optimize it more for each figure?
+
+9. [x] Consider merging figures 5.4 and 5.5 by grouping box plots with respect to file formats.
+
 10. [ ] Maybe include a comparison plot of gzip vs zstd to help the reader to understand the suitable codec for your data.
 11. [ ] Move many figures and tables to the appendix; the main body is overloaded with data that is not contextualize and discussed.
 12. [ ] Add context to every table and plot in the main body of the text, then refer to the tables: state why each result exists, what `patterns' do we see, and what is the take-away presented by data.

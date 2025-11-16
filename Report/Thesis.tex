@@ -694,7 +694,7 @@ The Hierarchical Data Format 5 (\gls{HDFfive}) stores every dataset, chunk, and 
 \paragraph{Serial and MPIIO access}
 Out-of-the-box \gls{HDFfive} access (via h5py, MATLAB, etc.) issues many small, non-contiguous \gls{POSIX} reads. Each rank that samples a \SIrange{4}{8}{\mega\byte} slice generates dozens of tiny, <\SI{64}{\kilo\byte} reads, leading to many metadata lookups. Small, non-contiguous selections generate many <\SI{64}{\kilo\byte} reads and metadata lookups; collective I/O reduces but does not eliminate this overhead \cite{Breitenfeld2022Parallel,9499420}. Single-file heritage makes many small-read interactive workloads sensitive to metadata hotspots, motivating chunk-per-object designs.
 
-Even when using collective metadata I/O, each \gls{HDFfive} read still must fetch the superblock and descriptive metadata before reading the raw data. In the CCGrid’21 benchmarks on Summit and Cori, metadata I/O alone accounted for as much as  \approx58\% of the total read time \cite{9499420}. \gls{HDFfive}/NeXus excels for large, sequential scans and single-node post-processing, but its single-file, \gls{POSIX}-style heritage makes it vulnerable to metadata hotspots when handling many small reads, motivating chunk-per-object designs such as Zarr and Parquet.
+Even when using collective metadata I/O, each \gls{HDFfive} read still must fetch the superblock and descriptive metadata before reading the raw data. In the CCGrid’21 benchmarks on Summit and Cori, metadata I/O alone accounted for as much as $\approx 58\%$ of the total read time \cite{9499420}. \gls{HDFfive}/NeXus excels for large, sequential scans and single-node post-processing, but its single-file, \gls{POSIX}-style heritage makes it vulnerable to metadata hotspots when handling many small reads, motivating chunk-per-object designs such as Zarr and Parquet.
 
 \subsection{Cloud Object Storage Fundamentals}
 \label{sec:cloud-object-storage-fundamentals}
@@ -1092,7 +1092,7 @@ Per-session \gls{SThree} aggregates are used descriptively only; identifiers and
 \subsection{Uncertainty and confounders in AWS}
 \Gls{AWS} introduces time-varying latency and variance that cannot be fully controlled. We mitigated this issue by using a single region with the \gls{SThree} bucket co-located, a Gateway VPC endpoint, and fixed client settings. Operational controls and randomization are documented in Appendix \ref{app:a2-run-qc}. Formats were executed in \emph{separate sessions} with no cross-format overlap. Consequently, cross-format contrasts are \textbf{descriptive, session-conditional}. Inference is limited to within-cell estimands (GM, \gls{Pninetyfive}, throughput) with dependence-robust bootstrap \glspl{CI}. CloudWatch aggregates are per-session and reported descriptively (no inference, no cross-session averaging of percentiles).
 
-\paragraph{Deviation: Parquet pilot-only}
+\subsubsection{Deviation: Parquet pilot-only}
 Parquet was piloted but excluded from the timed results due to high metadata open time and rapid object growth observed in the pilot runs. The pilot and rationale are documented in Chapter \ref{ch:whatYouDid}, where Parquet is presented only qualitatively. Timed comparisons cover four formats: \gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{RNTuple}.
 
 
@@ -1584,20 +1584,15 @@ We summarize request intensity from CloudWatch \emph{session} aggregates. All $n
 
 Here $n$ is the number of timed repetitions in the cell; $\widehat{\lambda}_{\mathrm{GiB}}$ is measured in GETs per GiB.
 
-Rates are descriptive and session-conditional. Table \ref{tab:req_intensity} lists $\widehat{\lambda}_{\mathrm{rep}}$ and $\widehat{\lambda}_{\mathrm{GiB}}$ for all cells. Figures \ref{fig:reqintensity_perRep_grid} and \ref{fig:reqintensity_perGiB_grid} plot per-cell point estimates (rows = codecs \{gzip, \gls{LZfour}, \gls{ZSTD}\}; columns = patterns \{slice, full\}).
+Rates are descriptive and session-conditional. Table \ref{tab:req_intensity} lists $\widehat{\lambda}_{\mathrm{rep}}$ and $\widehat{\lambda}_{\mathrm{GiB}}$ for all \{format, codec, pattern\} cells. Figure~\ref{fig:reqintensity_box_by_format} summarizes S3 request intensity by format, showing the distributions of GETs per repetition and GETs per GiB aggregated across codecs and access patterns. Detailed per-cell point estimates by codec and pattern are provided in Appendix Figures~\ref{fig:reqintensity_perRep_grid} and~\ref{fig:reqintensity_perGiB_grid}.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\linewidth]{figures/graphs/reqintensity_perRep_grid.pdf}
-  \caption{S3 request intensity per repetition ($\widehat{\lambda}_{\mathrm{rep}}$). Rows: codecs; columns: access patterns. Points are per session; descriptive only.}
-  \label{fig:reqintensity_perRep_grid}
-\end{figure}
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\linewidth]{figures/graphs/reqintensity_perGiB_grid.pdf}
-  \caption{S3 request intensity per GiB ($\widehat{\lambda}_{\mathrm{GiB}}$). Rows: codecs; columns: access patterns. Points are per session; descriptive only.}
-  \label{fig:reqintensity_perGiB_grid}
+  \includegraphics[width=\textwidth]{figures/graphs/fig_reqintensity_box_by_format.pdf}
+  \caption{S3 request intensity by format. 
+           Top: GETs per repetition; bottom: GETs per GiB. 
+           Each box shows the distribution across codecs and access patterns for a given format.}
+  \label{fig:reqintensity_box_by_format}
 \end{figure}
 
 
@@ -2691,7 +2686,7 @@ We test whether conclusions hold under alternative centers and dependence. We ch
 We verify that the modeling choices are appropriate and yield results similar to those of other estimators. We assess shape and serial dependence to justify log–time analysis with the moving–block bootstrap (MBB), then confirm rankings with median centers, and finally test tail stability with Harrell–Davis $p_{95}$.
 
 \subsubsection{Shape and dependence}
-Log–time is appropriate, and serial dependence is present. The diagnostics table shows frequent non-normality in the raw time series and improved behavior in $\ln(\text{time})$, while positive lag-1 autocorrelation is observed across all cells. This both motivates analyzing centers on the log scale and using MBB \glspl{CI} that respect dependence (Table \ref{tab:timing_diag_main}). Q–Q grids on $\ln(\text{time})$ support the transformation, and run-order traces show no systematic drift beyond short-range dependence (Appendix Figs. \ref{fig:appendix_qq_grid}, \ref{fig:appendix_drift_grid}). Together, these justify GM on log–time with dependence-robust \glspl{CI}.
+Log–time is appropriate, and serial dependence is present. The diagnostics table shows frequent non-normality in the raw time series and improved behavior in $\ln(\text{time})$, while positive lag-1 autocorrelation is observed across all cells. This both motivates analyzing centers on the log scale and using MBB \glspl{CI} that respect dependence (Table \ref{tab:timing_diag_main}). Q–Q grids on $\ln(\text{time})$ support the transformation, and run-order traces show no systematic drift beyond short-range dependence (Appendix Figs. \ref{fig:appendix_qq_grid_slice}, \ref{fig:appendix_qq_grid_full}, \ref{fig:appendix_drift_grid_slice}, \ref{fig:appendix_drift_grid_full}). Together, these justify GM on log–time with dependence-robust \glspl{CI}.
 
 
 \subsubsection{Center robustness}
@@ -2852,7 +2847,7 @@ The agenda below targets the highest-leverage uncertainties revealed by the resu
 \textbf{Networking.} Private \gls{SThree} via Gateway VPC endpoint; no CloudFront, no Transfer Acceleration, no cross-region traffic.\\
 \textbf{Client node.} One \gls{ECtwo} \texttt{c6i.8xlarge} instance for ingestion and reads, running Amazon Linux 2023 (\texttt{al2023-ami-2023.8.20250707.0-kernel-6.1-x86\_64}, \texttt{ami-09278528675a8d54e}) on private IPv4.\\
 \textbf{Connections.} Persistent HTTP keep-alive and connection pooling; default retry policy.\\
-\textbf{HSDS configuration.} \gls{HSDS} ran as a Docker service on the client node and wrote to \texttt{scatterin-thesis}. Key environment variables: \texttt{BUCKET\_NAME=scatterin-thesis}, \texttt{AWS\_REGION=eu-north-1}, \texttt{AWS\_S3\_GATEWAY=http://s3.amazonaws.com}, \texttt{SN\_PORT=5101}, \texttt{HSDS\_ENDPOINT=http://localhost:5101}, \texttt{LOG\_LEVEL=INFO}.
+\textbf{HSDS configuration.} \gls{HSDS} ran as a Docker service on the client node and wrote to \texttt{scatterin-thesis}. Key environment variables: \texttt{BUCKET\_NAME=scatterin-thesis},\\ \texttt{AWS\_REGION=eu-north-1},\\ \texttt{AWS\_S3\_GATEWAY=http://s3.amazonaws.com},\\ \texttt{SN\_PORT=5101},\\ \texttt{HSDS\_ENDPOINT=http://localhost:5101},\\ \texttt{LOG\_LEVEL=INFO}.
 
 \subsection{Run protocol and quality control}
 \label{app:a2-run-qc}
@@ -2861,7 +2856,7 @@ The agenda below targets the highest-leverage uncertainties revealed by the resu
 \textbf{Randomization.} Fixed seed; slice pattern uses a precomputed index list; full scan iterates all frames.\\
 \textbf{Timer scope.} First dispatch $\rightarrow$ last byte; includes transfer, decompression, client decode.\\
 \textbf{Inclusion rules.} Warm-ups excluded; only successful reads included; failures retried.\\
-\textbf{QC.} Q–Q on $\ln(\text{time})$, lag-1 autocorrelation, run-order trend. See Figs. \ref{fig:appendix_qq_grid}–\ref{fig:appendix_drift_grid}.
+\textbf{QC.} Q–Q on $\ln(\text{time})$, lag-1 autocorrelation, run-order trend. See Figs. \ref{fig:appendix_qq_grid_slice}, \ref{fig:appendix_qq_grid_full}, \ref{fig:appendix_drift_grid_slice}, \ref{fig:appendix_drift_grid_full}.
 
 \subsection{Statistical settings}
 \label{app:a3-stats}
@@ -2886,8 +2881,12 @@ The agenda below targets the highest-leverage uncertainties revealed by the resu
 \[
 \text{GETs/run}=\frac{\text{GetRequestsSum}}{n_{\text{runs}}},\quad
 \text{GETs/GiB}=\frac{\text{GetRequestsSum}}{\text{BytesDownloadedSum}/2^{30}},\quad
+\]
+
+\[
 \text{Throughput (GiB/s)}=\frac{\text{BytesDownloadedSum}/2^{30}}{\text{total scan time (s)}}
 \]
+
 (See Table \ref{tab:req_intensity} and Table \ref{tab:cw_latencies}.)
 
 \subsubsection*{Client timing logs}
@@ -2927,18 +2926,48 @@ Common logical shape $(N,2880,2880)$, $N\approx1300$, \texttt{uint16}; one frame
 Single-object Parquet with \texttt{gzip}/\texttt{lz4}; $\sim$34\,GiB object for a $\sim$20\,GiB raw stack; metadata open \SIrange{3}{4}{\minute}; intermittent client instability on \texttt{gzip}. Pilot halted; Parquet excluded from timed results; retained for qualitative discussion.
 
 \section{Additional Data}
+% Q–Q plots: slices
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{figures/graphs/appendix_QQ_grid_6x4.pdf}
-  \caption{Q–Q plots of $\ln(\text{time})$ for all cells. Rows: codec/pattern \{gzip/slice, gzip/full, lz4/slice, lz4/full, zstd/slice, zstd/full\}. Columns: format \{HDF5/HSDS, Zarr, TileDB, ROOT\}. Shaded band is 95\% pointwise envelope; per-panel Shapiro $p$ shown.}
-  \label{fig:appendix_qq_grid}
+  \includegraphics[width=\textwidth]{figures/graphs/appendix_QQ_grid_slice_3x4.pdf}
+  \caption{Q–Q plots of $\ln(\text{time})$ for slice workloads. 
+           Rows: codecs \{gzip, lz4, zstd\}. 
+           Columns: formats \{HDF5/HSDS, Zarr, TileDB, ROOT\}. 
+           Shaded band is a 95\% pointwise envelope; per-panel Shapiro $p$ shown.}
+  \label{fig:appendix_qq_grid_slice}
 \end{figure}
 
+% Q–Q plots: full scans
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\textwidth,height=\textheight,keepaspectratio]{figures/graphs/appendix_Drift_grid_6x4.pdf}
-  \caption{Run-order traces of $\ln(\text{time})$ for all cells. Rows and columns as in Fig. \ref{fig:appendix_qq_grid}. Solid line: LOWESS smoother; dashed: $\ln$ geometric mean. Per-panel robust y-limits; panel shows lag-1 autocorrelation $\rho_1$.}
-  \label{fig:appendix_drift_grid}
+  \includegraphics[width=\textwidth]{figures/graphs/appendix_QQ_grid_full_3x4.pdf}
+  \caption{Q–Q plots of $\ln(\text{time})$ for full-scan workloads. 
+           Rows: codecs \{gzip, lz4, zstd\}. 
+           Columns: formats \{HDF5/HSDS, Zarr, TileDB, ROOT\}. 
+           Shaded band is a 95\% pointwise envelope; per-panel Shapiro $p$ shown.}
+  \label{fig:appendix_qq_grid_full}
+\end{figure}
+
+% Drift plots: slices
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{figures/graphs/appendix_Drift_grid_slice_3x4.pdf}
+  \caption{Run-order traces of $\ln(\text{time})$ for slice workloads. 
+           Rows and columns as in Fig.~\ref{fig:appendix_qq_grid_slice}. 
+           Solid line: LOWESS smoother; dashed: $\ln$ geometric mean. 
+           Per-panel robust $y$-limits; panel shows lag-1 autocorrelation $\rho_1$.}
+  \label{fig:appendix_drift_grid_slice}
+\end{figure}
+
+% Drift plots: full scans
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{figures/graphs/appendix_Drift_grid_full_3x4.pdf}
+  \caption{Run-order traces of $\ln(\text{time})$ for full-scan workloads. 
+           Rows and columns as in Fig.~\ref{fig:appendix_qq_grid_full}. 
+           Solid line: LOWESS smoother; dashed: $\ln$ geometric mean. 
+           Per-panel robust $y$-limits; panel shows lag-1 autocorrelation $\rho_1$.}
+  \label{fig:appendix_drift_grid_full}
 \end{figure}
 
 
@@ -3199,6 +3228,20 @@ zarr   & \gls{ZSTD} & slice & 102.016& 171.055 & 161.938 & 330.963 \\
     \bottomrule
   \end{tabular}
 \end{table}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{figures/graphs/reqintensity_perRep_grid.pdf}
+  \caption{S3 request intensity per repetition ($\widehat{\lambda}_{\mathrm{rep}}$). Rows: codecs; columns: access patterns. Points are per session; descriptive only.}
+  \label{fig:reqintensity_perRep_grid}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{figures/graphs/reqintensity_perGiB_grid.pdf}
+  \caption{S3 request intensity per GiB ($\widehat{\lambda}_{\mathrm{GiB}}$). Rows: codecs; columns: access patterns. Points are per session; descriptive only.}
+  \label{fig:reqintensity_perGiB_grid}
+\end{figure}
 
 
 \cleardoublepage
