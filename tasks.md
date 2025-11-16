@@ -11,10 +11,13 @@
 
 - Changes: https://github.com/CasperKristiansson/KTH-MSc-Thesis-Computer-Science/compare/2b33953a82759b13ba85385201a097c6e7529978...ec2f4ffb380f8ef6bfd981a1223b952b4cbcbc17
 
-4. [ ] Tighten prose: many sentences repeat information or contain some obvious points.
-5. [ ] Eliminate vague statements like "seems to be limited to" in favor of precise claims backed by quantitative evidence.
-6. [ ] Focus on the scientific aspects; move most listings, bucket id, technical details, notebook environment descriptions, and "real" code snippets to the appendix; keep in mind that your code is part of the degree project, not just the document.
-7. [ ] Consider removing compute node specifications, Amazon product IDs, and S3 bucket names from the main text; these are technical details, not scientific contributions.
+4. [x] Tighten prose: many sentences repeat information or contain some obvious points.
+5. [x] Eliminate vague statements like "seems to be limited to" in favor of precise claims backed by quantitative evidence.
+6. [x] Focus on the scientific aspects; move most listings, bucket id, technical details, notebook environment descriptions, and "real" code snippets to the appendix; keep in mind that your code is part of the degree project, not just the document.
+7. [x] Consider removing compute node specifications, Amazon product IDs, and S3 bucket names from the main text; these are technical details, not scientific contributions.
+
+- Changes for 4-7: https://github.com/CasperKristiansson/KTH-MSc-Thesis-Computer-Science/compare/ec2f4ffb380f8ef6bfd981a1223b952b4cbcbc17...1c632dece8fd9d26269f33a619555dbbc37d0b52
+
 8. [ ] Decrease plot label font sizes using (e.g., `set_size_inches`) appropriately; tiny labels make e.g., figures 5.2, 5.4 and others rather unreadable.
 9. [ ] Consider merging figures 5.4 and 5.5 by grouping box plots with respect to file formats.
 10. [ ] Maybe include a comparison plot of gzip vs zstd to help the reader to understand the suitable codec for your data.
