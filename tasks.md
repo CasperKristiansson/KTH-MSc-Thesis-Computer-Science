@@ -37,10 +37,12 @@ Some graphs was also broken down into multiple plots to make them more readable.
 - Q: Is this acceptable? Or should I optimize it more for each figure?
 
 9. [x] Consider merging figures 5.4 and 5.5 by grouping box plots with respect to file formats.
-
 10. [x] Maybe include a comparison plot of gzip vs zstd to help the reader to understand the suitable codec for your data.
 11. [x] Move many figures and tables to the appendix; the main body is overloaded with data that is not contextualize and discussed.
 12. [x] Add context to every table and plot in the main body of the text, then refer to the tables: state why each result exists, what `patterns' do we see, and what is the take-away presented by data.
+
+- Changes for 10-12: https://github.com/CasperKristiansson/KTH-MSc-Thesis-Computer-Science/commit/0e7487780902e430127e1d41a0ac020782691aef
+
 13. [ ] Clarify that your "consistency" claims are regarding the average scores of some experiments; figures 5.11 and 5.12 show the variance demonstrates a somewhat unreliable mean estimate for TileDB and Zarr in certain conditions.
 14. [ ] Describe file formats more precisely as a computer scientist; explain what each format does beyond naming conventions, and what the strength and weaknesses are, and how this leads to research questions and experiments.
 15. [ ] Consider include experiments with slicing in dimensions other than the default; multi-axis access is common in real workflows (if needed), and consider discussing the relationship between storage order (C vs Fortran) in HDF5 and slicing performance.
