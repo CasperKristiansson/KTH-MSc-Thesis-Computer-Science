@@ -43,12 +43,28 @@ Some graphs was also broken down into multiple plots to make them more readable.
 
 - Changes for 10-12: https://github.com/CasperKristiansson/KTH-MSc-Thesis-Computer-Science/commit/0e7487780902e430127e1d41a0ac020782691aef
 
-13. [ ] Clarify that your "consistency" claims are regarding the average scores of some experiments; figures 5.11 and 5.12 show the variance demonstrates a somewhat unreliable mean estimate for TileDB and Zarr in certain conditions.
-14. [ ] Describe file formats more precisely as a computer scientist; explain what each format does beyond naming conventions, and what the strength and weaknesses are, and how this leads to research questions and experiments.
-15. [ ] Consider include experiments with slicing in dimensions other than the default; multi-axis access is common in real workflows (if needed), and consider discussing the relationship between storage order (C vs Fortran) in HDF5 and slicing performance.
-16. [ ] Consider testing EBS volumes for HDF5, as they are reported to be faster by a significant margin compared to HSDS.
-17. [ ] HSDS is a managed infrastructure and you partially measure HSDS infrastructure/"spin-up" time; can you isolate this from the file format performance? I suspect that your experiments are likely far too small to demonstrate when HSDS is useful.
-18. [ ] Explicitly state which hypotheses each experiment tests and link results back to those hypotheses.
+13. [x] Clarify that your "consistency" claims are regarding the average scores of some experiments; figures 5.11 and 5.12 show the variance demonstrates a somewhat unreliable mean estimate for TileDB and Zarr in certain conditions.
+
+- Changes: https://github.com/CasperKristiansson/KTH-MSc-Thesis-Computer-Science/commit/cd588369d7127df130a4c11a23ba7f6f8e995ba9
+
+14. [x] Describe file formats more precisely as a computer scientist; explain what each format does beyond naming conventions, and what the strength and weaknesses are, and how this leads to research questions and experiments.
+
+15. [-] Consider include experiments with slicing in dimensions other than the default; multi-axis access is common in real workflows (if needed), and consider discussing the relationship between storage order (C vs Fortran) in HDF5 and slicing performance.
+
+Note:
+I agree that multi-axis and non-contiguous slicing and storage order (C vs Fortran) are important in real beamline workflows, especially for reconstruction and region-of-interest analyses. In this thesis I deliberately fixed the access pattern to full $x!\times!y$ frame reads because that is the dominant interactive workload at the partner facility and what the company does, and because the experiment matrix was already large (4 formats × 3 codecs × 2 patterns × 50 reps). However, I acknowledge that this limits the generalizability of the findings to other access patterns. Future work could explore multi-axis and non-contiguous slicing, as well as the impact of storage order on performance.
+
+16. [-] Consider testing EBS volumes for HDF5, as they are reported to be faster by a significant margin compared to HSDS.
+
+Note:
+I’m aware that HDF5 on high-performance local or EBS storage can deliver much lower latencies than HSDS on S3, and that several reports (e.g. Lustre/EBS benchmarks) show substantial gains over S3/HSDS. In this project, however, the industrial partner’s requirement was specifically to evaluate “which cloud-native storage layout is best if we commit to S3 as the primary store”, largely to avoid the operational and lifecycle overhead of large EBS file systems. Therefore more comparing storage engines on S3 type storage was prioritized.
+
+17. [-] HSDS is a managed infrastructure and you partially measure HSDS infrastructure/"spin-up" time; can you isolate this from the file format performance? I suspect that your experiments are likely far too small to demonstrate when HSDS is useful.
+
+Note:
+You’re right that HSDS adds an extra layer (REST service, container orchestration, potential cold-start and metadata fan-out) on top of HDF5, and that my timed measurements necessarily include some of that overhead. I did consider instrumenting HSDS itself to separate “infrastructure spin-up” from steady-state chunk I/O, but I belived what would be intressting is the end-to-end behaviour (what a scientist actually experiences when hitting an HSDS endpoint on S3). The intressting thing is that the host company + partnered facility is already using HSDS in production for interactive analysis, so the results are relevant to their use case seeing the impact of end-to-end performance.
+
+18. [x] Explicitly state which hypotheses each experiment tests and link results back to those hypotheses.
 19. [ ] Consider reporting effect sizes (not just p-values) for all comparisons; confidence intervals alone are insufficient.
 20. [ ] Do you compute FWER / FDR?
 21. [ ] Clarify the scope: your session-conditional, descriptive contrasts do your results actually support a causal claim in general? I suspect that your experimental setup is not strong enough for this.
