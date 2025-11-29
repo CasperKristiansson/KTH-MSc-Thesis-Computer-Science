@@ -1076,8 +1076,85 @@ Based on the storage models in Section \ref{sec:cloud-native-storage-models}, th
   \item[H3.2 (layout vs request cost).] For a given codec, Zarr and TileDB achieve lower GETs per GiB than HDF5/HSDS at comparable or lower latencies, reflecting their more favourable objectization for this workload.
 \end{description}
 
+\subsection{Statistical formulation and evaluation}
+\label{sec:methods-statistical-hypotheses}
 
+The hypotheses in this section (H1.1--H3.2) are stated in verbal form. Here, we present their statistical analyses and their evaluation using the estimands and procedures in Section \ref{sec:methods-metrics} and Appendix \ref{app:a3-stats}.
 
+For each cell defined by \emph{format} $f$, \emph{codec} $c$, and \emph{pattern} $p\in\{\text{slice},\text{full}\}$, let $T_{fcp,1},\dots,T_{fcp,n}$ denote the repeated wall-clock times and
+
+\[
+Y_{fcp,r} \coloneqq \ln T_{fcp,r}.
+\]
+
+The session-conditional log-scale mean
+
+\[
+\mu_{fcp} \coloneqq \mathbb{E}\bigl[Y_{fcp,r}\mid\text{session}\bigr]
+\]
+
+defines the geometric-mean (GM) time
+
+\[
+\theta_{fcp} \coloneqq \exp(\mu_{fcp}),
+\]
+
+which is the primary estimand for latency and, via bytes/time, for throughput. For any two formats $f$ and $g$ at fixed $(c,p)$ we define the \emph{GM ratio}
+
+\[
+\rho_{f,g;c,p} \coloneqq \frac{\theta_{fcp}}{\theta_{gcp}}.
+\]
+
+On the original scale, $\rho_{f,g;c,p}<1$ means that $f$ is faster than $g$, and $\rho_{f,g;c,p}>1$ means that $f$ is slower than $g$. Each verbal hypothesis in H1.1--H3.2 can be written as an inequality on these ratios. For example, for RQ1 under a fixed codec $c$:
+
+\begin{itemize}
+  \item H1.1 (\emph{per-frame layouts faster than ROOT}) corresponds to directional hypotheses of the form
+  \[
+    H_{0}: \rho_{f,\text{ROOT};c,\text{slice}}\ge 1
+    \quad\text{vs}\quad
+    H_{1}: \rho_{f,\text{ROOT};c,\text{slice}}<1,
+  \]
+  where $f\in\{\text{HDF5/HSDS},\text{Zarr},\text{TileDB}\}$.
+  \item H1.2 (\emph{Zarr fastest for light codecs}) can be written as
+  \[
+    H_{0}: \rho_{\text{Zarr},f;c,\text{slice}}\ge 1
+    \quad\text{vs}\quad
+    H_{1}: \rho_{\text{Zarr},f;c,\text{slice}}<1,
+  \]
+  for $c\in\{\texttt{lz4},\texttt{zstd}\}$ and $f\in\{\text{HDF5/HSDS},\text{TileDB},\text{ROOT}\}$.
+\end{itemize}
+
+Analogous formulations apply to H2.1--H2.3 (full-scan throughput) and H3.1--H3.2 (compression and request intensity), where the estimands are GM throughput, compression ratio, or GETs/GiB, rather than GM latency.
+
+\subsubsection{Inference procedure (\emph{test})}
+Rather than perform classical null-hypothesis significance tests for many pairwise contrasts, we adopt an \emph{estimation} approach:
+
+\begin{enumerate}
+  \item Work on the log scale $Y_{fcp,r}=\ln T_{fcp,r}$ and estimate $\mu_{fcp}$ and its uncertainty using a moving-block bootstrap (MBB) that preserves within-session serial dependence (Appendix \ref{app:a3-stats}).
+  \item Back-transform to obtain $\theta_{fcp}$ and dependence-robust 95\% confidence intervals.
+  \item Form GM ratios $\rho_{f,g;c,p}$ and corresponding 95\% confidence intervals by subtracting and re-exponentiating log-scale means.
+\end{enumerate}
+
+In a fully formal one-sided test of, for example, \emph{$f$ is faster than $g$}, we would reject $H_{0}:\rho_{f,g;c,p}\ge 1$ at the 5\% level whenever the 95\% confidence interval for $\rho_{f,g;c,p}$ lay entirely below~1. In this thesis, we use the same intervals \emph{descriptively}: we report point estimates and confidence intervals for $\theta_{fcp}$ and $\rho_{f,g;c,p}$, and we interpret hypotheses H1.1--H3.2 in terms of which orderings are compatible with these intervals. We do not aggregate these into a single global decision rule, nor do we control a family-wise or false-discovery rate across all contrasts.
+
+\subsubsection{Why bootstrap, and why not $t$-tests or ANOVA?}
+Serial dependence and non-normality in the run-level timing data (Section \ref{sec:results-inventory}, Table \ref{tab:timing_diag_main}) violate the independence and homoscedastic normal-error assumptions underlying standard $t$-tests and ANOVA. A parametric linear model on $\ln(\text{time})$ could, in principle, be equipped with a dependence structure, but this would require additional modelling choices and diagnostics that are not central to the research questions. The moving-block bootstrap on $\ln(\text{time})$ was chosen because:
+
+\begin{itemize}
+  \item it respects the observed lag-1 autocorrelation and within-session serial dependence by resampling blocks rather than individual runs;
+  \item it makes no parametric assumption on the marginal distribution beyond stationarity over the session;
+  \item it yields confidence intervals for both cell-wise estimands ($\theta_{fcp}$, $p_{95}$) and derived quantities (ratios, throughput) uniformly.
+\end{itemize}
+
+Alternative procedures considered but not used include:
+
+\begin{itemize}
+  \item independent-sample $t$-tests or ANOVA on raw or log times (discarded due to serial dependence and skew);
+  \item per-cell normal-theory intervals on $\ln(\text{time})$ (discarded because they rely on approximate normality of the sample mean under dependence);
+  \item global regression models with format and codec as factors (discarded because formats are executed in separate sessions, so cross-format coefficients would still be session-conditional and require strong assumptions about between-session comparability).
+\end{itemize}
+
+In summary, the \emph{statistical hypotheses} behind H1.1--H3.2 are directional statements about GM times, throughputs, and related ratios. They are evaluated descriptively using dependence-robust confidence intervals for these estimands and their ratios. No formal multiple-comparison testing or causal inference is attempted, where all cross-format statements remain descriptive and session-conditional.
 
 
 
@@ -1135,7 +1212,7 @@ For downstream selection, we compute normalized 0–100 scores per codec\(\times
     \item \textbf{Full-scan weights:} throughput 0.60 (higher), GETs/GiB 0.15 (lower), stored GiB 0.15 (lower), \(p_{95}\) 0.10 (lower).
 \end{itemize}
 
-League tables are ranked by the primary objective (slice: GM latency and full: throughput), with tie-breakers matching the Results section.
+League tables are ranked by the primary objective (slice: GM latency; full: throughput), with tie-breakers matching those in the Results section.
 
 \subsection{Statistical methods}
 Timings are positive and multiplicative, so we analyze $\ln(\text{time})$ per cell (format$\times$codec$\times$pattern).
@@ -1150,6 +1227,10 @@ Primary estimands are:
 Within each codec$\times$pattern, cross-format contrasts are reported as GM time \emph{ratios} versus Zarr and are \textbf{descriptive, session-conditional}. Diagnostics include Q–Q plots on $\ln(\text{time})$, lag-1 autocorrelation, and a run-order trend test (Appendix \ref{app:a2-run-qc}).
 
 Per-session \gls{SThree} aggregates are used descriptively only; identifiers and statistics are listed in Appendix \ref{app:a4-metrics}. We do not average percentiles across sessions or attach inferential intervals to service metrics. Warm-up and replication policy are defined in Appendix \ref{app:a2-run-qc}.
+
+For all between-format comparisons we treat the \emph{ratio of geometric means} as the primary effect size. For latency, this is the ratio of GM times between two formats on the original scale (for example, GM$_\text{ROOT}$/GM$_\text{Zarr}$), where values below~1 indicate that the numerator is faster. Because we analyse $\ln(\text{time})$, these ratios correspond to differences of means on the log scale. Empirically, response‑time distributions in computer systems are right‑skewed and often close to lognormal, so working on the log scale and reporting geometric means is standard in performance evaluation. For full scans, we use the ratio of GM throughputs in GiB/s (for example, GM$_\text{TileDB}$/GM$_\text{Zarr}$). Nonparametric effect sizes are reported as \emph{median ratios} in the robustness tables.
+
+For each pair of formats within a codec \times pattern, the statistical null is that their log‑scale means are equal (ratio of GMs = 1). The alternative is that the ratio differs from 1. Rather than performing formal tests, we present 95\% confidence intervals for the ratio and interpret them descriptively.
 
 \subsection{Uncertainty and confounders in AWS}
 \Gls{AWS} introduces time-varying latency and variance that cannot be fully controlled. We mitigated this issue by using a single region with the \gls{SThree} bucket co-located, a Gateway VPC endpoint, and fixed client settings. Operational controls and randomization are documented in Appendix \ref{app:a2-run-qc}. Formats were executed in \emph{separate sessions} with no cross-format overlap. Consequently, cross-format contrasts are \textbf{descriptive, session-conditional}. Inference is limited to within-cell estimands (GM, \gls{Pninetyfive}, throughput) with dependence-robust bootstrap \glspl{CI}. CloudWatch aggregates are per-session and reported descriptively (no inference, no cross-session averaging of percentiles).
@@ -1503,7 +1584,7 @@ This chapter reports the empirical results of benchmarking four storage backends
 
 Metrics encompass client-observed timing, service-side behavior, and storage footprint, with timings analyzed on a log scale. For each {format$\times$codec$\times$pattern} cell, we report geometric-mean (GM) time with dependence-robust 95\% \glspl{CI} via a moving-block bootstrap (MBB; settings in Appendix \ref{app:a3-stats}). Tail behavior is summarized by $p_{95}$ with the same procedure. For full scans, we also report throughput (GiB/s) derived from bytes/time. Storage footprint is reported as stored bytes and compression ratio relative to the raw array. Request intensity (GETs/rep, GETs/GiB) is derived from CloudWatch session aggregates.
 
-Cross-format contrasts are \textbf{descriptive, session-conditional} because formats run in separate sessions. Warm-ups are excluded; $n=50$ timed repetitions per cell are analyzed.
+Cross-format contrasts are \textbf{descriptive, session-conditional} because formats run in separate sessions. Warm-ups are excluded; $n=50$ timed repetitions per cell are analyzed. All comparisons should therefore be read as associations in this specific dataset and testbed; the design does not support general causal claims about the formats beyond this setting.
 
 This chapter is organised by \emph{RQ1} (interactive slice latency,  section \ref{sec:rq1-results}), \emph{RQ2} (full-dataset throughput, section \ref{sec:rq2-results}), and \emph{RQ3} (cost posture and mechanisms, section \ref{sec:rq3-results}).
 
@@ -1554,7 +1635,7 @@ We assess per-run timing on the log scale. Table \ref{tab:timing_diag_main} summ
   \end{tabular}
 \end{table}
 
-\noindent\textit{Note.} Positive $\rho_1$ indicates serial dependence within sessions, the $\mathrm{p95}/\mathrm{GM}$ ratio summarizes tail heaviness.
+We assess per-run timing on the log scale. Table \ref{tab:timing_diag_main} summarizes, for each {format $\times$ codec $\times$ pattern} cell, the Shapiro $p$ on $\ln(\text{time})$, lag-1 autocorrelation $\rho_1$, the $\mathrm{p95}/\mathrm{GM}$ ratio, and a Spearman trend $p$. Most cells show non-normality in raw time but much milder skew in $\ln(\text{time})$, and nearly all cells have positive $\rho_1$, indicating within-session serial dependence. Together, these patterns justify analyzing log-times and using dependence-robust bootstrap intervals. Shapiro and Spearman $p$-values are used purely as diagnostics for shape and drift, not as tests of between-format differences, so the main comparisons rely on effect sizes (ratios) and confidence intervals. Q–Q plots and run-order traces in Appendix Figures \ref{fig:appendix_qq_grid_slice}–\ref{fig:appendix_drift_grid_full} are descriptive and illustrate these behaviors visually.
 
 \section{Footprint and service behavior — RQ3 context}
 \label{sec:rq3-results}
@@ -1576,7 +1657,7 @@ This section enumerates the total stored bytes on \gls{SThree} for each {format,
 
 For $N=1{,}300$, $B_{\text{raw}}=21{,}565{,}440{,}000\ \text{bytes}$ ($\approx 20.08\,\text{GiB}$). Figure \ref{fig:stored_bytes} reports absolute stored size and Figure \ref{fig:compression_rates} shows the corresponding compression ratios.
 
-Figure \ref{fig:stored_bytes} quantifies absolute stored size per format and codec. For this detector stack, zstd and gzip achieve similar total bytes across all four backends, while LZ4 consistently stores more data, especially for HDF5/HSDS. This confirms that codec choice, rather than format, is the primary driver of space usage for this workload.
+Figure \ref{fig:stored_bytes} quantifies absolute stored size per format and codec. For this detector stack, zstd and gzip achieve similar total bytes across all four backends, while LZ4 consistently stores more data, especially for HDF5/HSDS. This pattern is consistent with codec choice, rather than format, being the dominant determinant of space usage for this workload.
 
 \begin{figure}[H]
   \centering
@@ -1626,7 +1707,7 @@ We summarize request intensity from CloudWatch \emph{session} aggregates. All $n
 
 Here $n$ is the number of timed repetitions in the cell, and $\widehat{\lambda}_{\mathrm{GiB}}$ is measured in GETs per GiB.
 
-Rates are descriptive and session-conditional. Table \ref{tab:req_intensity} lists $\widehat{\lambda}_{\mathrm{rep}}$ and $\widehat{\lambda}_{\mathrm{GiB}}$ for all \{format, codec, pattern\} cells. Figure~\ref{fig:reqintensity_box_by_format} summarizes S3 request intensity by format, showing the distributions of GETs per repetition and GETs per GiB aggregated across codecs and access patterns. For this workload, Zarr and TileDB cluster toward lower GETs/GiB than HDF5/HSDS, indicating fewer requests for the same volume of data, while ROOT consistently has very low GETs/GiB because it serves from a single object. These differences help explain later latency and throughput patterns when combined with layout and codec effects. Detailed per-cell point estimates by codec and pattern are provided in Appendix Figures \ref{fig:reqintensity_perRep_grid} and \ref{fig:reqintensity_perGiB_grid}.
+Rates are descriptive and session-conditional. Table \ref{tab:req_intensity} lists $\widehat{\lambda}_{\mathrm{rep}}$ and $\widehat{\lambda}_{\mathrm{GiB}}$ for all \{format, codec, pattern\} cells. Figure \ref{fig:reqintensity_box_by_format} summarizes S3 request intensity by format, showing the distributions of GETs per repetition and GETs per GiB aggregated across codecs and access patterns. For this workload, Zarr and TileDB cluster toward lower GETs/GiB than HDF5/HSDS, indicating fewer requests for the same volume of data, while ROOT consistently has very low GETs/GiB because it serves from a single object. These differences are used as descriptive context for later latency and throughput patterns, together with layout and codec effects. Detailed per-cell point estimates by codec and pattern are provided in Appendix Figures \ref{fig:reqintensity_perRep_grid} and \ref{fig:reqintensity_perGiB_grid}.
 
 \begin{figure}[H]
   \centering
@@ -1655,7 +1736,7 @@ This section quantifies interactive (single-frame) latency for each \{format, co
 
 
 \subsubsection{gzip}
-Table \ref{tab:slice_gzip_mbb} reports GM slice latency and $p_{95}$ for each format under \texttt{gzip}. TileDB is fastest, with a GM latency of about 195~ms, followed closely by Zarr ($\sim$229~ms) and HDF5/HSDS ($\sim$241~ms), while \gls{ROOT} is roughly twice as slow at $\sim$406~ms. The $p_{95}$ point estimates follow the same ordering (TileDB $<\,$Zarr$<\,$HDF5/HSDS$<\,$ROOT). For TileDB and Zarr, the $p_{95}$ CIs partially overlap, so the tail difference between those two should be read as descriptive; however, both lie well below HDF5/HSDS and \gls{ROOT}. Overall, under \texttt{gzip}, chunked (Zarr) and fragment-based (TileDB) layouts yield substantially lower slice latency and lower tail latency than the single-object \gls{ROOT} layout in this dataset. The full dependence-robust CI curves and GM ratio plots for this codec are shown in Appendix Figures \ref{fig:slice_gzip_gm_mbb}–\ref{fig:slice_gzip_ratios_point}.
+Table \ref{tab:slice_gzip_mbb} reports GM slice latency and $p_{95}$ for each format under \texttt{gzip}. TileDB is fastest, with a GM latency of about 195~ms, followed by Zarr ($\sim$229~ms) and HDF5/HSDS ($\sim$241~ms), while \gls{ROOT} is roughly twice as slow at $\sim$406~ms. In effect-size terms (GM ratios vs.\ Zarr), TileDB’s GM is $\approx 0.85\times$ Zarr (about 15\% lower latency), HDF5/HSDS is $\approx 1.05\times$ Zarr (about 5\% higher latency), and \gls{ROOT} is $\approx 1.77\times$ Zarr (about 77\% higher latency). The $p_{95}$ point estimates follow the same ordering (TileDB $<\,$Zarr$<\,$HDF5/HSDS$<\,$ROOT); for TileDB and Zarr, the $p_{95}$ CIs partially overlap, so the tail difference between those two should be read as descriptive, but both lie well below HDF5/HSDS and \gls{ROOT}. Overall, under \texttt{gzip}, chunked (Zarr) and fragment-based (TileDB) layouts yield substantially lower slice latency and lower tail latency than the single-object \gls{ROOT} layout in this dataset. The full dependence-robust CI curves and GM ratio plots for this codec are shown in Appendix Figures \ref{fig:slice_gzip_gm_mbb}–\ref{fig:slice_gzip_ratios_point}.
 
 
 \begin{table}[H]
@@ -1675,7 +1756,7 @@ Table \ref{tab:slice_gzip_mbb} reports GM slice latency and $p_{95}$ for each fo
 \end{table}
 
 \subsubsection{LZ4}
-For \texttt{lz4}/slice, GM latencies and $p_{95}$ are given in Table \ref{tab:slice_lz4_mbb}. Zarr is fastest at about 176~ms, with TileDB ($\sim$214~ms) and HDF5/HSDS ($\sim$222~ms) following closely behind, and \gls{ROOT} again the slowest at $\sim$328~ms. A notable difference from \texttt{gzip} is that Zarr’s $p_{95}$ is higher and has wider CIs than TileDB and HDF5/HSDS, reflecting heavier tails under \texttt{lz4}. The relatively wide $p_{95}$ CIs mean that tail contrasts between Zarr and TileDB/HDF5 should be interpreted cautiously. The more stable signal is the GM ranking, which remains Zarr~$<$~TileDB~$\approx$~HDF5/HSDS~$\ll$~\gls{ROOT}. Appendix Figures~\ref{fig:slice_lz4_gm_mbb}–\ref{fig:slice_lz4_ratios_point} show the full CI and ratio behavior.
+For \texttt{lz4}/slice, GM latencies and $p_{95}$ are given in Table \ref{tab:slice_lz4_mbb}. Zarr is fastest at about 176~ms, with TileDB ($\sim$214~ms) and HDF5/HSDS ($\sim$222~ms) following closely behind, and \gls{ROOT} again the slowest at $\sim$328~ms. Relative to Zarr, TileDB’s GM latency is $\approx 1.22\times$ (about 22\% slower), HDF5/HSDS is $\approx 1.26\times$ (about 26\% slower), and \gls{ROOT} is $\approx 1.87\times$ (about 87\% slower). A notable difference from \texttt{gzip} is that Zarr’s $p_{95}$ is higher and has wider CIs than TileDB and HDF5/HSDS, reflecting heavier tails under \texttt{lz4}. The relatively wide $p_{95}$ CIs mean that tail contrasts between Zarr and TileDB/HDF5 should be interpreted cautiously. The more stable signal is the GM ranking, which remains Zarr~$<$~TileDB~$\approx$~HDF5/HSDS~$\ll$~\gls{ROOT}. Appendix Figures \ref{fig:slice_lz4_gm_mbb}–\ref{fig:slice_lz4_ratios_point} show the full CI and ratio behavior.
 
 
 \begin{table}[H]
@@ -1695,7 +1776,7 @@ For \texttt{lz4}/slice, GM latencies and $p_{95}$ are given in Table \ref{tab:sl
 \end{table}
 
 \subsubsection{zstd}
-For \texttt{zstd}/slice, Table \ref{tab:slice_zstd_mbb} shows that Zarr is fastest, with a GM latency of about 155~ms. TileDB ($\sim$177~ms) and HDF5/HSDS ($\sim$210~ms) are slower but still clearly separated from \gls{ROOT} ($\sim$269~ms). The $p_{95}$ point estimates display the same ordering, and differences are large in magnitude, especially between \gls{ROOT} and the other formats. CIs for Zarr, TileDB, and HDF5/HSDS overlap to some extent, so tail contrasts among those three are descriptive rather than sharp, but all three have markedly lower tails than \gls{ROOT}. Detailed MBB CI curves and GM ratio plots for \texttt{zstd}/slice are provided in Appendix Figures \ref{fig:slice_zstd_gm_mbb}–\ref{fig:slice_zstd_ratios_point}.
+For \texttt{zstd}/slice, Table \ref{tab:slice_zstd_mbb} shows that Zarr is fastest, with a GM latency of about 155~ms. TileDB ($\sim$177~ms) and HDF5/HSDS ($\sim$210~ms) are slower but still clearly separated from \gls{ROOT} ($\sim$269~ms). The corresponding effect sizes vs.\ Zarr are $\approx 1.14\times$ for TileDB (about 14\% slower), $\approx 1.35\times$ for HDF5/HSDS (about 35\% slower), and $\approx 1.74\times$ for \gls{ROOT} (about 74\% slower). The $p_{95}$ point estimates display the same ordering, and differences are large in magnitude, especially between \gls{ROOT} and the other formats. CIs for Zarr, TileDB, and HDF5/HSDS overlap to some extent, so tail contrasts among those three are descriptive rather than sharp, but all three have markedly lower tails than \gls{ROOT}. Detailed MBB CI curves and GM ratio plots for \texttt{zstd}/slice are provided in Appendix Figures \ref{fig:slice_zstd_gm_mbb}–\ref{fig:slice_zstd_ratios_point}.
 
 
 \begin{table}[H]
@@ -1722,6 +1803,8 @@ Throughput (GiB/s) is derived from GM time on the log scale with the same depend
 \subsubsection{gzip}
 Table \ref{tab:full_gzip_mbb} reports GM full-scan latencies and $p_{95}$ for each format under \texttt{gzip}. TileDB is clearly fastest, with a GM time of about 11.3~s (corresponding to $\approx 1.04$~GiB/s), followed by Zarr at $\approx 35.6$~s (0.32~GiB/s). HDF5/HSDS and \gls{ROOT} are substantially slower: roughly 4–5 times and 12 times slower than Zarr, respectively. The $p_{95}$ point estimates follow the exact ordering. The CIs are narrow relative to the gap between TileDB and \gls{ROOT}, suggesting that a few extreme runs do not drive the significant throughput differences; however, all tail summaries are interpreted descriptively. These patterns are consistent with the throughput–versus–GETs/GiB view in Table \ref{tab:cross_full_throughput_vs_gets} and Figure \ref{fig:cross_full_throughput_vs_gets}. Detailed dependence-robust CI and GM-ratio curves for \texttt{gzip}/full scans are provided in Appendix Figures \ref{fig:full_gzip_gm_mbb}–\ref{fig:full_gzip_ratios_point}.
 
+Table \ref{tab:full_gzip_mbb} reports GM full-scan latencies and $p_{95}$ for each format under \texttt{gzip}. TileDB is clearly fastest, with a GM time of about 11.3~s (corresponding to $\approx 1.04$~GiB/s), followed by Zarr at $\approx 35.6$~s (0.32~GiB/s). HDF5/HSDS and \gls{ROOT} are substantially slower: in GM time, TileDB is $\approx 0.32\times$ Zarr (about $3.2\times$ faster), HDF5/HSDS is $\approx 4.4\times$ Zarr, and \gls{ROOT} is $\approx 12.4\times$ Zarr. The $p_{95}$ point estimates follow the same ordering. The CIs are narrow relative to the gap between TileDB and \gls{ROOT}, suggesting that a few extreme runs do not drive the substantial throughput differences; however, all tail summaries are interpreted descriptively. These patterns are consistent with the throughput–versus–GETs/GiB view in Table \ref{tab:cross_full_throughput_vs_gets} and Figure \ref{fig:cross_full_throughput_vs_gets}. Detailed dependence-robust CI and GM-ratio curves for \texttt{gzip}/full scans are provided in Appendix Figures \ref{fig:full_gzip_gm_mbb}–\ref{fig:full_gzip_ratios_point}.
+
 \begin{table}[H]
   \centering
   \caption{Full-scan latency, \texttt{gzip}: GM and $p_{95}$ (ms) with dependence-robust 95\% CIs (MBB; $\ell\in\{4,6,8\}$; $B{=}10{,}000$).}
@@ -1741,7 +1824,7 @@ Table \ref{tab:full_gzip_mbb} reports GM full-scan latencies and $p_{95}$ for ea
 
 
 \subsubsection{LZ4}
-For \texttt{lz4}/full scans, Table \ref{tab:full_lz4_mbb} shows that TileDB again achieves the highest throughput, with a GM time of about 13.6~s (1.17~GiB/s). Zarr follows at $\approx 29.5$~s (0.37~GiB/s), so TileDB is roughly 2.2 times faster than Zarr, while HDF5/HSDS and \gls{ROOT} remain much slower (GM times around 152~s and 363~s, respectively). The $p_{95}$ point estimates mirror this ranking. CIs are comparatively tight for TileDB and Zarr, which supports the qualitative picture of TileDB as the highest-throughput format for this workload. These effect sizes agree with the codec-level ratios reported in Section \ref{sec:ans-rq2}. The full set of CI curves and GM-ratio plots for \texttt{lz4}/full scans is shown in Appendix Figures \ref{fig:full_lz4_gm_mbb}–\ref{fig:full_lz4_ratios_point}.
+For \texttt{lz4}/full scans, Table \ref{tab:full_lz4_mbb} shows that TileDB again achieves the highest throughput, with a GM time of about 13.6~s (1.17~GiB/s). Zarr follows at $\approx 29.5$~s (0.37~GiB/s), so TileDB’s GM time is $\approx 0.46\times$ Zarr (about $2.2\times$ faster), while HDF5/HSDS and \gls{ROOT} remain much slower, at $\approx 5.1\times$ and $\approx 12.3\times$ Zarr, respectively. The $p_{95}$ point estimates mirror this ranking, and CIs are comparatively tight for TileDB and Zarr, which supports the qualitative picture of TileDB as the highest-throughput format for this workload. These effect sizes agree with the codec-level ratios reported in Section \ref{sec:ans-rq2}. The full set of CI curves and GM-ratio plots for \texttt{lz4}/full scans is shown in Appendix Figures \ref{fig:full_lz4_gm_mbb}–\ref{fig:full_lz4_ratios_point}.
 
 \begin{table}[H]
   \centering
@@ -1762,7 +1845,7 @@ For \texttt{lz4}/full scans, Table \ref{tab:full_lz4_mbb} shows that TileDB agai
 
 
 \subsubsection{zstd}
-Under \texttt{zstd}, Table \ref{tab:full_zstd_mbb} shows that TileDB has the lowest GM full-scan time at about 10.4~s ($\approx 1.06$~GiB/s). Zarr is roughly three times slower ($\approx 30.4$~s, 0.35~GiB/s), while HDF5/HSDS and \gls{ROOT} are about five and twelve times slower than Zarr, respectively. The $p_{95}$ statistics follow the same ordering and are numerically far apart, particularly between TileDB/Zarr and \gls{ROOT}. For Zarr versus TileDB/\gls{HDFFive}, the CIs overlap, so tail contrasts among those three remain descriptive, but all three exhibit substantially lower tails than \gls{ROOT}. These results are consistent with the cross-metric view in Table \ref{tab:cross_full_throughput_vs_gets} and Figure \ref{fig:cross_full_throughput_vs_gets}. Appendix Figures \ref{fig:full_zstd_gm_mbb}–\ref{fig:full_zstd_ratios_point} and Figures \ref{fig:tail-full-p95-hd-ci-vs-L} and Table \ref{tab:tail-full-zstd-p95-selected} provide the corresponding CI and tail-sensitivity plots.
+Under \texttt{zstd}, Table \ref{tab:full_zstd_mbb} shows that TileDB has the lowest GM full-scan time at about 10.4~s ($\approx 1.06$~GiB/s). Zarr is roughly three times slower ($\approx 30.4$~s, 0.35~GiB/s), while HDF5/HSDS and \gls{ROOT} are about $5.0\times$ and $12.3\times$ slower than Zarr, respectively. In ratio terms vs.\ Zarr, TileDB’s GM time is $\approx 0.34\times$ (about $2.9\times$ faster), HDF5/HSDS is $\approx 5.0\times$, and \gls{ROOT} is $\approx 12.3\times$. The $p_{95}$ statistics follow the same ordering and are numerically far apart, particularly between TileDB/Zarr and \gls{ROOT}. For Zarr versus TileDB/HDF5, the CIs overlap, so tail contrasts among those three remain descriptive, but all three exhibit substantially lower tails than \gls{ROOT}. These results are consistent with the cross-metric view in Table \ref{tab:cross_full_throughput_vs_gets} and Figure \ref{fig:cross_full_throughput_vs_gets}. Appendix Figures \ref{fig:full_zstd_gm_mbb}–\ref{fig:full_zstd_ratios_point} and Figures \ref{fig:tail-full-p95-hd-ci-vs-L} and Table \ref{tab:tail-full-zstd-p95-selected} provide the corresponding CI and tail-sensitivity plots.
 
 \begin{table}[H]
   \centering
@@ -1807,7 +1890,7 @@ This section links client performance to request intensity and service latencies
 
 
 \subsubsection{Slice: latency vs GETs per GiB}
-Figure \ref{fig:cross_slice_latency_vs_gets} links slice latency to request intensity on S3 by plotting GM latency against GETs/GiB for each format and codec. Table \ref{tab:cross_slice_latency_vs_gets} lists the underlying values. For Zarr and TileDB, lower GETs/GiB coincide with lower GM latency, while ROOT shows low GETs/GiB but high latency due to its single-object layout and paging overhead. This confirms that request intensity explains only part of the latency differences and where layout and decode paths are equally important.
+Figure \ref{fig:cross_slice_latency_vs_gets} links slice latency to request intensity on S3 by plotting GM latency against GETs/GiB for each format and codec. Table \ref{tab:cross_slice_latency_vs_gets} lists the underlying values. For Zarr and TileDB, lower GETs/GiB coincide with lower GM latency, while ROOT shows low GETs/GiB but high latency due to its single-object layout and paging overhead. In this dataset, lower GETs/GiB is associated with lower GM latency for chunked stores (Zarr, TileDB), but not for \gls{ROOT}, which combines low GETs/GiB with high latency. Request intensity appears to account for part of the observed differences, but layout, object size, and decode paths also vary, and the experiment is not designed to attribute causal contributions between these factors.
 
 \begin{figure}[H]
   \centering
@@ -1839,8 +1922,6 @@ Figure \ref{fig:cross_slice_latency_vs_gets} links slice latency to request inte
     \bottomrule
   \end{tabular}
 \end{table}
-
-In these experiments, lower GETs/GiB is associated with lower GM latency for chunked stores (Zarr, TileDB), but not for \gls{ROOT}, which combines low GETs/GiB with high latency. Request intensity explains part of the differences, with layout, object size, and decode paths also contributing.
 
 \subsubsection{Scan: throughput vs GETs per GiB}
 Relate full-scan throughput to request intensity. Throughput is plotted on a log scale using GM time. GETs/GiB are session aggregates. \textbf{Descriptive only}.
@@ -1876,11 +1957,11 @@ Relate full-scan throughput to request intensity. Throughput is plotted on a log
   \end{tabular}
 \end{table}
 
-For full scans, lower GETs/GiB is associated with higher throughput for TileDB and Zarr, while ROOT remains slow despite low GETs/GiB because its single-object layout and decode overhead dominate. This pattern is consistent with H2.3: request intensity explains part of the throughput variance for chunked/fragmented stores, but is not sufficient to explain ROOT’s behaviour.
+For full scans, lower GETs/GiB is associated with higher throughput for TileDB and Zarr, while ROOT remains slow despite low GETs/GiB because its single-object layout and decode overhead dominate. This pattern is consistent with H2.3: request intensity likely contributes to throughput differences for chunked/fragmented stores, but is not sufficient to account for ROOT’s behaviour, where single-object layout and decode overhead dominate in this setup.
 
 
 \subsection{Sensitivity analyses and robustness checks}
-We apply the robustness procedures to all $4\times 3\times 2=24$ cells \((\text{format}\times\text{codec}\times\text{pattern})\) using the moving–block bootstrap settings in Appendix \ref{app:a3-stats}.
+We apply the robustness procedures to all $4\times 3\times 2=24$ cells \((\text{format}\times\text{codec}\times\text{pattern})\) using the moving–block bootstrap settings in Appendix \ref{app:a3-stats}. The goal is to check whether the descriptive orderings are stable under alternative centers and tail estimators, not to perform formal hypothesis testing across formats.
 
 \begin{itemize}
   \item \textbf{Cells to include:} all \(4\times 3\times 2=24\) cells \((\text{format}\times\text{codec}\times\text{pattern})\);\\
@@ -2207,7 +2288,7 @@ This section compiles summary tables for each codec $ \ times$ pattern combinati
 
 
 \subsubsection{Per-codec league tables}
-This subsection presents per-codec league tables to summarize practical rankings. Rankings are descriptive and session-conditional, using the stated primary objective and tie-breakers.
+This subsection presents per-codec league tables to summarize practical rankings. Scores use the stated primary objective and tie-breakers and totals are descriptive and session-conditional.
 
 \paragraph{Slice}
 Rankings use lower GM latency (tie-break: $p_{95}\!\rightarrow$ GETs/GiB $\rightarrow$ stored GiB), which are descriptive and session-conditional.
@@ -2496,7 +2577,7 @@ Nonparametric centers yield the same ranks across codecs, and the HD $p_{95}$ se
 
 \subsection{RQ3 — Cost posture and mechanisms (summary)}
 \label{sec:ans-rq3}
-Chunk/fragment layouts (Zarr, TileDB) produce low–to–moderate GETs/GiB and are associated with lower GM slice latency and higher scan throughput in this dataset. In contrast, \gls{HSDS} yields higher GETs/GiB, and \gls{ROOT} is the counterexample: few GETs yet slow due to single-object paging and decode, see section \ref{sec:rq3-results}, Figure \ref{fig:cross_slice_latency_vs_gets}, and Figure \ref{fig:cross_full_throughput_vs_gets}. Storage posture is codec-driven overall (zstd $\approx$ gzip $<$ lz4), with a significant inflation for \texttt{lz4}+\gls{HSDS} compared with Zarr/TileDB at the same payload (Table \ref{tab:object_counts}, Figure \ref{fig:stored_bytes}, Figure \ref{fig:compression_rates}). S3 FirstByte/TotalRequest latencies are stable across sessions and do not explain cross-format gaps, but where they serve as context only (Figure \ref{fig:cw_firstbyte_grid}, Figure \ref{fig:cw_total_grid}). Mechanistically, objectization determines request patterns, and the codec defines the bytes transferred together; they explain the client timings observed in \ref{sec:rq1-results}–\ref{sec:rq2-results}.
+Chunk/fragment layouts (Zarr, TileDB) produce low–to–moderate GETs/GiB and are associated with lower GM slice latency and higher scan throughput in this dataset. In contrast, \gls{HSDS} yields higher GETs/GiB, and \gls{ROOT} is the counterexample: few GETs yet slow due to single-object paging and decode, see section \ref{sec:rq3-results}, Figure \ref{fig:cross_slice_latency_vs_gets}, and Figure \ref{fig:cross_full_throughput_vs_gets}. Storage posture is codec-driven overall (zstd $\approx$ gzip $<$ lz4), with a significant inflation for \texttt{lz4}+\gls{HSDS} compared with Zarr/TileDB at the same payload (Table \ref{tab:object_counts}, Figure \ref{fig:stored_bytes}, Figure \ref{fig:compression_rates}). S3 FirstByte/TotalRequest latencies are stable across sessions and do not explain cross-format gaps, but where they serve as context only (Figure \ref{fig:cw_firstbyte_grid}, Figure \ref{fig:cw_total_grid}). Mechanistically, objectization determines request patterns, and the codec defines the bytes transferred together; these factors are consistent with the client timings observed in \ref{sec:rq1-results}–\ref{sec:rq2-results}.
 
 These findings address H3.1–H3.2: codec choice (especially \texttt{lz4} vs \texttt{zstd}/\texttt{gzip}) dominates stored GiB, Zarr and TileDB offer a more favourable request+storage posture than HSDS+\texttt{lz4} or ROOT, and the relatively flat CloudWatch service latencies confirm that S3 service timing is a background factor rather than a primary driver of client-observed performance.
 

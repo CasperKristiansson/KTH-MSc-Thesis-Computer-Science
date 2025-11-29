@@ -65,7 +65,11 @@ Note:
 You’re right that HSDS adds an extra layer (REST service, container orchestration, potential cold-start and metadata fan-out) on top of HDF5, and that my timed measurements necessarily include some of that overhead. I did consider instrumenting HSDS itself to separate “infrastructure spin-up” from steady-state chunk I/O, but I belived what would be intressting is the end-to-end behaviour (what a scientist actually experiences when hitting an HSDS endpoint on S3). The intressting thing is that the host company + partnered facility is already using HSDS in production for interactive analysis, so the results are relevant to their use case seeing the impact of end-to-end performance.
 
 18. [x] Explicitly state which hypotheses each experiment tests and link results back to those hypotheses.
-19. [ ] Consider reporting effect sizes (not just p-values) for all comparisons; confidence intervals alone are insufficient.
-20. [ ] Do you compute FWER / FDR?
-21. [ ] Clarify the scope: your session-conditional, descriptive contrasts do your results actually support a causal claim in general? I suspect that your experimental setup is not strong enough for this.
-22. [ ] Specify, motivate, and formally introduce statistical hypothesis, and explain how the test works, why you have chosen it over alternatives, provide context.
+19. [x] Consider reporting effect sizes (not just p-values) for all comparisons; confidence intervals alone are insufficient.
+20. [-] Do you compute FWER / FDR?
+
+In the current analysis the only p-values (Shapiro/Spearman) are used as shape/drift diagnostics, and all cross-format contrasts are reported as descriptive effect sizes with dependence-robust CIs. There is therefore no formal multiple-testing family for which FWER/FDR control is used.
+
+21. [x] Clarify the scope: your session-conditional, descriptive contrasts do your results actually support a causal claim in general? I suspect that your experimental setup is not strong enough for this.
+
+22. [x] Specify, motivate, and formally introduce statistical hypothesis, and explain how the test works, why you have chosen it over alternatives, provide context.
