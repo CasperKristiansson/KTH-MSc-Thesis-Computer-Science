@@ -1,4 +1,4 @@
 Application/Permission to publish blankett.pdf
-.env
+.venv
 Experiment/data/synthetic_images
 *.DS_Store

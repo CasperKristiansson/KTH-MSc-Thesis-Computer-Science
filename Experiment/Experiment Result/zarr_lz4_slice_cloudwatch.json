@@ -1,0 +1,8 @@
+{
+    "GetRequestsSum": 65,
+    "BytesDownloadedSum": 517034504,
+    "FirstByteLatencyP95": 171.05483890526614,
+    "TotalRequestLatencyP95": 330.96320153557366,
+    "FirstByteLatencyAverage": 102.01612903225806,
+    "TotalRequestLatencyAverage": 161.93846153846152
+}
