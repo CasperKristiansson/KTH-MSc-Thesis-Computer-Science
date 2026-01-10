@@ -375,7 +375,9 @@ The contribution is a reproducible AWS-native method and a decision matrix: choo
 \label{ch:introduction}
 Modern synchrotron and neutron experiments generate multi-GiB/s streams of multidimensional detector data. Parallel file systems (Lustre, \gls{GPFS}) deliver high throughput for large, contiguous I/O but respond poorly to the thousands of small, partial reads required for on-beamline feedback. Cloud object stores such as Amazon \gls{SThree} provide elastic capacity and global access but add per-request latency and fees. Monolithic file-container formats (e.g., \gls{HDFfive}/NeXus) map poorly to object stores without additional indirection.
 
-Cloud-native layouts—chunked arrays (Zarr), fragmented dense/sparse arrays (TileDB), and tree/column layouts (\gls{ROOT}/\gls{RNTuple})—offer alternative trade-offs in latency, throughput, compression, CPU, and request intensity. This thesis provides a side-by-side evaluation of four cloud storage backends on \gls{AWS} for realistic, partial-retrieval scattering workloads.
+Cloud-native layouts—chunked arrays (Zarr), fragmented dense/sparse arrays (TileDB), and tree/column layouts (\gls{ROOT}/\gls{RNTuple})—offer alternative trade-offs in latency, throughput, compression, CPU, and request intensity. This thesis provides a side-by-side evaluation of four cloud storage backends on \gls{AWS} under two canonical scattering access patterns: random single-frame reads (interactive slices) and full sequential scans (bulk post-processing).
+
+In this benchmark, the choice of layout and codec changes interactive single-frame latency by a factor of $\approx 2.6\times$ across the tested configurations (GM $\approx$155\,ms for Zarr+\texttt{zstd} versus GM $\approx$406\,ms for ROOT+\texttt{gzip}). For bulk processing, TileDB delivers $\approx 2.2$--$3.2\times$ higher full-scan throughput than Zarr across codecs (e.g., $\approx$1.06\,GiB/s vs.\ $\approx$0.35\,GiB/s under \texttt{zstd}). Cost-relevant proxies also vary materially: request intensity differs by up to $\approx 3$--$4\times$ (GETs/GiB) between layouts for the same workload, and stored size can differ by $\approx 1.8\times$ for the same logical dataset under \texttt{lz4} (e.g., HSDS vs.\ Zarr). These effect sizes bound how much engineering choices in storage layout and compression can change beamline feedback latency, end-to-end pipeline time, and object-store cost posture in an \gls{SThree}-based workflow.
 
 
 \section{Motivation and Context}
@@ -412,7 +414,7 @@ This thesis defines the original industrial problem as optimizing the retrieval 
 Generalizing beyond the narrow industrial case leads to several key research questions:
 
 \begin{itemize}
- \item Which access patterns (e.g., small random reads vs.\ large sequential scans, metadata index scalability) stress each format’s architecture the most?
+ \item For the two dominant access patterns in scattering pipelines—interactive single-frame reads and full sequential scans—how do storage layouts and codecs trade latency, throughput, request intensity, and stored size on \gls{SThree}?
  \item How do different compression algorithms (\texttt{zstd}, \texttt{lz4}, \texttt{gzip}) interact with object-stored data, and how does it affect end-to-end latency and throughput?
 \end{itemize}
 
@@ -469,7 +471,7 @@ This thesis focuses exclusively on cloud-native, object-store–based workflows 
         \item \textbf{Cloud provider scope:} Only \gls{AWS} services (\gls{SThree}, \gls{ECtwo}) are considered. No experiments involve Azure, Google Cloud, or on-premises \gls{HPC} clusters.
         \item \textbf{Storage formats:} The study is limited to the four specified formats. Other emerging or domain-specific formats (e.g., Avro, \gls{ORC}, \gls{CBF}, NeXus variants) fall outside the scope.
  	      \item \textbf{Dataset:} Benchmarks cover a single 3D dense detector dataset.
-        \item \textbf{Access patterns:} Evaluation targets full-dataset scans and random single-frame reads (\(\sim\)\SI{15.82}{\mebi\byte} per frame). This study excludes other patterns (e.g., random single-element lookups and real-time streaming ingestion).
+        \item \textbf{Access patterns:} The quantitative evaluation focuses on two canonical patterns that dominate user experience and data volume in this setting: random single-frame reads (\(\sim\)\SI{15.82}{\mebi\byte} per frame) and full sequential scans of the dataset. Other patterns (e.g., metadata-only queries, random single-element lookups, real-time streaming ingestion, and multi-client contention) are discussed qualitatively or left to future work.
         \item \textbf{Compression algorithms:} This study uses three widely used codecs (\texttt{zstd}, \gls{LZfour}, and \texttt{gzip}) and does not compare other options, such as Snappy, Brotli, bzip2, or ZFP.
 \end{itemize}
 
@@ -744,7 +746,27 @@ Object stores provide scale but add request latency, immutability, and per-reque
 \label{sec:cloud-native-storage-models}
 Cloud object stores such as Amazon \gls{SThree}, Azure Blob Storage, and Google Cloud Storage provide effectively unlimited capacity and global accessibility. However, they introduce request latency, immutable object semantics, and per-request billing, which clash with the low-latency, mutable-file assumptions of traditional \gls{HPC} formats \cite{durbin2020cloud}. To exploit cloud elasticity without prohibitive slice-read costs, a new generation of \emph{cloud-native storage models} has emerged, each rethinking how scientific arrays or tables are partitioned, compressed, and addressed in an object store.
 
-This section surveys five representative approaches: \gls{HDFfive} served through the Highly Scalable Data Service (\gls{HSDS}), Zarr's chunk-per-object layout, Apache Parquet's columnar row-group design, TileDB's dense/sparse array storage, and \gls{CERN}'s page-oriented \gls{ROOT}/\gls{RNTuple} format. Each subsection highlights how the format maps its internal data units to cloud objects, which compression and indexing strategies it employs, and the trade-offs in latency and throughput.
+This thesis does not attempt an extensive survey of all scientific file formats. The goal is to compare a small set of \emph{adoption-realistic} storage models that could reasonably be deployed for large-scale scattering data on Amazon \gls{SThree}, and that span the main design choices that drive object-store performance. The candidate set of storage methods was selected to satisfy three criteria:
+
+\begin{itemize}
+  \item \textbf{Practical deployability on \gls{SThree}:} an open specification and a maintained implementation with native object-store support (client-side or via a service layer).
+  \item \textbf{Representativeness for the studied workflow:} ability to store either dense detector arrays or associated tabular metadata, and to support the dominant access patterns in this thesis (random frame/slice reads and full sequential scans).
+  \item \textbf{Coverage of distinct layout families:} monolithic file layouts (\gls{HDFfive}), chunk-per-object key–value arrays (Zarr), \gls{HDFfive} semantics with sharded chunks/metadata exposed via a REST service (\gls{HSDS}), fragment-based arrays with metadata pruning (TileDB), and single-object page/cluster layouts accessed via range reads (\gls{ROOT}/\gls{RNTuple}).
+\end{itemize}
+
+While a custom storage layout could in principle be engineered for this dataset, it would still have to specify the same core mechanisms as any production format: a chunking granularity, an object naming and sharding scheme, a metadata/index structure, a compression pipeline, and concurrency/consistency semantics. These choices map closely onto the layout families represented above. In particular, Zarr approximates the simplest viable custom design (chunk-per-object with lightweight metadata), while TileDB and \gls{RNTuple} represent richer indexing and streaming strategies. Designing, implementing, and validating a new storage engine would shift the thesis from comparative evaluation to system construction and would reduce reproducibility for other groups. For these reasons, the study focuses on established formats and uses the experimental results to derive design implications that would also inform any future custom solution.
+
+In addition to the conceptual layout differences, the storage candidates were chosen because they were practical to deploy and benchmark on Amazon \gls{SThree} under a single, reproducible test environment. Specifically, each option maintains a stable S3 I/O path (either direct object access or a stateless service layer), supports partial reads without a POSIX gateway, and exposes tunable physical granularity (chunks/tiles/pages) and standard compression filters used in this thesis. The five candidates also represent distinct \emph{deployment and I/O paths} that an engineering team would realistically choose between:
+
+\begin{itemize}
+  \item \textbf{\gls{HDFfive}+\gls{HSDS}:} preserves \gls{HDFfive}/NeXus compatibility while adding an explicit REST service that shards chunks and metadata into \gls{SThree} objects.
+  \item \textbf{Zarr:} a serverless, direct-to-\gls{SThree} chunk-per-object store with minimal metadata, representative of the simplest cloud-native array design.
+  \item \textbf{TileDB:} a library-based storage engine that writes immutable fragments plus fragment metadata (enabling pruning and consolidation), representing an “engine + metadata” approach rather than pure chunk key value store.
+  \item \textbf{Parquet:} the dominant columnar format in the cloud analytics stack, included to cover tabular experiment metadata and to document the engineering mismatch between row-group I/O and frame/tile access.
+  \item \textbf{\gls{ROOT}/\gls{RNTuple}:} a largely single-object layout with internal paging/clustering accessed via Range GETs, providing a counterpoint to object-sharded designs.
+\end{itemize}
+
+Table \ref{tab:format-granularity} previews the implied storage granularity, object counts, and the dominant engineering pain-point for each approach.
 
 
 \begin{table}[htbp]
@@ -998,6 +1020,13 @@ Key benchmarking variables are read latency, derived throughput, and request- an
 \subsubsection{Step 2: Conducting the Experiment}
 For each format, three datasets were created—one for each codec (\texttt{gzip}, \texttt{lz4}, and \texttt{zstd}). Chunking was fixed per format and held constant across runs. Two access patterns were executed per dataset: full scan of the \SI{20}{\gibi\byte} object and random single-frame reads (\(\sim\)\SI{15.82}{\mebi\byte} per frame). Logged metrics: per-run wall-clock time and per-session \gls{SThree} request counts, bytes, and latency percentiles (Appendix \ref{app:a4-metrics}). QC tests and rerun rules are listed in Appendix \ref{app:a2-run-qc}.
 
+The primary observations in this thesis are run-level wall-clock times for storage \emph{operations} (one random frame read or one full scan). Such timings are strictly positive, typically right-skewed, and often dominated by multiplicative factors (network RTT, request queuing, decompression cost, and library-level overhead). In addition, consecutive runs are not perfectly independent in a cloud setting: HTTP/TLS connections are reused, client-side and library metadata caches warm up, and object-store throughput can vary over time due to shared infrastructure. For these reasons, we analyze $\ln(\text{time})$ and quantify uncertainty with resampling methods (Section \ref{sec:methods-statistical-hypotheses} and Appendix \ref{app:a3-stats}) rather than relying on normal-error, independent-sample assumptions.
+
+An ideal benchmark design would obtain \emph{independent} replications by repeating each cell (format$\times$codec$\times$pattern) across many separate, isolated sessions (e.g., different time windows, fresh processes/containers, or even fresh instances) and by interleaving conditions to average out time-varying cloud effects. This would strengthen generalization beyond a single session and would simplify inference.
+
+
+In practice, fully independent replications are expensive because the cost scales roughly linearly with the amount of data read and the required setup overhead. In this study, there are 24 cells, each with 5 warm-ups and 50 timed runs; the full-scan workload alone reads approximately $20$~GiB $\times 55 \times 12 \approx 13.2$~TiB from \gls{SThree}. Replicating each cell across, for example, 5 independent sessions to reduce session-specific effects would increase this to $\sim 66$~TiB and multiply \gls{ECtwo} runtime and \gls{SThree} request charges by a similar factor (plus additional restart/cool-down overhead). Given these constraints, we instead run repeated measurements within a controlled session, randomize run order within the session, apply warm-ups to reach steady state, and treat remaining serial dependence explicitly in the uncertainty procedure (moving-block bootstrap). The resulting cross-format contrasts are therefore reported as \emph{descriptive and session-conditional}.
+
 \subsubsection{Step 3: Analyzing the Data}
 This step summarizes run-level timings and \gls{SThree} aggregates using the estimands and bootstrap procedures in Section \ref{sec:methods-metrics} and Appendices \ref{app:a2-run-qc}–\ref{app:a4-metrics}.
 
@@ -1138,7 +1167,7 @@ Rather than perform classical null-hypothesis significance tests for many pairwi
 In a fully formal one-sided test of, for example, \emph{$f$ is faster than $g$}, we would reject $H_{0}:\rho_{f,g;c,p}\ge 1$ at the 5\% level whenever the 95\% confidence interval for $\rho_{f,g;c,p}$ lay entirely below~1. In this thesis, we use the same intervals \emph{descriptively}: we report point estimates and confidence intervals for $\theta_{fcp}$ and $\rho_{f,g;c,p}$, and we interpret hypotheses H1.1--H3.2 in terms of which orderings are compatible with these intervals. We do not aggregate these into a single global decision rule, nor do we control a family-wise or false-discovery rate across all contrasts.
 
 \subsubsection{Why bootstrap, and why not \texorpdfstring{$t$}{t}-tests or ANOVA?}
-Serial dependence and non-normality in the run-level timing data (Section \ref{sec:results-inventory}, Table \ref{tab:timing_diag_main}) violate the independence and homoscedastic normal-error assumptions underlying standard $t$-tests and ANOVA. A parametric linear model on $\ln(\text{time})$ could, in principle, be equipped with a dependence structure, but this would require additional modelling choices and diagnostics that are not central to the research questions. The moving-block bootstrap on $\ln(\text{time})$ was chosen because:
+As discussed in Step 2, run-level timings are right-skewed and can exhibit within-session serial dependence due to cache and cloud-variability effects, making independent and identically distributed assumptions fragile. Serial dependence and non-normality in the run-level timing data (Section \ref{sec:results-inventory}, Table \ref{tab:timing_diag_main}) violate the independence and homoscedastic normal-error assumptions underlying standard $t$-tests and ANOVA. A parametric linear model on $\ln(\text{time})$ could, in principle, be equipped with a dependence structure, but this would require additional modelling choices and diagnostics that are not central to the research questions. The moving-block bootstrap on $\ln(\text{time})$ was chosen because:
 
 \begin{itemize}
   \item it respects the observed lag-1 autocorrelation and within-session serial dependence by resampling blocks rather than individual runs;
