@@ -845,7 +845,7 @@ This architecture provides high-throughput, scalable, and selective access to pe
 From a computer-science perspective, the five formats in this study represent different points in a shared design space: how an $n$-dimensional or tabular dataset is mapped to physical storage, how metadata is indexed, and how many objects and round-trips each logical operation induces. This subsection summarises those design choices and how they motivate the experiments.
 
 \subsubsection{HDF5/HSDS}
-\gls{HDFFive} defines a hierarchical container of datasets (multidimensional arrays) and groups, backed by a single byte-addressable file. HSDS replaces that monolithic file by sharding each HDF5 chunk and its metadata into separate objects and exposing them via a REST API. Algorithmically, each logical array access becomes:
+\gls{HDFfive} defines a hierarchical container of datasets (multidimensional arrays) and groups, backed by a single byte-addressable file. HSDS replaces that monolithic file by sharding each HDF5 chunk and its metadata into separate objects and exposing them via a REST API. Algorithmically, each logical array access becomes:
 
 \begin{itemize}
     \item a metadata lookup in small JSON documents that map indices to object IDs
@@ -1137,7 +1137,7 @@ Rather than perform classical null-hypothesis significance tests for many pairwi
 
 In a fully formal one-sided test of, for example, \emph{$f$ is faster than $g$}, we would reject $H_{0}:\rho_{f,g;c,p}\ge 1$ at the 5\% level whenever the 95\% confidence interval for $\rho_{f,g;c,p}$ lay entirely below~1. In this thesis, we use the same intervals \emph{descriptively}: we report point estimates and confidence intervals for $\theta_{fcp}$ and $\rho_{f,g;c,p}$, and we interpret hypotheses H1.1--H3.2 in terms of which orderings are compatible with these intervals. We do not aggregate these into a single global decision rule, nor do we control a family-wise or false-discovery rate across all contrasts.
 
-\subsubsection{Why bootstrap, and why not $t$-tests or ANOVA?}
+\subsubsection{Why bootstrap, and why not \texorpdfstring{$t$}{t}-tests or ANOVA?}
 Serial dependence and non-normality in the run-level timing data (Section \ref{sec:results-inventory}, Table \ref{tab:timing_diag_main}) violate the independence and homoscedastic normal-error assumptions underlying standard $t$-tests and ANOVA. A parametric linear model on $\ln(\text{time})$ could, in principle, be equipped with a dependence structure, but this would require additional modelling choices and diagnostics that are not central to the research questions. The moving-block bootstrap on $\ln(\text{time})$ was chosen because:
 
 \begin{itemize}
@@ -1230,7 +1230,7 @@ Per-session \gls{SThree} aggregates are used descriptively only; identifiers and
 
 For all between-format comparisons we treat the \emph{ratio of geometric means} as the primary effect size. For latency, this is the ratio of GM times between two formats on the original scale (for example, GM$_\text{ROOT}$/GM$_\text{Zarr}$), where values below~1 indicate that the numerator is faster. Because we analyse $\ln(\text{time})$, these ratios correspond to differences of means on the log scale. Empirically, response‑time distributions in computer systems are right‑skewed and often close to lognormal, so working on the log scale and reporting geometric means is standard in performance evaluation. For full scans, we use the ratio of GM throughputs in GiB/s (for example, GM$_\text{TileDB}$/GM$_\text{Zarr}$). Nonparametric effect sizes are reported as \emph{median ratios} in the robustness tables.
 
-For each pair of formats within a codec \times pattern, the statistical null is that their log‑scale means are equal (ratio of GMs = 1). The alternative is that the ratio differs from 1. Rather than performing formal tests, we present 95\% confidence intervals for the ratio and interpret them descriptively.
+For each pair of formats within a codec $\times$ pattern, the statistical null is that their log‑scale means are equal (ratio of GMs = 1). The alternative is that the ratio differs from 1. Rather than performing formal tests, we present 95\% confidence intervals for the ratio and interpret them descriptively.
 
 \subsection{Uncertainty and confounders in AWS}
 \Gls{AWS} introduces time-varying latency and variance that cannot be fully controlled. We mitigated this issue by using a single region with the \gls{SThree} bucket co-located, a Gateway VPC endpoint, and fixed client settings. Operational controls and randomization are documented in Appendix \ref{app:a2-run-qc}. Formats were executed in \emph{separate sessions} with no cross-format overlap. Consequently, cross-format contrasts are \textbf{descriptive, session-conditional}. Inference is limited to within-cell estimands (GM, \gls{Pninetyfive}, throughput) with dependence-robust bootstrap \glspl{CI}. CloudWatch aggregates are per-session and reported descriptively (no inference, no cross-session averaging of percentiles).
@@ -1351,7 +1351,7 @@ Bucket analytics were enabled to track object counts and byte growth over time. 
 \subsection{Compute node}
 A single \gls{ECtwo} \texttt{c6i.8xlarge} instance executed ingestion and reads for all formats; full instance and OS details are in Appendix \ref{app:a1-testbed}.
 
-\subsection{HSDS service (HDF5 over \gls{SThree})}
+\subsection{HSDS service (HDF5 over \texorpdfstring{\gls{SThree}}{S3})}
 \gls{HDFfive} access was provided by \gls{HSDS} running via Docker on the \gls{ECtwo} node, following the vendor’s \gls{AWS} instructions \cite{hdfgroup-hsds-aws-docker}. The service wrote to the benchmark \gls{SThree} bucket and exposed a local HTTP endpoint where environment variables and configuration are listed in Appendix \ref{app:a1-testbed}.
 
 \subsection{Other backends (no server)}
@@ -1390,7 +1390,7 @@ This section summarizes how the array was mapped to \gls{SThree} for each format
   \item Host-level threading parallelized frame decoding and I/O (implementation details in Appendix \ref{app:a6-schemas}).
 \end{itemize}
 
-\subsection{Zarr on \gls{SThree}}
+\subsection{Zarr on \texorpdfstring{\gls{SThree}}{S3}}
 Zarr uses one chunk per frame where we record store paths, array geometry, chunking parity, codecs, and the write procedure.
 
 \textbf{Layout:}
@@ -1406,7 +1406,7 @@ Zarr uses one chunk per frame where we record store paths, array geometry, chunk
   \item Frames were written in batches of $64$ as contiguous slices, with threaded frame loading.
 \end{itemize}
 
-\subsection{Apache Parquet on \gls{SThree}}
+\subsection{Apache Parquet on \texorpdfstring{\gls{SThree}}{S3}}
 Frames were tabularized as rows with 2D rows as fixed-size lists. \textit{Note:} Parquet was piloted only and is excluded from timed results due to an operational stop (see section \ref{subsubsec:parquet-pilot-exclusion}).
 
 \textbf{Layout:}
