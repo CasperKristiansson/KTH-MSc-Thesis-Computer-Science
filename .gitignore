@@ -3,3 +3,7 @@ Application/Permission to publish blankett.pdf
 Experiment/data/synthetic_images
 *.DS_Store
 temp.tex
+revealjs
+Presentation/Summary/node_modules
+**node_modules**
+Presentation/Summary/screenshots

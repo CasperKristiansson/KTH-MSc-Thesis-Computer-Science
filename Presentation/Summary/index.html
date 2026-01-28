@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>From Experiment to Insight</title>
+
+  <!-- Reveal.js core -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Chart.js for data visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <section id="title" class="section-divider" data-state="is-section-divider">
+        <p class="eyebrow">Master's Thesis Summary</p>
+        <h1>From Experiment to Insight</h1>
+        <div class="accent-rule"></div>
+        <p class="title-sub">Benchmarking HDF5/HSDS, Zarr, TileDB, and ROOT/TTree for large-scale synchrotron and neutron-scattering data on AWS</p>
+        <div class="meta-grid">
+          <div><strong>Author:</strong> Casper Ove Kristiansson</div>
+          <div><strong>Affiliation:</strong> KTH EECS</div>
+          <div><strong>Host:</strong> Scatterin AB</div>
+          <div><strong>Supervisors:</strong> Sebastian Dalleiger (KTH), Ahmet Bahadir Yildiz (Scatterin AB)</div>
+        </div>
+      </section>
+
+      <section id="motivation">
+        <h2>Motivation: beamlines meet object storage</h2>
+        <div class="content">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center;">
+            <div>
+              <ul>
+                <li>Modern beamlines stream multi‑GiB/s, turning single experiments into multi‑TB datasets.</li>
+                <li>Parallel file systems deliver throughput, but thousands of small reads suffer.</li>
+                <li>S3 scales, yet per‑request latency and request cost become visible.</li>
+                <li>Need a side‑by‑side, cloud‑native evaluation for <strong>slice latency vs full-scan throughput</strong>.</li>
+              </ul>
+              <div class="callout callout-bordered callout-orange">
+                <strong>Goal:</strong> Identify storage + codec choices that reduce interactive latency while sustaining scan throughput.
+              </div>
+            </div>
+            <div class="image-frame">
+              <img src="assets/beamline_data_journey.jpg" alt="Beamline data journey" style="width: 100%; height: auto; border-radius: 12px;">
+              <div class="figure-caption">Beamline pipelines generate high‑volume, latency‑sensitive data flows.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="purpose">
+        <h2>Purpose & contributions</h2>
+        <div class="content">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: center;">
+            <div style="display: grid; gap: 16px;">
+              <div class="stat-card">
+                <div class="stat-label">Prototype ingestion</div>
+                <div class="stat-value">4 formats + 3 codecs</div>
+                <div class="stat-note">HDF5/HSDS, Zarr v3, TileDB, ROOT/TTree (Parquet pilot only).</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Quantitative benchmarking</div>
+                <div class="stat-value">Slice + full scan</div>
+                <div class="stat-note">AWS S3 timings, request metrics, and compression footprints.</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Decision matrix</div>
+                <div class="stat-value">Latency-first vs throughput-first</div>
+                <div class="stat-note">Concrete, workload‑driven recommendations.</div>
+              </div>
+            </div>
+            <div class="image-frame">
+              <img src="assets/research_process.png" alt="Research process" style="width: 100%; height: auto; border-radius: 12px;">
+              <div class="figure-caption">Design‑science cycle: plan → run → analyze → decide.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="rqs">
+        <h2>Research questions & scope</h2>
+        <div class="content">
+          <div style="display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 28px;">
+            <div>
+              <div class="callout callout-bordered callout-blue">
+                <strong>RQ1:</strong> For random single‑frame reads on S3, which backend + codec minimize GM latency and control p95?
+              </div>
+              <div class="callout callout-bordered callout-green">
+                <strong>RQ2:</strong> For full‑dataset scans, which backend + codec maximize GM throughput with stable p95?
+              </div>
+              <div class="callout callout-bordered callout-orange">
+                <strong>RQ3:</strong> How do layout + codec choices change GETs/GiB and stored size, and explain timings?
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Scope & delimitations</div>
+              <ul>
+                <li>AWS only (S3 + EC2).</li>
+                <li>One dense detector stack (~20 GiB, ~1300 frames).</li>
+                <li>Codecs: gzip, lz4, zstd.</li>
+                <li>Workloads: single‑frame slices + full scans.</li>
+                <li>Results are <strong>descriptive, session‑conditional</strong>.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="dataset">
+        <h2>Dataset & workloads</h2>
+        <div class="content">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center;">
+            <div style="display: grid; gap: 18px;">
+              <div class="stat-card">
+                <div class="stat-label">Dataset</div>
+                <div class="stat-value">~20 GiB detector stack</div>
+                <div class="stat-note">~1300 frames, 2880×2880, uint16 (~15.82 MiB/frame).</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Source</div>
+                <div class="stat-note">80 real CBF frames + synthetic augmentation (gain, contrast, jitter, noise).</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Workloads</div>
+                <div class="stat-note">Random single‑frame reads and full sequential scans.</div>
+              </div>
+            </div>
+            <div class="image-frame">
+              <img src="assets/data_cube_detector_axes_schematic.png" alt="Detector cube schematic" style="width: 100%; height: auto; border-radius: 12px;">
+              <div class="figure-caption">Frame‑aligned chunks preserve slice‑level comparability.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="formats">
+        <h2>Formats, codecs, layout parity</h2>
+        <div class="content">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center;">
+            <div>
+              <ul>
+                <li><strong>HDF5 via HSDS:</strong> chunk‑per‑frame objects + metadata fan‑out.</li>
+                <li><strong>Zarr v3:</strong> chunk‑per‑frame objects, direct S3 access.</li>
+                <li><strong>TileDB:</strong> frame‑sized tiles, fragment‑based layout.</li>
+                <li><strong>ROOT/TTree:</strong> single object per codec (range‑GET paging).</li>
+                <li><strong>Parquet pilot only:</strong> metadata open 3–4 min, single ~34 GiB file → excluded from timed runs.</li>
+                <li><strong>Codecs:</strong> gzip, lz4, zstd (same logical chunk size).</li>
+              </ul>
+            </div>
+            <div>
+              <img src="assets/fig_object_counts.png" alt="Object counts by format" class="chart-fit">
+              <div class="figure-caption">Objectization differs by layout (log scale).</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="rq1-results">
+        <h2>RQ1 — Interactive slice latency</h2>
+        <div class="content">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: center;">
+            <div style="display: grid; gap: 16px;">
+              <div class="stat-card">
+                <div class="stat-label">Fastest slice latency</div>
+                <div class="stat-value">Zarr + zstd ≈ 155 ms</div>
+                <div class="stat-note">Zarr leads for zstd and lz4 slices.</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">gzip exception</div>
+                <div class="stat-value">TileDB ≈ 195 ms</div>
+                <div class="stat-note">TileDB wins when gzip is mandated.</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Slowest slices</div>
+                <div class="stat-value">ROOT ≈ 406 ms (gzip)</div>
+                <div class="stat-note">Single‑object paging dominates despite few GETs.</div>
+              </div>
+            </div>
+            <div>
+              <img src="assets/fig_codec_summary_by_format.png" alt="Codec summary" class="chart-crop-top">
+              <div class="figure-caption">Top panel: GM slice latency across codecs.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="rq2-results">
+        <h2>RQ2 — Full‑dataset throughput</h2>
+        <div class="content">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: center;">
+            <div style="display: grid; gap: 16px;">
+              <div class="stat-card">
+                <div class="stat-label">Throughput leader</div>
+                <div class="stat-value">TileDB dominates</div>
+                <div class="stat-note">2.2–3.2× faster than Zarr across codecs.</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">zstd full scan</div>
+                <div class="stat-value">10.4 s (1.06 GiB/s)</div>
+                <div class="stat-note">TileDB vs Zarr 30.4 s (0.35 GiB/s).</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Lagging formats</div>
+                <div class="stat-note">HSDS and ROOT remain far behind on scan throughput.</div>
+              </div>
+            </div>
+            <div>
+              <img src="assets/fig_codec_summary_by_format.png" alt="Codec summary" class="chart-crop-bottom">
+              <div class="figure-caption">Bottom panel: GM full‑scan throughput.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="rq3-results">
+        <h2>RQ3 — Cost posture & mechanisms</h2>
+        <div class="content">
+          <div class="callout callout-bordered callout-gray">
+            <strong>Key mechanisms:</strong> codec choice drives stored bytes, while layout drives GETs/GiB. ROOT keeps few GETs but still suffers high latency.
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start;">
+            <div>
+              <img src="assets/fig_stored_bytes.png" alt="Stored bytes" class="chart-fit">
+              <div class="figure-caption">Stored size (codec‑driven).</div>
+            </div>
+            <div>
+              <img src="assets/fig_reqintensity_box_by_format.png" alt="Request intensity" class="chart-fit">
+              <div class="figure-caption">GETs per repetition and per GiB.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="decision-matrix">
+        <h2>Decision matrix (practitioner choices)</h2>
+        <div class="content">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+            <div class="stat-card">
+              <div class="stat-label">Latency‑first (interactive slices)</div>
+              <ul>
+                <li><strong>Default:</strong> Zarr + zstd</li>
+                <li><strong>If gzip required:</strong> TileDB + gzip</li>
+                <li><strong>Avoid:</strong> ROOT for frame‑random reads</li>
+                <li><strong>Caution:</strong> HSDS + lz4 (storage‑heavy)</li>
+              </ul>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Throughput‑first (full scans)</div>
+              <ul>
+                <li><strong>Default:</strong> TileDB + zstd</li>
+                <li><strong>Option:</strong> TileDB + lz4 if CPU‑bound</li>
+                <li><strong>Second choice:</strong> Zarr for ecosystem fit</li>
+              </ul>
+            </div>
+          </div>
+          <p class="mini-note">All rankings are descriptive and session‑conditional for this dataset and testbed.</p>
+        </div>
+      </section>
+
+      <section id="status">
+        <h2>Status & remaining plan</h2>
+        <div class="content">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+            <div class="stat-card">
+              <div class="stat-label">Current status</div>
+              <ul>
+                <li>Main experimental work completed.</li>
+                <li>Final revision and polishing phase (motivation, methods framing, limitations).</li>
+                <li>Awaiting supervisor feedback.</li>
+                <li>Supervisor: Sebastian Dalleiger.</li>
+                <li>Target submission: late Feb 2026 (early March depending on feedback).</li>
+              </ul>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Remaining plan</div>
+              <ul>
+                <li>Incorporate supervisor feedback.</li>
+                <li>Active listening completed; opposition remaining.</li>
+                <li>Prepare final defense presentation.</li>
+              </ul>
+            </div>
+          </div>
+          <div class="callout callout-bordered callout-blue">
+            <strong>Repository:</strong>
+            <a href="https://github.com/CasperKristiansson/KTH-MSc-Thesis-Computer-Science" target="_blank" rel="noreferrer">
+              github.com/CasperKristiansson/KTH-MSc-Thesis-Computer-Science
+            </a>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js-plugins@latest/chart/plugin.js"></script>
+  <script>
+    Reveal.initialize({
+      width: 1280,
+      height: 720,
+      margin: 0,
+      controls: true,
+      progress: true,
+      slideNumber: false,
+      hash: true,
+      transition: 'slide',
+      center: false,
+      plugins: [ RevealChart ],
+      chart: {
+        defaults: Object.assign({
+          color: 'rgba(46, 36, 27, 0.8)',
+          borderColor: 'rgba(46, 36, 27, 0.8)',
+          devicePixelRatio: 2
+        }, window.location.search.includes('export') ? { animation: false } : {})
+      }
+    });
+  </script>
+</body>
+</html>
