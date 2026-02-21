@@ -2248,13 +2248,14 @@ We estimate $p_{95}$ with the Harrell–Davis quantile and dependence-robust 95\
 \end{table}
 
 \subsection{Summary tables for downstream decision matrix}
-This section compiles summary tables for each codec $ \ times$ pattern combination to support the downstream decision matrix. Entries are \emph{session-conditional} and descriptive, where we report geometric mean (GM) latency with dependence-robust 95\% \glspl{CI} and $p_{95}$ (\gls{CI}). For full scans, we also include GM throughput (GiB/s, \gls{CI}), and each table lists \gls{SThree} GETs/GiB and stored size (GiB).
+This section reports representative summary tables used in the downstream decision matrix; the complete set is provided in Appendix Section \ref{app:supplementary}. Entries are \emph{session-conditional} and descriptive, where we report geometric mean (GM) latency with dependence-robust 95\% \glspl{CI} and $p_{95}$ (\gls{CI}). For full scans, we also include GM throughput (GiB/s, \gls{CI}), and each table lists \gls{SThree} GETs/GiB and stored size (GiB).
 
 \subsubsection{Per-codec league tables}
-This subsection presents per-codec league tables to summarize practical rankings. Scores use the stated primary objective and tie-breakers and totals are descriptive and session-conditional.
+This subsection presents representative per-codec league tables to summarize practical rankings; remaining league tables are reported in Appendix Section \ref{app:supplementary}. Scores use the stated primary objective and tie-breakers and totals are descriptive and session-conditional.
 
 \paragraph{Slice}
 Rankings use lower GM latency (tie-break: $p_{95}\!\rightarrow$ GETs/GiB $\rightarrow$ stored GiB), which are descriptive and session-conditional.
+We show representative league tables for \texttt{gzip} and \texttt{zstd} in the main text; the \texttt{lz4} slice league table is reported in Appendix Table \ref{tab:league-slice-lz4}.
 
 \begin{table}[H]
   \centering
@@ -2268,22 +2269,6 @@ Rankings use lower GM latency (tie-break: $p_{95}\!\rightarrow$ GETs/GiB $\right
     2 & zarr   & 229 \ [223, 236] & 283 \ [262, 314] & 126.7 & 11.09 \\
     3 & \gls{HDFfive}   & 241 \ [232, 252] & 342 \ [295, 364] & 482.2 & 11.11 \\
     4 & \gls{ROOT}   & 406 \ [397, 416] & 471 \ [451, 501] & 61.3  & 11.09 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\begin{table}[H]
-  \centering
-  \caption{Slice — \texttt{lz4}: league table.}
-  \label{tab:league-slice-lz4}
-  \begin{tabular}{rlllll}
-    \toprule
-    Rank & Format & GM (ms) [\gls{CI}] & $p_{95}$ (ms) [\gls{CI}] & GETs/GiB & Stored GiB \\
-    \midrule
-    1 & zarr   & 176 \ [159, 195] & 349 \ [281, 414] & 135.0 & 10.40 \\
-    2 & tiledb & 214 \ [203, 227] & 274 \ [261, 403] & 83.2  & 15.56 \\
-    3 & \gls{HDFfive}   & 222 \ [215, 230] & 273 \ [251, 281] & 270.5 & 19.17 \\
-    4 & \gls{ROOT}   & 328 \ [314, 344] & 380 \ [369, 429] & 51.1  & 13.31 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -2307,37 +2292,7 @@ Rankings use lower GM latency (tie-break: $p_{95}\!\rightarrow$ GETs/GiB $\right
 \paragraph{Full Scan}
 Rankings use higher GM throughput (tie-break GM time $\!\rightarrow$ GETs/GiB $\rightarrow$ stored GiB), which are descriptive and session-conditional.
 
-\begin{table}[H]
-  \centering
-  \caption{Full — \texttt{gzip}: league table.}
-  \label{tab:league-full-gzip}
-  \begin{tabular}{rlllll}
-    \toprule
-    Rank & Format & GM thr (GiB/s) [\gls{CI}] & GM time (ms) [\gls{CI}] & GETs/GiB & Stored GiB \\
-    \midrule
-    1 & tiledb & \makecell[r]{1.037\\\footnotesize([1.013, 1.062])} & \makecell[r]{11\,254\\\footnotesize([10\,994, 11\,529])} & 94.6  & 11.44 \\
-    2 & zarr   & \makecell[r]{0.318\\\footnotesize([0.315, 0.321])} & \makecell[r]{35\,598\\\footnotesize([35\,280, 35\,926])} & 116.8 & 11.09 \\
-    3 & \gls{HDFfive}   & \makecell[r]{0.072\\\footnotesize([0.072, 0.072])} & \makecell[r]{156\,966\\\footnotesize([156\,394, 157\,761])} & 137.7 & 11.11 \\
-    4 & \gls{ROOT}   & \makecell[r]{0.051\\\footnotesize([0.050, 0.052])} & \makecell[r]{442\,484\\\footnotesize([434\,012, 451\,398])} & 58.5  & 11.09 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\begin{table}[H]
-  \centering
-  \caption{Full — \texttt{lz4}: league table.}
-  \label{tab:league-full-lz4}
-  \begin{tabular}{rlllll}
-    \toprule
-    Rank & Format & GM thr (GiB/s) [\gls{CI}] & GM time (ms) [\gls{CI}] & GETs/GiB & Stored GiB \\
-    \midrule
-    1 & tiledb & \makecell[r]{1.167\\\footnotesize([1.144, 1.197])} & \makecell[r]{13\,602\\\footnotesize([13\,265, 13\,871])} & 93.7  & 15.56 \\
-    2 & zarr   & \makecell[r]{0.368\\\footnotesize([0.365, 0.371])} & \makecell[r]{29\,483\\\footnotesize([29\,255, 29\,741])} & 124.5 & 10.40 \\
-    3 & \gls{HDFfive}   & \makecell[r]{0.129\\\footnotesize([0.129, 0.129])} & \makecell[r]{151\,427\\\footnotesize([151\,201, 151\,666])} & 79.6  & 19.17 \\
-    4 & \gls{ROOT}   & \makecell[r]{0.075\\\footnotesize([0.075, 0.076])} & \makecell[r]{363\,490\\\footnotesize([358\,672, 367\,871])} & 48.7  & 13.31 \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+We show the \texttt{zstd} full-scan league table in the main text; the corresponding \texttt{gzip} and \texttt{lz4} tables are reported in Appendix Tables \ref{tab:league-full-gzip} and \ref{tab:league-full-lz4}.
 
 \begin{table}[H]
   \centering
@@ -2357,111 +2312,7 @@ Rankings use higher GM throughput (tie-break GM time $\!\rightarrow$ GETs/GiB $\
 
 
 \subsubsection{Normalized scores matrix}
-This subsection aggregates metrics into 0–100 scores per codec$\times$pattern to support selection. Scores use robust min–max normalization and predefined weights, and totals are descriptive and session-conditional.
-
-We aggregate latency, tail behavior, request intensity, and stored size into 0–100 normalized scores per codec$\times$pattern to support configuration choices. Appendix Figures \ref{fig:scores-slice-gzip}–\ref{fig:scores-full-zstd} and Tables \ref{tab:scores-slice-gzip}–\ref{tab:scores-full-zstd} show the resulting score matrices. For slices, TileDB and Zarr dominate the Pareto frontier for gzip and zstd, while Zarr is favored under LZ4 where for full scans, TileDB clearly dominates on throughput and overall score for all codecs.
-
-\paragraph{Slice}
-Scores are 0–100 per metric using robust min–max (5th–95th percentiles) within each codec$\times$pattern where higher is better. Weights: GM 0.60, $p_{95}$ 0.20, GETs/GiB 0.10, Stored 0.10.
-
-\begin{table}[H]
-  \centering
-  \caption{Slice/\texttt{gzip}: score matrix (normalized 0–100).}
-  \label{tab:scores-slice-gzip}
-  \begin{tabular}{lrrrrrl}
-    \toprule
-    Format & GM & $p_{95}$ & GETs & Stored & Total & \gls{DoM}. /by \\
-    \midrule
-    tiledb & 100.0 & 100.0 & 87.7 & 0.0  & 88.8 & / \\
-    zarr   & 84.1  & 90.6  & 84.0 & 100.0 & 86.9 & \gls{HDFfive} / \\
-    \gls{HDFfive}   & 77.5  & 59.0  & 0.0  & 93.3  & 67.6 & / zarr \\
-    \gls{ROOT}   & 0.0   & 0.0   & 100.0& 100.0 & 20.0 & / \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\begin{table}[H]
-  \centering
-  \caption{Slice/\texttt{lz4}: score matrix (normalized 0–100).}
-  \label{tab:scores-slice-lz4}
-  \begin{tabular}{lrrrrrl}
-    \toprule
-    Format & GM & $p_{95}$ & GETs & Stored & Total & \gls{DoM}. /by \\
-    \midrule
-    zarr   & 100.0 & 25.9 & 59.3 & 100.0 & 81.1 & / \\
-    tiledb & 75.0  & 99.0 & 85.9 & 39.4  & 77.3 & / \\
-    \gls{HDFfive}   & 68.8  & 100.0& 0.0  & 0.0   & 61.3 & / \\
-    \gls{ROOT}   & 0.0   & 0.0  & 100.0& 68.3  & 16.8 & / \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\begin{table}[H]
-  \centering
-  \caption{Slice/\texttt{zstd}: score matrix (normalized 0–100).}
-  \label{tab:scores-slice-zstd}
-  \begin{tabular}{lrrrrrl}
-    \toprule
-    Format & GM & $p_{95}$ & GETs & Stored & Total & \gls{DoM}. /by \\
-    \midrule
-    zarr   & 100.0 & 100.0 & 83.2 & 50.8 & 93.4 & \gls{HDFfive} / \\
-    tiledb & 81.9  & 53.1  & 87.2 & 0.0  & 68.4 & / \\
-    \gls{HDFfive}   & 49.3  & 48.1  & 0.0  & 13.8 & 40.6 & / zarr \\
-    \gls{ROOT}   & 0.0   & 0.0   & 100.0& 100.0& 20.0 & / \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\paragraph{Full Scan}
-Scores are 0–100 per metric, using robust min–max normalization within codec$\times$  pattern where higher scores are better. Weights: throughput 0.60, GETs/GiB 0.15, Stored 0.15, $p_{95}$ 0.10.
-
-\begin{table}[H]
-  \centering
-  \caption{Full/\texttt{gzip}: score matrix (normalized 0–100).}
-  \label{tab:scores-full-gzip}
-  \begin{tabular}{lrrrrrl}
-    \toprule
-    Format & Thr & $p_{95}$ & GETs/GiB & Stored & Total & \gls{DoM}. /by \\
-    \midrule
-    tiledb & 100.0 & 100.0 & 56.6 & 0.0  & 78.5 & / \\
-    zarr   & 30.1  & 94.9  & 25.2 & 100.0& 46.3 & \gls{HDFfive} / \\
-    \gls{ROOT}   & 0.0   & 0.0   & 100.0& 100.0& 30.0 & / \\
-    \gls{HDFfive}   & 2.1   & 64.3  & 0.0  & 93.3 & 21.7 & / zarr \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\begin{table}[H]
-  \centering
-  \caption{Full/\texttt{lz4}: score matrix (normalized 0–100).}
-  \label{tab:scores-full-lz4}
-  \begin{tabular}{lrrrrrl}
-    \toprule
-    Format & Thr & $p_{95}$ & GETs/GiB & Stored & Total & \gls{DoM}. /by \\
-    \midrule
-    tiledb & 100.0 & 100.0 & 39.4 & 39.4 & 81.8 & / \\
-    zarr   & 29.6  & 95.8  & 0.0  & 100.0& 42.3 & / \\
-    \gls{ROOT}   & 0.0   & 0.0   & 100.0& 68.3 & 25.2 & / \\
-    \gls{HDFfive}   & 4.8   & 58.1  & 60.5 & 0.0  & 17.8 & / \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-\begin{table}[H]
-  \centering
-  \caption{Full/\texttt{zstd}: score matrix (normalized 0–100).}
-  \label{tab:scores-full-zstd}
-  \begin{tabular}{lrrrrrl}
-    \toprule
-    Format & Thr & $p_{95}$ & GETs/GiB & Stored & Total & \gls{DoM}. /by \\
-    \midrule
-    tiledb & 100.0 & 100.0 & 59.7 & 0.0  & 79.0 & / \\
-    zarr   & 33.1  & 95.6  & 22.7 & 50.8 & 40.4 & \gls{HDFfive} / \\
-    \gls{ROOT}   & 0.0   & 0.0   & 100.0& 100.0& 30.0 & / \\
-    \gls{HDFfive}   & 1.5   & 63.5  & 0.0  & 13.8 & 9.3  & / zarr \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+This thesis uses normalized score matrices as a compact multi-criteria view for configuration selection. The full score matrices are provided in Appendix Tables \ref{tab:scores-slice-gzip}–\ref{tab:scores-full-zstd} with corresponding heatmaps in Appendix Figures \ref{fig:scores-slice-gzip}–\ref{fig:scores-full-zstd}. We use these scores as descriptive decision support; the practitioner-facing guidance is summarized in Chapter \ref{ch:conclusionsAndFutureWork}.
 
 
 
@@ -3304,6 +3155,59 @@ zarr   & \gls{ZSTD} & slice & 83.932 & 94.424 & 133.233 & 182.695 \\
   \label{fig:tail-full-p95-hd-ci-vs-L}
 \end{figure}
 
+\subsection{League tables for configuration selection}
+The main text reports representative league tables for slice \texttt{gzip} and \texttt{zstd} and for full scans under \texttt{zstd}. This appendix lists the remaining league tables used for the decision matrix.
+
+\paragraph{Slice}
+\begin{table}[H]
+  \centering
+  \caption{Slice — \texttt{lz4}: league table.}
+  \label{tab:league-slice-lz4}
+  \begin{tabular}{rlllll}
+    \toprule
+    Rank & Format & GM (ms) [\gls{CI}] & $p_{95}$ (ms) [\gls{CI}] & GETs/GiB & Stored GiB \\
+    \midrule
+    1 & zarr   & 176 \ [159, 195] & 349 \ [281, 414] & 135.0 & 10.40 \\
+    2 & tiledb & 214 \ [203, 227] & 274 \ [261, 403] & 83.2  & 15.56 \\
+    3 & \gls{HDFfive}   & 222 \ [215, 230] & 273 \ [251, 281] & 270.5 & 19.17 \\
+    4 & \gls{ROOT}   & 328 \ [314, 344] & 380 \ [369, 429] & 51.1  & 13.31 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Full scan}
+\begin{table}[H]
+  \centering
+  \caption{Full — \texttt{gzip}: league table.}
+  \label{tab:league-full-gzip}
+  \begin{tabular}{rlllll}
+    \toprule
+    Rank & Format & GM thr (GiB/s) [\gls{CI}] & GM time (ms) [\gls{CI}] & GETs/GiB & Stored GiB \\
+    \midrule
+    1 & tiledb & \makecell[r]{1.037\\\footnotesize([1.013, 1.062])} & \makecell[r]{11\,254\\\footnotesize([10\,994, 11\,529])} & 94.6  & 11.44 \\
+    2 & zarr   & \makecell[r]{0.318\\\footnotesize([0.315, 0.321])} & \makecell[r]{35\,598\\\footnotesize([35\,280, 35\,926])} & 116.8 & 11.09 \\
+    3 & \gls{HDFfive}   & \makecell[r]{0.072\\\footnotesize([0.072, 0.072])} & \makecell[r]{156\,966\\\footnotesize([156\,394, 157\,761])} & 137.7 & 11.11 \\
+    4 & \gls{ROOT}   & \makecell[r]{0.051\\\footnotesize([0.050, 0.052])} & \makecell[r]{442\,484\\\footnotesize([434\,012, 451\,398])} & 58.5  & 11.09 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[H]
+  \centering
+  \caption{Full — \texttt{lz4}: league table.}
+  \label{tab:league-full-lz4}
+  \begin{tabular}{rlllll}
+    \toprule
+    Rank & Format & GM thr (GiB/s) [\gls{CI}] & GM time (ms) [\gls{CI}] & GETs/GiB & Stored GiB \\
+    \midrule
+    1 & tiledb & \makecell[r]{1.167\\\footnotesize([1.144, 1.197])} & \makecell[r]{13\,602\\\footnotesize([13\,265, 13\,871])} & 93.7  & 15.56 \\
+    2 & zarr   & \makecell[r]{0.368\\\footnotesize([0.365, 0.371])} & \makecell[r]{29\,483\\\footnotesize([29\,255, 29\,741])} & 124.5 & 10.40 \\
+    3 & \gls{HDFfive}   & \makecell[r]{0.129\\\footnotesize([0.129, 0.129])} & \makecell[r]{151\,427\\\footnotesize([151\,201, 151\,666])} & 79.6  & 19.17 \\
+    4 & \gls{ROOT}   & \makecell[r]{0.075\\\footnotesize([0.075, 0.076])} & \makecell[r]{363\,490\\\footnotesize([358\,672, 367\,871])} & 48.7  & 13.31 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
 \subsection{Score matrices for configuration selection}
 
 \begin{figure}[H]
@@ -3347,6 +3251,110 @@ zarr   & \gls{ZSTD} & slice & 83.932 & 94.424 & 133.233 & 182.695 \\
   \caption{Full/\texttt{zstd}: normalized scores.}
   \label{fig:scores-full-zstd}
 \end{figure}
+
+We aggregate latency, tail behavior, request intensity, and stored size into 0–100 normalized scores per codec$\times$pattern to support configuration choices. Figures \ref{fig:scores-slice-gzip}–\ref{fig:scores-full-zstd} and Tables \ref{tab:scores-slice-gzip}–\ref{tab:scores-full-zstd} show the resulting score matrices. For slices, TileDB and Zarr dominate the Pareto frontier for gzip and zstd, while Zarr is favored under LZ4 where for full scans, TileDB clearly dominates on throughput and overall score for all codecs.
+
+\paragraph{Slice}
+Scores are 0–100 per metric using robust min–max (5th–95th percentiles) within each codec$\times$pattern where higher is better. Weights: GM 0.60, $p_{95}$ 0.20, GETs/GiB 0.10, Stored 0.10.
+
+\begin{table}[H]
+  \centering
+  \caption{Slice/\texttt{gzip}: score matrix (normalized 0–100).}
+  \label{tab:scores-slice-gzip}
+  \begin{tabular}{lrrrrrl}
+    \toprule
+    Format & GM & $p_{95}$ & GETs & Stored & Total & \gls{DoM}. /by \\
+    \midrule
+    tiledb & 100.0 & 100.0 & 87.7 & 0.0  & 88.8 & / \\
+    zarr   & 84.1  & 90.6  & 84.0 & 100.0 & 86.9 & \gls{HDFfive} / \\
+    \gls{HDFfive}   & 77.5  & 59.0  & 0.0  & 93.3  & 67.6 & / zarr \\
+    \gls{ROOT}   & 0.0   & 0.0   & 100.0& 100.0 & 20.0 & / \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[H]
+  \centering
+  \caption{Slice/\texttt{lz4}: score matrix (normalized 0–100).}
+  \label{tab:scores-slice-lz4}
+  \begin{tabular}{lrrrrrl}
+    \toprule
+    Format & GM & $p_{95}$ & GETs & Stored & Total & \gls{DoM}. /by \\
+    \midrule
+    zarr   & 100.0 & 25.9 & 59.3 & 100.0 & 81.1 & / \\
+    tiledb & 75.0  & 99.0 & 85.9 & 39.4  & 77.3 & / \\
+    \gls{HDFfive}   & 68.8  & 100.0& 0.0  & 0.0   & 61.3 & / \\
+    \gls{ROOT}   & 0.0   & 0.0  & 100.0& 68.3  & 16.8 & / \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[H]
+  \centering
+  \caption{Slice/\texttt{zstd}: score matrix (normalized 0–100).}
+  \label{tab:scores-slice-zstd}
+  \begin{tabular}{lrrrrrl}
+    \toprule
+    Format & GM & $p_{95}$ & GETs & Stored & Total & \gls{DoM}. /by \\
+    \midrule
+    zarr   & 100.0 & 100.0 & 83.2 & 50.8 & 93.4 & \gls{HDFfive} / \\
+    tiledb & 81.9  & 53.1  & 87.2 & 0.0  & 68.4 & / \\
+    \gls{HDFfive}   & 49.3  & 48.1  & 0.0  & 13.8 & 40.6 & / zarr \\
+    \gls{ROOT}   & 0.0   & 0.0   & 100.0& 100.0& 20.0 & / \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Full Scan}
+Scores are 0–100 per metric, using robust min–max normalization within codec$\times$  pattern where higher scores are better. Weights: throughput 0.60, GETs/GiB 0.15, Stored 0.15, $p_{95}$ 0.10.
+
+\begin{table}[H]
+  \centering
+  \caption{Full/\texttt{gzip}: score matrix (normalized 0–100).}
+  \label{tab:scores-full-gzip}
+  \begin{tabular}{lrrrrrl}
+    \toprule
+    Format & Thr & $p_{95}$ & GETs/GiB & Stored & Total & \gls{DoM}. /by \\
+    \midrule
+    tiledb & 100.0 & 100.0 & 56.6 & 0.0  & 78.5 & / \\
+    zarr   & 30.1  & 94.9  & 25.2 & 100.0& 46.3 & \gls{HDFfive} / \\
+    \gls{ROOT}   & 0.0   & 0.0   & 100.0& 100.0& 30.0 & / \\
+    \gls{HDFfive}   & 2.1   & 64.3  & 0.0  & 93.3 & 21.7 & / zarr \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[H]
+  \centering
+  \caption{Full/\texttt{lz4}: score matrix (normalized 0–100).}
+  \label{tab:scores-full-lz4}
+  \begin{tabular}{lrrrrrl}
+    \toprule
+    Format & Thr & $p_{95}$ & GETs/GiB & Stored & Total & \gls{DoM}. /by \\
+    \midrule
+    tiledb & 100.0 & 100.0 & 39.4 & 39.4 & 81.8 & / \\
+    zarr   & 29.6  & 95.8  & 0.0  & 100.0& 42.3 & / \\
+    \gls{ROOT}   & 0.0   & 0.0   & 100.0& 68.3 & 25.2 & / \\
+    \gls{HDFfive}   & 4.8   & 58.1  & 60.5 & 0.0  & 17.8 & / \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[H]
+  \centering
+  \caption{Full/\texttt{zstd}: score matrix (normalized 0–100).}
+  \label{tab:scores-full-zstd}
+  \begin{tabular}{lrrrrrl}
+    \toprule
+    Format & Thr & $p_{95}$ & GETs/GiB & Stored & Total & \gls{DoM}. /by \\
+    \midrule
+    tiledb & 100.0 & 100.0 & 59.7 & 0.0  & 79.0 & / \\
+    zarr   & 33.1  & 95.6  & 22.7 & 50.8 & 40.4 & \gls{HDFfive} / \\
+    \gls{ROOT}   & 0.0   & 0.0   & 100.0& 100.0& 30.0 & / \\
+    \gls{HDFfive}   & 1.5   & 63.5  & 0.0  & 13.8 & 9.3  & / zarr \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \begin{figure}[H]
   \centering
