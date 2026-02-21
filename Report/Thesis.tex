@@ -452,13 +452,13 @@ To structure the investigation, the following research questions are posed:
 This section outlines the benchmarking methodology and the study scope. It specifies datasets, workloads, metrics, and the delimitations for reproducibility.
 
 \subsection{Research Methodology}
-We use an \emph{experimental benchmarking} approach within a design–science framework to evaluate four timed storage backends on \gls{AWS} (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}/\gls{TTree}). Apache Parquet is included as a pilot (ingest only, no timed runs). The benchmark dataset is a single dense detector stack of approximately \SI{20}{\gibi\byte} (\(\sim\)1{,}300 frames). Two workloads are evaluated: random single-frame reads and full scans. We report geometric-mean latency or throughput with dependence-robust 95\% confidence intervals and $p_{95}$ latency/throughput. Detailed descriptions of infrastructure, randomization, logging, and estimator choices are provided in Chapter \ref{ch:methods} and the Appendix.
+We use an \emph{experimental benchmarking} approach within a design–science framework to evaluate four timed storage backends on \gls{AWS} (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}/\gls{TTree}). Apache Parquet is included only as a single-object pilot (ingest only, no timed runs; Appendix \ref{app:a8-parquet}). The benchmark dataset is a single dense detector stack of approximately \SI{20}{\gibi\byte} (\(\sim\)1{,}300 frames). Two workloads are evaluated: random single-frame reads and full scans. We report geometric-mean latency or throughput with dependence-robust 95\% confidence intervals and $p_{95}$ latency/throughput. Detailed descriptions of infrastructure, randomization, logging, and estimator choices are provided in Chapter \ref{ch:methods} and the Appendix.
 
 \subsection{Delimitations}
-This thesis focuses exclusively on cloud-native, object-store–based workflows within the \gls{AWS} ecosystem. Specifically, four storage backends are \emph{timed,} and Apache Parquet is used in a pilot ingest-only experiment. Benchmarks use one dense 3D detector dataset ($\sim$20 GiB, $\sim$1{,}300 frames). The following boundaries apply:
+This thesis focuses exclusively on cloud-native, object-store–based workflows within the \gls{AWS} ecosystem. Specifically, four storage backends are \emph{timed,} and Apache Parquet is used only in a single-object, ingest-only pilot (no timed results). Benchmarks use one dense 3D detector dataset ($\sim$20 GiB, $\sim$1{,}300 frames). The following boundaries apply:
 \begin{itemize}
         \item \textbf{Cloud provider scope:} Only \gls{AWS} services (\gls{SThree}, \gls{ECtwo}) are considered. No experiments involve Azure, Google Cloud, or on-premises \gls{HPC} clusters.
-        \item \textbf{Storage formats:} The study is limited to the four specified formats. Other emerging or domain-specific formats (e.g., Avro, \gls{ORC}, \gls{CBF}, NeXus variants) fall outside the scope.
+        \item \textbf{Storage formats:} Quantitative results cover four timed formats (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}/\gls{TTree}); Parquet is included only as a single-object pilot and is excluded from timed comparisons (Appendix \ref{app:a8-parquet}).
  	      \item \textbf{Dataset:} Benchmarks cover a single 3D dense detector dataset.
         \item \textbf{Access patterns:} The quantitative evaluation focuses on two canonical patterns that dominate user experience and data volume in this setting: random single-frame reads (\(\sim\)\SI{15.82}{\mebi\byte} per frame) and full sequential scans of the dataset. Other patterns (e.g., metadata-only queries, random single-element lookups, real-time streaming ingestion, and multi-client contention) are discussed qualitatively or left to future work.
         \item \textbf{Compression algorithms:} This study uses three widely used codecs (\texttt{zstd}, \gls{LZfour}, and \texttt{gzip}) and does not compare other options, such as Snappy, Brotli, bzip2, or ZFP.
@@ -495,7 +495,7 @@ This thesis is organized into seven main chapters, followed by appendices:
 \label{ch:background}
 Modern synchrotron and neutron facilities stream multi-GiB/s data, producing multi-terabyte experiments that strain large-block assumptions in traditional \gls{HPC} storage. Chapter \ref{ch:introduction} posed the core question: which cloud-native layout minimizes partial-read latency while maintaining scan throughput on \gls{AWS}? This chapter provides scientific context, storage foundations, and prior art needed for the experimental design and results.
 
-First, this chapter surveys how modern beamlines generate and consume data, highlighting the feedback loop and collaboration demands that drive storage-system requirements (Section \ref{sec:scientific-data-context}). It then contrasts legacy parallel file systems such as Lustre and \gls{GPFS} with the architectural principles of \gls{SThree} and other object stores (Sections \ref{sec:traditional-hpc-storage-paradigms} and \ref{sec:cloud-object-storage-fundamentals}). Building on that foundation, Sections \ref{sec:cloud-native-storage-models}–\ref{sec:compression-algorithms} introduce the five storage formats examined in this thesis: \gls{HDFfive} + \gls{HSDS}, Zarr, Parquet, TileDB, and \gls{ROOT} / \gls{TTree}. These file formats are matched with the three compression algorithms (\texttt{gzip}, \gls{LZfour}, \texttt{zstd}) that modulate their performance. Section \ref{sec:access-patterns-scattering} characterizes the access patterns typical of scattering analysis.
+First, this chapter surveys how modern beamlines generate and consume data, highlighting the feedback loop and collaboration demands that drive storage-system requirements (Section \ref{sec:scientific-data-context}). It then contrasts legacy parallel file systems such as Lustre and \gls{GPFS} with the architectural principles of \gls{SThree} and other object stores (Sections \ref{sec:traditional-hpc-storage-paradigms} and \ref{sec:cloud-object-storage-fundamentals}). Building on that foundation, Sections \ref{sec:cloud-native-storage-models}–\ref{sec:compression-algorithms} introduce the five storage formats considered in this thesis: \gls{HDFfive} + \gls{HSDS}, Zarr, Parquet, TileDB, and \gls{ROOT} / \gls{TTree}. Four formats are benchmarked quantitatively, while Parquet is included only as a single-object pilot for the detector stack (Appendix \ref{app:a8-parquet}). The timed benchmark matches the four timed formats with three compression algorithms (\texttt{gzip}, \gls{LZfour}, \texttt{zstd}) that modulate their performance. Section \ref{sec:access-patterns-scattering} characterizes the access patterns typical of scattering analysis.
 
 
 
@@ -673,7 +673,7 @@ The Hierarchical Data Format 5 (\gls{HDFfive}) stores every dataset, chunk, and 
 
 Out-of-the-box \gls{HDFfive} access (via h5py, MATLAB, etc.) issues many small, non-contiguous \gls{POSIX} reads. Each rank that samples a \SIrange{4}{8}{\mega\byte} slice generates dozens of tiny, <\SI{64}{\kilo\byte} reads, leading to many metadata lookups. Small, non-contiguous selections generate many <\SI{64}{\kilo\byte} reads and metadata lookups, collective I/O reduces but does not eliminate this overhead \cite{Breitenfeld2022Parallel,9499420}. Single-file heritage makes many small-read interactive workloads sensitive to metadata hotspots, motivating chunk-per-object designs.
 
-Even when using collective metadata I/O, each \gls{HDFfive} read still must fetch the superblock and descriptive metadata before reading the raw data. In the CCGrid’21 benchmarks on Summit and Cori, metadata I/O alone accounted for as much as $\approx 58\%$ of the total read time \cite{9499420}. \gls{HDFfive}/NeXus excels for large, sequential scans and single-node post-processing, but its single-file, \gls{POSIX}-style heritage makes it vulnerable to metadata hotspots when handling many small reads, motivating chunk-per-object designs such as Zarr and Parquet.
+Even when using collective metadata I/O, each \gls{HDFfive} read still must fetch the superblock and descriptive metadata before reading the raw data. In the CCGrid’21 benchmarks on Summit and Cori, metadata I/O alone accounted for as much as $\approx 58\%$ of the total read time \cite{9499420}. \gls{HDFfive}/NeXus excels for large, sequential scans and single-node post-processing, but its single-file, \gls{POSIX}-style heritage makes it vulnerable to metadata hotspots when handling many small reads, motivating object-store–oriented layouts such as chunk-per-object arrays (e.g., Zarr) and columnar row-group formats (e.g., Parquet).
 
 \subsection{Cloud Object Storage Fundamentals}
 \label{sec:cloud-object-storage-fundamentals}
@@ -741,35 +741,35 @@ While a custom storage layout could in principle be engineered for this dataset,
 
 In addition to the conceptual layout differences, the storage candidates were chosen because they were practical to deploy and benchmark on Amazon \gls{SThree} under a single, reproducible test environment. Specifically, each option maintains a stable S3 I/O path (either direct object access or a stateless service layer), supports partial reads without a POSIX gateway, and exposes tunable physical granularity (chunks/tiles/pages) and standard compression filters used in this thesis. The five candidates also represent distinct \emph{deployment and I/O paths} that an engineering team would realistically choose between:
 
-\begin{itemize}
-  \item \textbf{\gls{HDFfive}+\gls{HSDS}:} preserves \gls{HDFfive}/NeXus compatibility while adding an explicit REST service that shards chunks and metadata into \gls{SThree} objects.
-  \item \textbf{Zarr:} a serverless, direct-to-\gls{SThree} chunk-per-object store with minimal metadata, representative of the simplest cloud-native array design.
-  \item \textbf{TileDB:} a library-based storage engine that writes immutable fragments plus fragment metadata (enabling pruning and consolidation), representing an “engine + metadata” approach rather than pure chunk key value store.
-  \item \textbf{Parquet:} the dominant columnar format in the cloud analytics stack, included to cover tabular experiment metadata and to document the engineering mismatch between row-group I/O and frame/tile access.
-  \item \textbf{\gls{ROOT}/\gls{TTree}:} a largely single-object layout with internal paging/clustering accessed via Range GETs, providing a counterpoint to object-sharded designs.
-\end{itemize}
+  \begin{itemize}
+	  \item \textbf{\gls{HDFfive}+\gls{HSDS}:} preserves \gls{HDFfive}/NeXus compatibility while adding an explicit REST service that shards chunks and metadata into \gls{SThree} objects.
+	  \item \textbf{Zarr:} a serverless, direct-to-\gls{SThree} chunk-per-object store with minimal metadata, representative of the simplest cloud-native array design.
+	  \item \textbf{TileDB:} a library-based storage engine that writes immutable fragments plus fragment metadata (enabling pruning and consolidation), representing an “engine + metadata” approach rather than pure chunk key value store.
+	  \item \textbf{Parquet:} the dominant columnar format in the cloud analytics stack, included to cover tabular experiment metadata and to document the engineering mismatch between row-group I/O and frame/tile access (the detector-stack mapping is explored only via a single-object pilot; Appendix \ref{app:a8-parquet}).
+	  \item \textbf{\gls{ROOT}/\gls{TTree}:} a largely single-object layout with internal paging/clustering accessed via Range GETs, providing a counterpoint to object-sharded designs.
+  \end{itemize}
 
 Table \ref{tab:format-granularity} previews the implied storage granularity, object counts, and the dominant engineering pain-point for each approach.
 
 
 \begin{table}[htbp]
-  \centering
-  \begin{threeparttable}
-    \caption{Storage granularity, object‐count, and dominant pain‐point for each candidate format. Figures assume a 1 TB tomography volume stored with 16 MiB scientific chunks (except Parquet) or 256 MiB Parquet row groups.}
-    \label{tab:format-granularity}
-    \footnotesize
-    \begin{tabularx}{\linewidth}{@{}l l c c@{}}
+	  \centering
+	  \begin{threeparttable}
+	    \caption{Storage granularity, object‐count, and dominant pain‐point for each candidate format. Figures assume a 1 TB tomography volume stored with 16 MiB scientific chunks (except Parquet) or as a partitioned Parquet dataset with 256 MiB data files.}
+	    \label{tab:format-granularity}
+	    \footnotesize
+	    \begin{tabularx}{\linewidth}{@{}l l c c@{}}
       \toprule
       \textbf{Format} & \textbf{Storage type} & \textbf{Objects$^\dagger$} & \textbf{Key pain‐point} \\
       \midrule
-      \gls{HDFfive} (single file)      & File‐per‐dataset                               & $1$                      & \tnote{a} \\
-      \gls{HDFfive} + \gls{HSDS}             & Chunk‐per‐object                               & $\approx 65{,}536$       & \tnote{b} \\
-      Zarr v3                 & Chunk‐per‐object                               & $\approx 65{,}536$       & \tnote{c} \\
-      Parquet                 & Row‐group object (256 MiB)                     & $4{,}096$                & \tnote{d} \\
-      TileDB                  & Fragment dir with per‐attribute tile files     & $\approx 4^\ddagger$     & \tnote{e} \\
-      \gls{ROOT} / \gls{TTree}          & Single file with clustered pages               & $1$                     & \tnote{f} \\
-      \bottomrule
-    \end{tabularx}
+	      \gls{HDFfive} (single file)      & File‐per‐dataset                               & $1$                      & \tnote{a} \\
+	      \gls{HDFfive} + \gls{HSDS}             & Chunk‐per‐object                               & $\approx 65{,}536$       & \tnote{b} \\
+	      Zarr v3                 & Chunk‐per‐object                               & $\approx 65{,}536$       & \tnote{c} \\
+	      Parquet                 & Partitioned data files (256 MiB)               & $4{,}096$                & \tnote{d} \\
+	      TileDB                  & Fragment dir with per‐attribute tile files     & $\approx 4^\ddagger$     & \tnote{e} \\
+	      \gls{ROOT} / \gls{TTree}          & Single file with clustered pages               & $1$                     & \tnote{f} \\
+	      \bottomrule
+	    \end{tabularx}
     \begin{tablenotes}[flushleft]\footnotesize
       \item[$\dagger$] Approximate count of \gls{POSIX} inodes or \gls{SThree} objects, computed from $1\,\mathrm{TB}$ and the stated granularity.
       \item[$\ddagger$] TileDB stores many tiles per file; object count scales with fragments and attributes. The figure shown assumes one write fragment and one fixed‐size attribute (files: array schema, fragment metadata, one or two per‐attribute data files) \cite{TileDBDataLayout}.
@@ -797,7 +797,7 @@ Production \gls{HSDS} clusters back multi-hundred-terabyte public archives, e.g.
 
 Most Lustre and \gls{GPFS} installations cap the number of inodes a single user may allocate because millions of tiny files saturate the metadata target (MDT) servers long before disk bandwidth runs out \cite{gmitter2018smallfile}. Therefore, a monolithic \gls{HDFfive} container carries a practical on-prem advantage: \emph{one inode per file} and negligible directory pressure. By contrast, chunk-per-object formats such as Zarr can create $10^{5}$–$10^{7}$ objects for a single 1 TB tomography scan, a scenario many \gls{HPC} administrators actively discourage or block via strict inode quotas. The same characteristic becomes an asset in cloud object stores, where inodes do not exist, and latency can be hidden behind massive parallelism for GET/PUT.
 
-\gls{HDFfive}’s internal super-block, heap tables, and fractal B-trees replicate several file-system duties to offer \gls{POSIX}-seekable random access \cite{howison2010tuning}. On low-latency local storage, this overhead is minor; however, when a single 4 MB slice is served from \gls{SThree}, it incurs two round-trips: first to fetch the B-tree node, then the data chunk, doubling both latency and request cost. Chunk-native layouts (Zarr, Parquet, \gls{ROOT}/\gls{TTree}) avoid this indirection because each chunk or page is already an independent object.
+\gls{HDFfive}’s internal super-block, heap tables, and fractal B-trees replicate several file-system duties to offer \gls{POSIX}-seekable random access \cite{howison2010tuning}. On low-latency local storage, this overhead is minor; however, when a single 4 MB slice is served from \gls{SThree}, it incurs two round-trips: first to fetch the B-tree node, then the data chunk, doubling both latency and request cost. Chunk-per-object layouts such as Zarr avoid this indirection because the chunk itself is the addressable unit. Columnar and paged formats (Parquet, \gls{ROOT}/\gls{TTree}) instead pay an initial footer/index load and then use Range GETs against contiguous regions within a file.
 
 \subsubsection{Zarr}
 \label{sec:zarr}
@@ -946,11 +946,11 @@ The background above shows how accelerating detector output and evolving collabo
 \begin{itemize}
   \item \textbf{Data rates:} Multi-\si{\giga\byte\per\second} streams and multi-\si{\tera\byte} experiments are routine.
   \item \textbf{Mismatch:} Parallel file systems deliver bulk throughput but suffer under many small reads; \gls{SThree} scales throughput via concurrency but has \SIrange{100}{200}{\milli\second} TTFB per request.
-  \item \textbf{Rise of cloud-native, chunk- or column-based formats:} Zarr, Parquet, TileDB, and \gls{ROOT}/\gls{TTree} reorganize data into independently addressable objects, promising lower slice-read latency and better cost control.
-  \item \textbf{Thesis contribution and practical significance:} Prototype ingestion for all five formats, quantitative benchmarking across small-slice and full-scan patterns, and a decision matrix that informs near-real-time experimental feedback, cloud spend, and next-generation scientific data platforms.
+  \item \textbf{Rise of object-store–oriented formats:} Chunked arrays (Zarr, HDF5/HSDS), fragment engines (TileDB), and columnar/paged files (Parquet, \gls{ROOT}/\gls{TTree}) trade object count, metadata strategy, and I/O granularity to adapt scientific data access to \gls{SThree}.
+  \item \textbf{Thesis contribution and practical significance:} Prototype ingestion for five formats (Parquet as a pilot), quantitative benchmarking of four backends across small-slice and full-scan patterns, and a decision matrix that informs near-real-time experimental feedback, cloud spend, and next-generation scientific data platforms.
 \end{itemize}
 
-Taken together, the format descriptions in Section \ref{sec:cloud-native-storage-models} and the trade-offs in Section \ref{sec:format-tradeoffs} suggest that chunk-per-object layouts (Zarr, HDF5/HSDS) should favour interactive slices, fragment-based layouts (TileDB) should favour full scans, and single-object/page-oriented layouts (ROOT/TTree, Parquet) may struggle for frame-granularity reads on \gls{SThree}. Chapters \ref{ch:methods} and \ref{ch:resultsAndAnalysis} formalise these expectations as RQ1–RQ3 and test them empirically on a controlled detector dataset.
+Taken together, the format descriptions in Section \ref{sec:cloud-native-storage-models} and the trade-offs in Section \ref{sec:format-tradeoffs} suggest that chunk-per-object layouts (Zarr, HDF5/HSDS) should favour interactive slices, fragment-based layouts (TileDB) should favour full scans, and single-file range-read layouts (\gls{ROOT}/\gls{TTree}) may struggle for frame-granularity reads on \gls{SThree}. For Parquet, we report only a single-object pilot mapping of the detector stack (Appendix \ref{app:a8-parquet}); partitioned Parquet variants were not evaluated. Chapters \ref{ch:methods} and \ref{ch:resultsAndAnalysis} formalise these expectations as RQ1–RQ3 and test them empirically on a controlled detector dataset across the four timed backends.
 
 
 
@@ -1155,7 +1155,7 @@ In summary, the \emph{statistical hypotheses} behind H1.1--H3.2 are directional 
 
 \section{Experimental Testbed and Protocols}
 \label{sec:methods-testbed}
-We evaluate four timed cloud-native storage formats (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{TTree}) on \gls{AWS} \gls{SThree} using a single \(\sim\)\SI{20}{\gibi\byte} detector dataset; Parquet is included as a pilot (ingest only, no timed runs). The hardware, region, libraries, ingestion, and run protocol are identical across RQ1–RQ3, with only the workload unit (slice vs full scan) differing, as defined in \ref{sec:methods-rq1}–\ref{sec:methods-rq2}.
+We evaluate four timed cloud-native storage formats (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{TTree}) on \gls{AWS} \gls{SThree} using a single \(\sim\)\SI{20}{\gibi\byte} detector dataset; Parquet is included only as a single-object pilot (ingest only, no timed runs; Appendix \ref{app:a8-parquet}). The hardware, region, libraries, ingestion, and run protocol are identical across RQ1–RQ3, with only the workload unit (slice vs full scan) differing, as defined in \ref{sec:methods-rq1}–\ref{sec:methods-rq2}.
 
 \subsection{Test Environment and Infrastructure Setup}
 The experiment runs on Amazon Web Services (\gls{AWS}). Storage backends use Amazon \gls{SThree}, and Amazon \gls{ECtwo} instances perform data processing and benchmarking (Figure \ref{fig:aws_topology}).
@@ -1171,7 +1171,7 @@ The experiment runs on Amazon Web Services (\gls{AWS}). Storage backends use Ama
 All runs are executed in a single \gls{AWS} region with the \gls{SThree} bucket co-located. No CloudFront, \gls{SThree} Transfer Acceleration, or cross-region traffic was used. Full region and network settings are listed in Appendix \ref{app:a1-testbed}.
 
 \subsection{Data Ingestion and Configuration}
-A single detector dataset of \(\sim\)\SI{20}{\gibi\byte} (\(N{=}1296\approx1{,}300\) frames) was used, derived from 80 real \gls{CBF} seed frames and synthetically expanded (Appendix \ref{app:a7-synthesis}). The \SI{20}{\gibi\byte} figure refers to the uncompressed pixel payload of the logical array, while stored bytes on \gls{SThree} (data+metadata) are reported separately (Appendix Table \ref{tab:object_counts}, Appendix Table \ref{tab:dataset_facts}). For each storage format, three datasets were created—one for each codec (\texttt{gzip}, \texttt{lz4}, and \texttt{zstd}). Format-specific schemas are in Appendix \ref{app:a6-schemas}.
+A single detector dataset of \(\sim\)\SI{20}{\gibi\byte} (\(N{=}1296\approx1{,}300\) frames) was used, derived from 80 real \gls{CBF} seed frames and synthetically expanded (Appendix \ref{app:a7-synthesis}). The \SI{20}{\gibi\byte} figure refers to the uncompressed pixel payload of the logical array, while stored bytes on \gls{SThree} (data+metadata) are reported separately (Appendix Table \ref{tab:object_counts}, Appendix Table \ref{tab:dataset_facts}). For each timed storage format, three datasets were created—one for each codec (\texttt{gzip}, \texttt{lz4}, and \texttt{zstd}); the Parquet pilot used \texttt{gzip} and \texttt{lz4} only (Appendix \ref{app:a8-parquet}). Format-specific schemas are in Appendix \ref{app:a6-schemas}.
 
 \subsection{Experimental Parameters and Workloads}
 The experiment compares the four storage formats under two access patterns: small-slice reads and full-dataset sequential scans, reflecting typical beamline workflows. Runs were executed in sessions, one cell (format$\times$codec$\times$pattern) at a time, with within-session run order randomized using a fixed seed.
@@ -1229,7 +1229,7 @@ For each pair of formats within a codec $\times$ pattern, the statistical null i
 \Gls{AWS} introduces time-varying latency and variance that cannot be fully controlled. We mitigated this issue by using a single region with the \gls{SThree} bucket co-located, a Gateway VPC endpoint, and fixed client settings. Operational controls and randomization are documented in Appendix \ref{app:a2-run-qc}. Formats were executed in \emph{separate sessions} with no cross-format overlap. Consequently, cross-format contrasts are \textbf{descriptive, session-conditional}. Inference is limited to within-cell estimands (GM, \gls{Pninetyfive}, throughput) with dependence-robust bootstrap \glspl{CI}. CloudWatch aggregates are per-session and reported descriptively (no inference, no cross-session averaging of percentiles).
 
 \subsubsection{Deviation: Parquet pilot-only}
-Parquet was piloted but excluded from the timed results due to high metadata open time and rapid object growth observed in the pilot runs. The pilot and rationale are documented in Chapter \ref{ch:whatYouDid}, where Parquet is presented only qualitatively. Timed comparisons cover four formats: \gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{TTree}.
+Parquet was piloted in a single-object layout but excluded from the timed results due to high metadata open time and rapid object growth observed in the pilot runs. This pilot documents one concrete mapping of an $n$-D detector stack into a single Parquet object and should not be interpreted as a general performance statement about Parquet as a partitioned format family (Appendix \ref{app:a8-parquet}). The pilot and rationale are documented in Chapter \ref{ch:whatYouDid}, where Parquet is presented only qualitatively. Timed comparisons cover four formats: \gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{TTree}.
 
 
 
@@ -1393,8 +1393,8 @@ Zarr uses one chunk per frame where we record store paths, array geometry, chunk
   \item Frames were written in batches of $16$ as contiguous slices, with threaded frame loading.
 \end{itemize}
 
-\subsection{Apache Parquet on \texorpdfstring{\gls{SThree}}{S3}}
-Frames were tabularized as rows with 2D rows as fixed-size lists. \textit{Note:} Parquet was piloted only and is excluded from timed results due to an operational stop (see section \ref{subsubsec:parquet-pilot-exclusion}).
+\subsection{Apache Parquet on \texorpdfstring{\gls{SThree}}{S3} (single-object pilot)}
+Frames were tabularized as rows with 2D rows as fixed-size lists. \textit{Note:} Parquet was piloted only in a single-object layout and is excluded from timed results due to an operational stop (see section \ref{subsubsec:parquet-pilot-exclusion} and Appendix \ref{app:a8-parquet}).
 
 \textbf{Layout:}
 \begin{itemize}
@@ -1410,7 +1410,7 @@ Frames were tabularized as rows with 2D rows as fixed-size lists. \textit{Note:}
   \item For each frame, per-row arrays were assembled into a one-row table and appended to the Parquet file (Appendix \ref{app:a6-schemas}).
 \end{itemize}
 
-\subsubsection{Parquet pilot and exclusion (deviation)}
+\subsubsection{Single-object Parquet pilot and exclusion (deviation)}
 \label{subsubsec:parquet-pilot-exclusion}
 Parquet was implemented as a single file with $2880$ list-of-$2880$ \texttt{uint16} columns (\texttt{row\_0}\dots\texttt{row\_2879}), one appended row per frame, with \texttt{gzip} and \texttt{lz4} compression where dictionaries disabled.
 
@@ -1536,7 +1536,7 @@ Runs followed the fixed warm-up and timing protocol where integrity checks verif
 
 \textbf{Deviations from plan:}
 \begin{itemize}
-  \item \textbf{Parquet pilot-only} Writing and a smoke read revealed impractical metadata open times and a single huge object; Parquet was omitted from timed results and kept for qualitative discussion.
+  \item \textbf{Parquet pilot-only (single-object)} Writing and a smoke read revealed impractical metadata open times for the single-file layout and a single huge object; Parquet was omitted from timed results and kept for qualitative discussion (Appendix \ref{app:a8-parquet}).
 \end{itemize}
 
 
@@ -1559,7 +1559,7 @@ Runs followed the fixed warm-up and timing protocol where integrity checks verif
 \cleardoublepage
 \chapter{Results and Analysis}
 \label{ch:resultsAndAnalysis}
-This chapter reports the empirical results of benchmarking four storage backends on Amazon \gls{SThree}, \gls{HDFfive} via \gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{TTree} under two workload patterns on a single $\sim$20 GiB detector stack ($\sim$1{,}300 frames, \texttt{uint16}). Parquet is included as a pilot-only storage engine (no timed results). Each backend is evaluated with three codecs (\texttt{gzip}, \texttt{lz4}, \texttt{zstd}). We present outcomes for (i) partial retrieval of a single frame ($\sim$15.82 MiB), and (ii) full sequential scans of the dataset.
+This chapter reports the empirical results of benchmarking four storage backends on Amazon \gls{SThree}, \gls{HDFfive} via \gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{TTree} under two workload patterns on a single $\sim$20 GiB detector stack ($\sim$1{,}300 frames, \texttt{uint16}). Parquet is included as a pilot-only storage engine (no timed results). Each timed backend is evaluated with three codecs (\texttt{gzip}, \texttt{lz4}, \texttt{zstd}). We present outcomes for (i) partial retrieval of a single frame ($\sim$15.82 MiB), and (ii) full sequential scans of the dataset.
 
 Metrics encompass client-observed timing, service-side behavior, and storage footprint, with timings analyzed on a log scale. For each {format$\times$codec$\times$pattern} cell, we report geometric-mean (GM) time with dependence-robust 95\% \glspl{CI} via a moving-block bootstrap (MBB; settings in Appendix \ref{app:a3-stats}). Tail behavior is summarized by $p_{95}$ with the same procedure. For full scans, we also report throughput (GiB/s) derived from bytes/time. Storage footprint is reported as stored bytes and compression ratio relative to the raw array. Request intensity (GETs/rep, GETs/GiB) is derived from CloudWatch session aggregates.
 
@@ -2595,7 +2595,7 @@ All planned runs were completed without failure, and warm-ups were excluded by d
 Findings reflect a single \(\sim\)\SI{20}{\gibi\byte} dataset, a single region, and a single client, with two access patterns and three codecs. The dataset size is sufficient to expose request/metadata overheads for the tested workloads, but it does not establish asymptotic behavior at multi-terabyte or petabyte scale. Cross-format contrasts are \emph{descriptive} and \emph{session-conditional}. CloudWatch service metrics are used solely for descriptive context, not as causal evidence (Figures \ref{fig:cw_firstbyte_grid}, \ref{fig:cw_total_grid}).
 
 \section{Deviations and exclusions}
-Parquet was piloted only and excluded from timed comparisons. When we scaled to complete ingestion and attempted full-dataset scans, a single large object (\(\sim\)34\, GiB for a \(\sim\)20\, GiB raw stack) incurred 3–4 min metadata open time and intermittent client instability on the \texttt{gzip} file, making it unsuitable for frame-granularity reads and unattractive even for bulk scans in this setup. The root cause is objectization and file semantics: a single-object, columnar Parquet file offers few opportunities for request-level parallelization and concentrates footer/metadata work at open. We therefore retain Parquet as a qualitative caution for $n$-D image stacks on \gls{SThree} single-object layouts and exclude it from quantitative timing (Chapter \ref{ch:resultsAndAnalysis}). A partitioned Parquet dataset with row-grouping aligned to frames might alter objectization, but designing and validating that variant was out of scope.
+Parquet was piloted only and excluded from timed comparisons. When we scaled to complete ingestion and attempted full-dataset scans, a single large object (\(\sim\)34\, GiB for a \(\sim\)20\, GiB raw stack) incurred 3–4 min metadata open time and intermittent client instability on the \texttt{gzip} file, making it unsuitable for frame-granularity reads and unattractive even for bulk scans in this setup. The root cause is objectization and file semantics: a single-object, columnar Parquet file offers few opportunities for request-level parallelization and concentrates footer/metadata work at open. We therefore retain Parquet as a qualitative caution for $n$-D image stacks on \gls{SThree} single-object layouts and exclude it from quantitative timing (Chapter \ref{ch:resultsAndAnalysis}). This evidence is limited to the tested single-object layout and should not be generalized to partitioned Parquet datasets with tuned file and row-group sizing (data-lake style); evaluating such variants was out of scope.
 
 
 
@@ -2800,7 +2800,7 @@ Common logical shape $(N,2880,2880)$, $N{=}1296$, \texttt{uint16}; one frame per
 \textbf{Zarr.} Store \texttt{s3://\dots/zarr/\{gzip|lz4|zstd\}.zarr}; array \texttt{/data}; codecs as above. Frames were written in batches of 16 contiguous slices, with threaded frame loading and a single chunk per frame.\\
 \textbf{TileDB.} URI \texttt{s3://\dots/tiledb/\{gzip|lz4|zstd\}.tdb}; domain dims \texttt{file:[0,N-1]}, \texttt{y:[0,2879]}, \texttt{x:[0,2879]}; tile extents $(1,2880,2880)$. Writes were grouped into fragments of 16 frames each, so the expected fragment count is $\lceil N/16\rceil=81$.\\
 \textbf{\gls{ROOT}/\gls{TTree}.} File \texttt{s3://\dots/root/\{gzip|lz4|zstd\}.root}; \texttt{TTree img\_tree} with branch \texttt{data} ($2880\times2880$ \texttt{uint16}); one entry per frame. Entries were appended sequentially, one frame per event, with \texttt{gzip}, \texttt{lz4}, or \texttt{zstd} compression.\\
-\textbf{Parquet (pilot only).} Single file; 2880 list-of-2880 \texttt{uint16} columns; one row per frame; dictionaries disabled; rows appended sequentially with \texttt{gzip} or \texttt{lz4} compression only.
+\textbf{Parquet (single-object pilot only).} Single file; 2880 list-of-2880 \texttt{uint16} columns; one row per frame; dictionaries disabled; rows appended sequentially with \texttt{gzip} or \texttt{lz4} compression only.
 
 \subsection{Data synthesis parameters}
 \label{app:a7-synthesis}
@@ -2817,9 +2817,9 @@ Common logical shape $(N,2880,2880)$, $N{=}1296$, \texttt{uint16}; one frame per
     Synthetic expansion & Frames are sampled from the seed set and perturbed with deterministic RNG (below) until \(N{=}1296\approx1{,}300\) frames. Outputs are named \texttt{slice\_\{index\}.cbf} (zero-based indexing). \\
     Per-frame raw size & \(B_{\text{frame}} = 2880\times2880\times2 = 16{,}588{,}800\) bytes \(=\)\SI{15.82}{\mebi\byte}. \\
     Raw baseline size & \(B_{\text{raw}} = N\cdot B_{\text{frame}} = 21{,}499{,}084{,}800\) bytes \(=\)\SI{20.02}{\gibi\byte}. \\
-    Stored size definition & \(B^{\text{stored}}_{f,c}\) is the sum of all \gls{SThree} object sizes under a format\(\times\)codec prefix (data+metadata). Observed \(B^{\text{stored}}_{f,c}\) spans \SI{10.26}{\gibi\byte}–\SI{19.17}{\gibi\byte} (Appendix Table \ref{tab:object_counts}). \\
+    Stored size definition & \(B^{\text{stored}}_{f,c}\) is the sum of all \gls{SThree} object sizes under a format\(\times\)codec prefix (data+metadata). Observed \(B^{\text{stored}}_{f,c}\) for the four timed backends spans \SI{10.26}{\gibi\byte}–\SI{19.17}{\gibi\byte} (Appendix Table \ref{tab:object_counts}); the Parquet pilot is excluded (Appendix \ref{app:a8-parquet}). \\
     Transferred bytes (full scans) & \(B^{\text{dl}}_{f,c}\) is CloudWatch \texttt{BytesDownloadedSum} over the timed full-scan window (Appendix \ref{app:a4-metrics}); this is the volume term used for reported scan throughput. \\
-    Compressibility & Compression is reported as \(R_{f,c}=B_{\text{raw}}/B^{\text{stored}}_{f,c}\) (Eq.~\ref{eq:compression_ratio}); observed ratios span \(\approx1.04\)–\(\approx1.95\) depending on codec and backend (Appendix Table \ref{tab:object_counts}). \\
+    Compressibility & Compression is reported as \(R_{f,c}=B_{\text{raw}}/B^{\text{stored}}_{f,c}\) (Eq.~\ref{eq:compression_ratio}); observed ratios for the four timed backends span \(\approx1.04\)–\(\approx1.95\) depending on codec and backend (Appendix Table \ref{tab:object_counts}). \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -2830,7 +2830,22 @@ Common logical shape $(N,2880,2880)$, $N{=}1296$, \texttt{uint16}; one frame per
 
 \subsection{Parquet pilot notes}
 \label{app:a8-parquet}
-Single-object Parquet with \texttt{gzip}/\texttt{lz4}; $\sim$34\,GiB object for a $\sim$20\,GiB raw stack; metadata open \SIrange{3}{4}{\minute}; intermittent client instability on \texttt{gzip}. Pilot halted; Parquet excluded from timed results; retained for qualitative discussion.
+This thesis includes Parquet only as a pilot to document one concrete mapping of an $n$-D detector stack into Parquet and to surface operational pitfalls of a single-object layout on \gls{SThree}. It is not a quantitative benchmark of Parquet as a format family.
+
+\textbf{Tested layout (single-object pilot).}
+\begin{itemize}
+  \item One Parquet file per codec (one \gls{SThree} object); codecs: \texttt{gzip} and \texttt{lz4} only.
+  \item Schema: $2880$ columns \texttt{row\_0}\dots\texttt{row\_2879}, each \texttt{list<fixed\_size=2880, uint16>}; one appended row per frame (\(N{=}1296\)).
+  \item Row groups: effectively one row group per frame because each write call appended a one-row table (PyArrow defaults).
+\end{itemize}
+
+\textbf{Observed during pilot.}
+\begin{itemize}
+  \item Stored size grew to a single \(\sim\)\SI{34}{\gibi\byte} object for a \(\sim\)\SI{20}{\gibi\byte} raw stack.
+  \item Metadata open required \SIrange{3}{4}{\minute} on the \gls{ECtwo} node; repeated attempts to open the \texttt{gzip} file caused intermittent instability (including instance crashes).
+\end{itemize}
+
+\textbf{How to interpret this pilot.} The outcomes above are evidence about a \emph{single-file, single-object} Parquet layout for dense image stacks. In contrast, Parquet is commonly deployed as a \emph{partitioned} dataset of many Parquet data files (often managed by table formats such as Iceberg \cite{iceberg_spec}) with tuned file sizing and row-group sizing for scan/filter workloads; such variants were not evaluated here.
 
 \section{Supplementary tables and figures}
 \label{app:supplementary}
