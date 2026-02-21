@@ -1258,7 +1258,7 @@ Full-scan time is measured from entering the scan read routine to completion of 
 \end{enumerate}
 
 \subsubsection{Validity and Reliability Measures}
-No explicit OS cache flushes were performed between runs. Five warm-ups amortize cold-start effects (DNS, TLS, \gls{TCP}, metadata caches). Warm-up and replication policy are specified in Appendix\ref{app:a2-run-qc}.
+No explicit OS page-cache flushes or manual library-cache resets were performed between runs. Five warm-ups amortize cold-start effects (DNS, TLS, \gls{TCP}, and metadata caching), so the reported latency and throughput results should be interpreted as \emph{warm, within-session} behaviour rather than cold-open performance. Cache-control assumptions and replication policy are specified in Appendix \ref{app:a2-run-qc}.
 
 \subsubsection{Reproducibility and availability}
 Random seeds are fixed and logged with per-run timers, and CloudWatch aggregates are saved as \gls{JSON} with run IDs. The code and notebooks are released on GitHub at \url{https://github.com/CasperKristiansson/KTH-MSc-Thesis-Computer-Science}. The repository includes (i) seed frames under \texttt{Experiment/Base Data/} and the synthesis procedure (Appendix \ref{app:a7-synthesis}), and (ii) the raw measurement logs used to generate all reported tables and figures (\texttt{Experiment/Experiment Result/}). The full ingested \gls{SThree} dataset prefixes and the \gls{AWS} execution environment are not publicly hosted; rerunning timed experiments therefore requires re-provisioning comparable cloud resources and will reproduce the \emph{workflow} and analysis, not the exact wall-clock timings. Exact package versions and access paths are listed in Appendix \ref{app:a5-libraries}.
@@ -1505,7 +1505,7 @@ Warm-ups precede the timed window by \(\ge\)2\, minutes to keep aggregates attri
 Warm-ups are excluded by design. A timed run is included if the read returns successfully. If a read raised an exception or timed out, that repetition was re-attempted.
 
 \subsubsection{Caching and connections}
-Default client behavior was used. No explicit OS page-cache flushes. \Gls{HTTP} keep-alive and connection pooling are left to \texttt{fsspec/s3fs}, \texttt{boto3}, \texttt{h5pyd}, \texttt{tiledb} VFS, and \texttt{uproot}. No application-level prefetching was enabled in the read loops.
+Default client behavior was used. No explicit OS page-cache flushes or cache-clearing steps were performed between repetitions. Each session begins with 5 warm-up reads (excluded from analysis), so the timed window represents a warm within-session regime where DNS/TLS/\gls{TCP} state, connection pools, and library metadata caches are primed. For the slice workload, frame indices are sampled without replacement so warm-ups do not prefetch the same frames as timed reads; remaining cache effects are therefore primarily control-plane and metadata rather than repeated pixel payload reads. Appendix \ref{app:a2-run-qc} summarizes the cache-control assumptions.
 
 \subsubsection{Run IDs, filenames, and logs}
 Each session emitted a monotonic \texttt{run\_id}, and timed samples and CloudWatch aggregates were stored as \gls{JSON} with format/codec/pattern identifiers (log schema in Appendix \ref{app:a4-metrics}).
@@ -2732,6 +2732,8 @@ The agenda below targets the highest-leverage uncertainties revealed by the resu
 \label{app:a2-run-qc}
 \textbf{Sessions.} One per \{format, codec, pattern\} with no overlap across formats.\\
 \textbf{Warm-ups and repetitions.} 5 warm-ups, then $n{=}50$ timed runs per cell with idle gap $\ge$2\,min before timing.\\
+\textbf{Cache regime.} No explicit cache-clearing between repetitions (no OS page-cache drops and no manual library-cache resets). Timed runs therefore represent warm, within-session behaviour after warm-ups; absolute latencies are likely optimistic relative to cold-open first-touch reads, especially for metadata-heavy layouts.\\
+\textbf{Slice warm-ups.} Slice frame indices are sampled without replacement, so warm-ups touch distinct frames; warm-up mainly primes connections and metadata rather than the timed pixel payload.\\
 \textbf{Randomization.} Fixed seed with slice pattern uses a precomputed index list; full scan iterates all frames.\\
 \textbf{Timer scope.} First dispatch $\rightarrow$ last byte; includes transfer, decompression, client decode.\\
 \textbf{Inclusion rules.} Warm-ups excluded; only successful reads included; failures retried.\\
@@ -2776,7 +2778,7 @@ Per \{format, codec, pattern\} cell, the notebook wrote a timing log and a Cloud
   \begin{verbatim}
   [ {"i": <rep_index>, "t_total_ns": <int>}, ... ]
   \end{verbatim}
-  where \texttt{i} is the repetition index ($0\ldots49$ for timed runs) and \texttt{t\_total\_ns} is the wall-clock time in nanoseconds for that read.
+  where \texttt{i} is the repetition index ($1\ldots50$ for timed runs; warm-ups are not logged) and \texttt{t\_total\_ns} is the wall-clock time in nanoseconds for that read.
   \item \textbf{CloudWatch exports (server).} One JSON file per cell with aggregated CloudWatch metrics for the same time window, containing the identifiers listed above (\texttt{GetRequestsSum}, \texttt{BytesDownloadedSum}, \texttt{FirstByteLatencyAverage}/\texttt{P95}, \texttt{TotalRequestLatencyAverage}/\texttt{P95}).
 \end{itemize}
 
