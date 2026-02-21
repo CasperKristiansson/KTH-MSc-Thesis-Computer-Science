@@ -1137,7 +1137,7 @@ Rather than perform classical null-hypothesis significance tests for many pairwi
 In a fully formal one-sided test of, for example, \emph{$f$ is faster than $g$}, we would reject $H_{0}:\rho_{f,g;c,p}\ge 1$ at the 5\% level whenever the 95\% confidence interval for $\rho_{f,g;c,p}$ lay entirely below~1. In this thesis, we use the same intervals \emph{descriptively}: we report point estimates and confidence intervals for $\theta_{fcp}$ and $\rho_{f,g;c,p}$, and we interpret hypotheses H1.1--H3.2 in terms of which orderings are compatible with these intervals. We do not aggregate these into a single global decision rule, nor do we control a family-wise or false-discovery rate across all contrasts.
 
 \subsubsection{Why bootstrap, and why not \texorpdfstring{$t$}{t}-tests or ANOVA?}
-As discussed in Step 2, run-level timings are right-skewed and can exhibit within-session serial dependence due to cache and cloud-variability effects, making independent and identically distributed assumptions fragile. Serial dependence and non-normality in the run-level timing data (Section \ref{sec:results-inventory}, Table \ref{tab:timing_diag_main}) violate the independence and homoscedastic normal-error assumptions underlying standard $t$-tests and ANOVA. A parametric linear model on $\ln(\text{time})$ could, in principle, be equipped with a dependence structure, but this would require additional modelling choices and diagnostics that are not central to the research questions. The moving-block bootstrap on $\ln(\text{time})$ was chosen because:
+As discussed in Step 2, run-level timings are right-skewed and can exhibit within-session serial dependence due to cache and cloud-variability effects, making independent and identically distributed assumptions fragile. Serial dependence and non-normality in the run-level timing data (Section \ref{sec:results-inventory} and Appendix Table \ref{tab:timing_diag_main}) violate the independence and homoscedastic normal-error assumptions underlying standard $t$-tests and ANOVA. A parametric linear model on $\ln(\text{time})$ could, in principle, be equipped with a dependence structure, but this would require additional modelling choices and diagnostics that are not central to the research questions. The moving-block bootstrap on $\ln(\text{time})$ was chosen because:
 \begin{itemize}
   \item it respects the observed lag-1 autocorrelation and within-session serial dependence by resampling blocks rather than individual runs;
   \item it makes no parametric assumption on the marginal distribution beyond approximate stationarity within the timed window; we diagnose run-order drift separately and treat intervals as descriptive when drift is present;
@@ -1554,50 +1554,14 @@ This chapter is organised by \emph{RQ1} (interactive slice latency,  section \re
 
 \section{Inventory and data hygiene}
 \label{sec:results-inventory}
-This section checks the executed runs and verifies data hygiene before analysis. We report run coverage per {format $\times$ codec $\times$ pattern}, assess distributional shape and run-order drift on $\ln(\text{time})$.
+This section verifies run coverage and summarizes timing diagnostics that motivate the log-scale, dependence-robust analysis used in the main results.
 
 \subsection{Run inclusion and coverage}
 \label{sec:run-inclusion-and-coverage}
-All planned timed runs completed successfully. For every \{format $\times$ codec $\times$ pattern\} cell we planned $n=50$ timed runs and included all $n=50$, with $n=0$ retries and $n=0$ failures. Across the 24 cells: planned $1{,}200$, included $1{,}200$; warm-ups ($5$ per cell; total $120$) were excluded by design. No \gls{SThree}, \gls{HSDS}, or client errors were observed during execution.
+All planned timed runs completed successfully: $n=50$ timed runs per \{format $\times$ codec $\times$ pattern\} cell (24 cells; $1{,}200$ total), with $n=0$ retries and $n=0$ failures; warm-ups ($5$ per cell) were excluded by design. No \gls{SThree}, \gls{HSDS}, or client errors were observed during execution.
 
 \subsection{Timing diagnostics (distributional shape and drift)}
-We assess per-run timing on the log scale. Table \ref{tab:timing_diag_main} summarizes, for each {format $\times$ codec $\times$ pattern} cell, the Shapiro $p$ on $\ln(\text{time})$, lag-1 autocorrelation $\rho_1$, the $\mathrm{p95}/\mathrm{GM}$ ratio, and a Spearman trend $p$. Most cells show non-normality in raw time but much milder skew in $\ln(\text{time})$, and many cells show serial dependence (often positive, sometimes weakly negative), indicating within-session serial dependence. Together, these patterns justify analyzing log-times and using dependence-robust bootstrap intervals. Q–Q plots and run-order traces in Appendix Figures \ref{fig:appendix_qq_grid_slice}–\ref{fig:appendix_drift_grid_full} are descriptive and illustrate these behaviors visually. Because runs exhibit within-session serial dependence, the Shapiro and Spearman $p$-values are not interpreted as formally calibrated hypothesis tests under independence. We use them only as heuristic diagnostic flags for distributional shape and monotonic run-order drift, and rely on Q--Q plots, run-order traces, and dependence-robust bootstrap intervals for the main summaries.
-
-\begin{table}[H]
-  \centering
-  \caption{Summary diagnostics by cell: Shapiro $p$ on $\ln(\text{time})$ and lag-1 autocorrelation $\rho_1$.}
-  \label{tab:timing_diag_main}
-  \begin{tabular}{l r r r r}
-    \hline
-    Cell (format–codec–pattern) & Shapiro $p$ & $\rho_1$ & $\mathrm{p95}/\mathrm{GM}$ & Spearman $p$ \\
-    \hline
-    \gls{HDFfive}–gzip–full    & 3.43e-09 & 0.66  & 1.02 & 0.837 \\
-    \gls{ROOT}–gzip–full    & 0.305    & 0.75  & 1.05 & 8.09e-06 \\
-    tiledb–gzip–full  & 0.067    & 0.61  & 1.10 & 0.531 \\
-    zarr–gzip–full    & 0.0571   & 0.79  & 1.02 & 4.63e-15 \\
-    \gls{HDFfive}–gzip–slice   & 0.00656  & -0.12 & 1.42 & 0.337 \\
-    \gls{ROOT}–gzip–slice   & 0.983    & 0.02  & 1.16 & 0.161 \\
-    tiledb–gzip–slice & 0.334    & 0.03  & 1.34 & 0.00376 \\
-    zarr–gzip–slice   & 0.773    & -0.19 & 1.23 & 0.786 \\
-    \gls{HDFfive}–\gls{LZfour}–full     & 0.249    & 0.34  & 1.01 & 0.831 \\
-    \gls{ROOT}–\gls{LZfour}–full     & 0.0396   & 0.77  & 1.03 & 0.036 \\
-    tiledb–\gls{LZfour}–full   & 0.07     & 0.69  & 1.06 & 0.0948 \\
-    zarr–\gls{LZfour}–full     & 0.311    & 0.71  & 1.03 & 0.689 \\
-    \gls{HDFfive}–\gls{LZfour}–slice    & 0.481    & 0.07  & 1.23 & 0.509 \\
-    \gls{ROOT}–\gls{LZfour}–slice    & 0.432    & 0.32  & 1.16 & 0.00312 \\
-    tiledb–\gls{LZfour}–slice  & 0.00033  & 0.05  & 1.28 & 0.178 \\
-    zarr–\gls{LZfour}–slice    & 0.0164   & -0.09 & 1.99 & 0.585 \\
-    \gls{HDFfive}–\gls{ZSTD}–full    & 0.000154 & 0.57  & 1.01 & 0.00385 \\
-    \gls{ROOT}–\gls{ZSTD}–full    & 0.556    & 0.60  & 1.17 & 0.395 \\
-    tiledb–\gls{ZSTD}–full  & 0.00838  & 0.75  & 1.11 & 0.33 \\
-    zarr–\gls{ZSTD}–full    & 0.0821   & 0.57  & 1.02 & 0.00347 \\
-    \gls{HDFfive}–\gls{ZSTD}–slice   & 0.0038   & -0.21 & 1.21 & 0.625 \\
-    \gls{ROOT}–\gls{ZSTD}–slice   & 0.101    & -0.17 & 1.16 & 0.0225 \\
-    tiledb–\gls{ZSTD}–slice & 0.339    & 0.01  & 1.41 & 0.0662 \\
-    zarr–\gls{ZSTD}–slice   & 0.00425  & 0.00  & 1.26 & 0.236 \\
-    \hline
-  \end{tabular}
-\end{table}
+Run-level times are right-skewed and exhibit within-session serial dependence, so we analyze $\ln(\text{time})$ and report dependence-robust intervals via a moving-block bootstrap. Appendix Table \ref{tab:timing_diag_main} summarizes per-cell diagnostic flags (Shapiro $p$ on $\ln(\text{time})$, lag-1 autocorrelation, $\mathrm{p95}/\mathrm{GM}$, Spearman drift), and Appendix Figures \ref{fig:appendix_qq_grid_slice}–\ref{fig:appendix_drift_grid_full} provide the Q–Q and drift plots. Because runs are serially dependent, these $p$-values are used only as heuristics rather than formally calibrated tests. Overall, the diagnostics support the log-scale, dependence-robust analysis used in the main results.
 
 \section{Footprint and service behavior — RQ3 context}
 \label{sec:rq3-results}
@@ -2413,7 +2377,7 @@ We test whether conclusions hold under alternative centers and dependence. We ch
 We verify that the modeling choices are appropriate and yield results similar to those of other estimators. We assess shape and serial dependence to justify log–time analysis with the moving–block bootstrap (MBB), then confirm rankings with median centers, and finally test tail stability with Harrell–Davis $p_{95}$.
 
 \subsubsection{Shape and dependence}
-Log–time is appropriate, and serial dependence is present. The diagnostics table shows frequent non-normality in the raw time series and improved behavior in $\ln(\text{time})$, while often positive lag-1 autocorrelation is observed across all cells. This both motivates analyzing centers on the log scale and using MBB \glspl{CI} that respect dependence (Table \ref{tab:timing_diag_main}). Q–Q grids on $\ln(\text{time})$ support the transformation, and run-order traces and the Spearman drift diagnostic indicate that some cells exhibit monotonic run-order trends (Table \ref{tab:timing_diag_main}); we therefore interpret MBB intervals as dependence-robust, session-conditional summaries of the timed window, not as formal inference under strict stationarity (Appendix Figures \ref{fig:appendix_qq_grid_slice}, \ref{fig:appendix_qq_grid_full}, \ref{fig:appendix_drift_grid_slice}, \ref{fig:appendix_drift_grid_full}). Together, these justify GM on log–time with dependence-robust \glspl{CI}.
+Log–time is appropriate, and serial dependence is present. The diagnostics table shows frequent non-normality in the raw time series and improved behavior in $\ln(\text{time})$, while often positive lag-1 autocorrelation is observed across all cells. This both motivates analyzing centers on the log scale and using MBB \glspl{CI} that respect dependence (Appendix Table \ref{tab:timing_diag_main}). Q–Q grids on $\ln(\text{time})$ support the transformation, and run-order traces and the Spearman drift diagnostic indicate that some cells exhibit monotonic run-order trends (Appendix Table \ref{tab:timing_diag_main}); we therefore interpret MBB intervals as dependence-robust, session-conditional summaries of the timed window, not as formal inference under strict stationarity (Appendix Figures \ref{fig:appendix_qq_grid_slice}, \ref{fig:appendix_qq_grid_full}, \ref{fig:appendix_drift_grid_slice}, \ref{fig:appendix_drift_grid_full}). Together, these justify GM on log–time with dependence-robust \glspl{CI}.
 
 \subsubsection{Center robustness}
 Median-based rankings match GM across codecs and patterns. Descriptive median ratios reproduce the slice and full-scan orderings, and rank-agreement tables show identical ranks to GM within each codec (Figures \ref{fig:np_slice_ratios_grid}, \ref{fig:np_full_ratios_grid} and Tables \ref{tab:np_slice_gzip_median}, \ref{tab:np_slice_lz4_median}, \ref{tab:np_slice_zstd_median}, \ref{tab:np_full_gzip_median}, \ref{tab:np_full_lz4_median}, \ref{tab:np_full_zstd_median}, and \ref{tab:np_slice_gzip_rank}, \ref{tab:np_slice_lz4_rank}, \ref{tab:np_slice_zstd_rank}, \ref{tab:np_full_gzip_rank}, \ref{tab:np_full_lz4_rank}, \ref{tab:np_full_zstd_rank}). Thus, when we describe rankings as “consistent” across estimators, this refers to the relative ordering of formats, not to low variance or narrow CIs for every GM estimate.
@@ -2425,7 +2389,7 @@ Orderings are stable under Harrell–Davis $p_{95}$ with an $\ell\in\{4,6,8,10\}
 We state what the measurements support and where they do not generalize. Internal checks and external scope are made explicit so readers interpret results correctly.
 
 \subsubsection{Internal checks}
-All planned runs were completed without failure, and warm-ups were excluded by design. Run order was randomized with a fixed seed. Serial dependence is handled via the moving-block bootstrap, and the log-time choice is supported by shape diagnostics (Section \ref{sec:run-inclusion-and-coverage}, Table \ref{tab:timing_diag_main}).
+All planned runs were completed without failure, and warm-ups were excluded by design. Run order was randomized with a fixed seed. Serial dependence is handled via the moving-block bootstrap, and the log-time choice is supported by shape diagnostics (Section \ref{sec:run-inclusion-and-coverage} and Appendix Table \ref{tab:timing_diag_main}).
 
 \subsubsection{External validity}
 Findings reflect an \gls{AWS}-only setup (\gls{SThree} + \gls{ECtwo} + CloudWatch) using one \gls{SThree} bucket in a single region (\texttt{eu-north-1}) and a single \gls{ECtwo} client, with two access patterns and three codecs. No multi-client contention, cross-region traffic, or non-\gls{AWS} object stores were evaluated; performance and cost posture may differ on Azure Blob Storage, Google Cloud Storage, or on-premises \gls{SThree}-compatible systems. We do not include an on-premises baseline (e.g., Lustre/\gls{GPFS} or POSIX file I/O), so results should be interpreted as \emph{within-\gls{SThree}} cross-format comparisons rather than cloud-versus-\gls{HPC} claims. The dataset size is sufficient to expose request/metadata overheads for the tested workloads, but it does not establish asymptotic behavior at multi-terabyte or petabyte scale. Cross-format contrasts are \emph{descriptive} and \emph{session-conditional}. CloudWatch service metrics are used solely for descriptive context, not as causal evidence (Figures \ref{fig:cw_firstbyte_grid}, \ref{fig:cw_total_grid}).
@@ -2689,6 +2653,42 @@ This thesis includes Parquet only as a pilot to document one concrete mapping of
 \label{app:supplementary}
 
 \subsection{Timing diagnostics (Q–Q and drift)}
+\begin{table}[H]
+  \centering
+  \caption{Summary diagnostics by cell: Shapiro $p$ on $\ln(\text{time})$ and lag-1 autocorrelation $\rho_1$.}
+  \label{tab:timing_diag_main}
+  \begin{tabular}{l r r r r}
+    \hline
+    Cell (format–codec–pattern) & Shapiro $p$ & $\rho_1$ & $\mathrm{p95}/\mathrm{GM}$ & Spearman $p$ \\
+    \hline
+    \gls{HDFfive}–gzip–full    & 3.43e-09 & 0.66  & 1.02 & 0.837 \\
+    \gls{ROOT}–gzip–full    & 0.305    & 0.75  & 1.05 & 8.09e-06 \\
+    tiledb–gzip–full  & 0.067    & 0.61  & 1.10 & 0.531 \\
+    zarr–gzip–full    & 0.0571   & 0.79  & 1.02 & 4.63e-15 \\
+    \gls{HDFfive}–gzip–slice   & 0.00656  & -0.12 & 1.42 & 0.337 \\
+    \gls{ROOT}–gzip–slice   & 0.983    & 0.02  & 1.16 & 0.161 \\
+    tiledb–gzip–slice & 0.334    & 0.03  & 1.34 & 0.00376 \\
+    zarr–gzip–slice   & 0.773    & -0.19 & 1.23 & 0.786 \\
+    \gls{HDFfive}–\gls{LZfour}–full     & 0.249    & 0.34  & 1.01 & 0.831 \\
+    \gls{ROOT}–\gls{LZfour}–full     & 0.0396   & 0.77  & 1.03 & 0.036 \\
+    tiledb–\gls{LZfour}–full   & 0.07     & 0.69  & 1.06 & 0.0948 \\
+    zarr–\gls{LZfour}–full     & 0.311    & 0.71  & 1.03 & 0.689 \\
+    \gls{HDFfive}–\gls{LZfour}–slice    & 0.481    & 0.07  & 1.23 & 0.509 \\
+    \gls{ROOT}–\gls{LZfour}–slice    & 0.432    & 0.32  & 1.16 & 0.00312 \\
+    tiledb–\gls{LZfour}–slice  & 0.00033  & 0.05  & 1.28 & 0.178 \\
+    zarr–\gls{LZfour}–slice    & 0.0164   & -0.09 & 1.99 & 0.585 \\
+    \gls{HDFfive}–\gls{ZSTD}–full    & 0.000154 & 0.57  & 1.01 & 0.00385 \\
+    \gls{ROOT}–\gls{ZSTD}–full    & 0.556    & 0.60  & 1.17 & 0.395 \\
+    tiledb–\gls{ZSTD}–full  & 0.00838  & 0.75  & 1.11 & 0.33 \\
+    zarr–\gls{ZSTD}–full    & 0.0821   & 0.57  & 1.02 & 0.00347 \\
+    \gls{HDFfive}–\gls{ZSTD}–slice   & 0.0038   & -0.21 & 1.21 & 0.625 \\
+    \gls{ROOT}–\gls{ZSTD}–slice   & 0.101    & -0.17 & 1.16 & 0.0225 \\
+    tiledb–\gls{ZSTD}–slice & 0.339    & 0.01  & 1.41 & 0.0662 \\
+    zarr–\gls{ZSTD}–slice   & 0.00425  & 0.00  & 1.26 & 0.236 \\
+    \hline
+  \end{tabular}
+\end{table}
+
 % Q–Q plots: slices
 \begin{figure}[H]
   \centering
