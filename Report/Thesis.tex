@@ -1171,7 +1171,7 @@ The experiment runs on Amazon Web Services (\gls{AWS}). Storage backends use Ama
 All runs are executed in a single \gls{AWS} region with the \gls{SThree} bucket co-located. No CloudFront, \gls{SThree} Transfer Acceleration, or cross-region traffic was used. Full region and network settings are listed in Appendix \ref{app:a1-testbed}.
 
 \subsection{Data Ingestion and Configuration}
-A single detector dataset of \(\sim\)\SI{20}{\gibi\byte} (\(\sim\)1{,}300 frames) was used, derived from 80 real experiment frames and synthetically expanded to the target size (Appendix \ref{app:a7-synthesis}). For each storage format, three datasets were created—one for each codec (\texttt{gzip}, \texttt{lz4}, and \texttt{zstd}). Format-specific schemas are in Appendix \ref{app:a6-schemas}.
+A single detector dataset of \(\sim\)\SI{20}{\gibi\byte} (\(N{=}1296\approx1{,}300\) frames) was used, derived from 80 real \gls{CBF} seed frames and synthetically expanded (Appendix \ref{app:a7-synthesis}). The \SI{20}{\gibi\byte} figure refers to the uncompressed pixel payload of the logical array, while stored bytes on \gls{SThree} (data+metadata) are reported separately (Appendix Table \ref{tab:object_counts}, Appendix Table \ref{tab:dataset_facts}). For each storage format, three datasets were created—one for each codec (\texttt{gzip}, \texttt{lz4}, and \texttt{zstd}). Format-specific schemas are in Appendix \ref{app:a6-schemas}.
 
 \subsection{Experimental Parameters and Workloads}
 The experiment compares the four storage formats under two access patterns: small-slice reads and full-dataset sequential scans, reflecting typical beamline workflows. Runs were executed in sessions, one cell (format$\times$codec$\times$pattern) at a time, with within-session run order randomized using a fixed seed.
@@ -1180,7 +1180,7 @@ The experiment compares the four storage formats under two access patterns: smal
 In the small-slice pattern, each run performs a random single-frame read; each frame averages \(\sim\)\SI{15.82}{\mebi\byte}. This pattern represents interactive retrieval during and after experiments.
 
 \subsubsection{Full-Dataset Sequential Scans}
-In this pattern, each run performs a sequential read of the entire \SI{20}{\gibi\byte} dataset for each format–codec combination. This pattern stresses storage bandwidth and tests high-throughput processing of full-dataset reads.
+In this pattern, each run performs a sequential read of the entire $N$-frame dataset for each format–codec combination. This pattern stresses storage bandwidth and tests high-throughput processing of full-dataset reads.
 
 \section{Metrics, Statistics, and Scoring}
 \label{sec:methods-metrics}
@@ -1240,12 +1240,13 @@ This section specifies data sources, sampling, instrumentation, and release arti
 \subsection{Data Collection}
 \label{sec:dataCollection}
 The data‐collection plan for this thesis centers on a single dataset built from 80 real seed frames and synthetically expanded to \(\sim\)\SI{20}{\gibi\byte} (\(\sim\)1{,}300 frames). These frames statistically replicate the size, structure, and access patterns of real synchrotron and neutron experiments. Generating datasets on demand from a few real frames (rather than distributing the entire raw beamline dataset) avoids licensing constraints and guarantees that every experiment can be reproduced bit-for-bit.
+Dataset facts and size definitions are summarized in Appendix Table \ref{tab:dataset_facts}.
 
 \subsubsection{Data Sources}
-Detector stack ($\sim$\SI{20}{\gibi\byte}): $\sim$1{,}300 \gls{CBF} frames at 16-bit depth derived from 80 seed frames from one experiment. A jitter–noise routine perturbs intensity, offset, spatial shifts, and noise to synthesize the remaining frames (Appendix \ref{app:a7-synthesis}).
+Detector stack (raw pixel payload $\sim$\SI{20}{\gibi\byte}): $N{=}1296$ \gls{CBF} frames at 16-bit depth derived from 80 seed frames from one experiment. One frame constitutes one sample and contains $2880\times2880$ pixel features (\(\sim\)\SI{15.82}{\mebi\byte} uncompressed). A jitter–noise routine perturbs intensity, offset, spatial shifts, and noise to synthesize the remaining frames (Appendix \ref{app:a7-synthesis}, Appendix Table \ref{tab:dataset_facts}).
 
 \subsubsection{Sampling Strategy}
-Two patterns were executed on the same dataset. For the slice workload, each run reads one randomly selected frame (\(\sim\)\SI{15.82}{\mebi\byte}) and each backend uses its native physical granularity, so a frame maps to different numbers of objects across formats. For the scanning workload, the entire \SI{20}{\gibi\byte} dataset is read sequentially. Within-session run order was randomized with a fixed seed, and no cross-format concurrency occurred.
+Two patterns were executed on the same dataset. For the slice workload, each run reads one randomly selected frame (\(\sim\)\SI{15.82}{\mebi\byte}) and each backend uses its native physical granularity, so a frame maps to different numbers of objects across formats. For the scanning workload, the entire $N$-frame dataset is read sequentially. Within-session run order was randomized with a fixed seed, and no cross-format concurrency occurred.
 
 \subsubsection{Instrumentation and Metric Logging}
 Full-scan time is measured from entering the scan read routine to completion of the scan with all data materialized/decoded by the client library; slice-read time is measured from entering the single-frame read routine until it returns a fully materialized frame. These timers include network transfer, decompression, and client decode, while log serialization is outside the timer. Throughput equals bytes divided by time. We therefore collect the following data:
@@ -1260,7 +1261,7 @@ Full-scan time is measured from entering the scan read routine to completion of 
 No explicit OS cache flushes were performed between runs. Five warm-ups amortize cold-start effects (DNS, TLS, \gls{TCP}, metadata caches). Warm-up and replication policy are specified in Appendix\ref{app:a2-run-qc}.
 
 \subsubsection{Reproducibility and availability}
-Random seeds are fixed and logged with per-run timers, and CloudWatch aggregates are saved as \gls{JSON} with run IDs. The code and notebooks are released on GitHub with a small public data subset sufficient to reproduce representative results where artifact versions, object paths, formats, codec settings, and synthesis seeds are documented in Appendices \ref{app:a5-libraries} and \ref{app:a7-synthesis}.
+Random seeds are fixed and logged with per-run timers, and CloudWatch aggregates are saved as \gls{JSON} with run IDs. The code and notebooks are released on GitHub at \url{https://github.com/CasperKristiansson/KTH-MSc-Thesis-Computer-Science}. Seed frames are stored under \texttt{Experiment/Base Data/} and all experiment notebooks and scripts are under \texttt{Experiment/}. Artifact versions, object paths, formats, codec settings, and synthesis seeds are documented in Appendices \ref{app:a5-libraries} and \ref{app:a7-synthesis}.
 
 
 
@@ -1286,7 +1287,7 @@ Random seeds are fixed and logged with per-run timers, and CloudWatch aggregates
 This chapter documents how the artifacts were built and run. It specifies the dataset and augmentation strategy, the \gls{AWS} environment and client software, how each backend (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}, Parquet) was ingested on \gls{SThree}, the monitoring and logging setup, and deviations from the plan, including the pilot-only evaluation of Parquet.
 
 \section{Dataset and preprocessing}
-All experiments used a single detector stack derived from 80 real \texttt{CBF} frames and expanded to $\sim$20\, GiB (\,$\sim$1{,}300 frames\,).
+All experiments used a single detector stack derived from 80 real \texttt{CBF} frames and expanded to a raw pixel payload of \(\sim\)\SI{20}{\gibi\byte} (\(N{=}1296\approx1{,}300\) frames; Appendix Table \ref{tab:dataset_facts}).
 
 \subsection{Raw structure}
 Each detector exposure is a dense two-dimensional frame. The specifications below fix the frame geometry, axis conventions, numeric encoding, byte size, and the theoretical versus empirically observed value range used for all subsequent ingestion and synthetic data generation.
@@ -1297,6 +1298,8 @@ Each detector exposure is a dense two-dimensional frame. The specifications belo
   \item \texttt{dtype}: \texttt{uint16} (bit depth 16).
   \item Endianness: native little-endian.
   \item Per-frame size: \SI{16588800}{\byte} (\SI{15.82}{\mebi\byte}).
+  \item Features per frame: $2880\times2880=8{,}294{,}400$ pixel intensities.
+  \item Seed container: \gls{CBF} 1.5 with \texttt{x-CBF\_BYTE\_OFFSET} compression (header convention \texttt{PILATUS\_1.2}); decoded into \texttt{uint16} arrays before synthesis and ingestion.
   \item Value range (theoretical): $[0, 65535]$.
   \item Value range (observed, raw): $[0, 1199]$.
 \end{itemize}
@@ -1318,7 +1321,7 @@ To scale the corpus for I/O benchmarking while preserving frame geometry and \te
 Random choices used fixed Python and NumPy seeds (Appendix \ref{app:a7-synthesis}).
 
 \subsubsection{Size targeting and parallelization}
-We targeted a detector stack of $\sim$\SI{20}{\gibi\byte} by estimating average slice size and computing the required frame count. Outputs were written as \gls{CBF} frames and then uploaded to \gls{AWS} \gls{SThree} (implementation details in Appendix \ref{app:a7-synthesis}).
+We targeted $N{=}1296$ frames (raw pixel payload \(\sim\)\SI{20.02}{\gibi\byte}; Appendix Table \ref{tab:dataset_facts}) by estimating average slice size and computing the required frame count. Outputs were written as \gls{CBF} frames and then uploaded to \gls{AWS} \gls{SThree} (implementation details in Appendix \ref{app:a7-synthesis}).
 
 \section{Infrastructure and software}
 All experiments ran in a single \gls{AWS} region (\texttt{eu-north-1}) on one \gls{ECtwo} node, with all artifacts stored in one \gls{SThree} bucket. \gls{HDFfive} used a local \gls{HSDS} service; Zarr, TileDB, \gls{ROOT}, and the Parquet pilot wrote directly to \gls{SThree} via client libraries. \gls{SThree} bucket analytics and CloudWatch request metrics captured request counts, bytes, and service latencies per session.
@@ -1350,7 +1353,7 @@ This section summarizes how the array was mapped to \gls{SThree} for each format
 
 \subsection{Common design and parity}
 \begin{itemize}
-  \item Logical array for all stores: $(N,2880,2880)$, $N\approx 1300$, \texttt{uint16}.
+  \item Logical array for all stores: $(N,2880,2880)$, $N{=}1296$, \texttt{uint16}.
   \item One frame per chunk/tile: $(1,2880,2880)$ to keep read units comparable.
   \item Codecs targeted: \texttt{gzip}, \texttt{lz4}, \texttt{zstd}. Parquet used only \texttt{gzip} and \texttt{lz4}.
   \item Frame enumeration: zero-based; source files named \texttt{slice\_\{index\}.cbf}.
@@ -1628,14 +1631,14 @@ This section enumerates the total stored bytes on \gls{SThree} for each {format,
   B_{\text{raw}} \coloneqq N \times 2880 \times 2880 \times 2 \text{bytes}.
 \end{equation}
 
-For $N=1{,}300$, $B_{\text{raw}}=21{,}565{,}440{,}000\ \text{bytes}$ ($\approx 20.08\,\text{GiB}$). Figure \ref{fig:stored_bytes} reports absolute stored size and Figure \ref{fig:compression_rates} shows the corresponding compression ratios.
+For $N=1{,}296$, $B_{\text{raw}}=21{,}499{,}084{,}800\ \text{bytes}$ ($\approx 20.02\,\text{GiB}$). Figure \ref{fig:stored_bytes} reports absolute stored size and Figure \ref{fig:compression_rates} shows the corresponding compression ratios.
 
 Figure \ref{fig:stored_bytes} quantifies absolute stored size per format and codec. For this detector stack, zstd and gzip achieve similar total bytes across most backends, while LZ4 tends to store more data, particularly for HDF5/HSDS, TileDB, and ROOT; Zarr is the main exception, where LZ4 is slightly smaller than gzip. This pattern is consistent with codec choice, rather than format, being the dominant determinant of space usage for this workload.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=\linewidth]{figures/graphs/fig_stored_bytes.pdf}
-  \caption{Total stored size on \gls{SThree} by format and codec. Bars sum all objects (data + metadata) under each prefix. The raw baseline is $B_{\text{raw}}\approx20.08\,\text{GiB}$ ($1300\times2880\times2880\times2$ bytes).}
+  \caption{Total stored size on \gls{SThree} by format and codec. Bars sum all objects (data + metadata) under each prefix. The raw baseline is $B_{\text{raw}}\approx20.02\,\text{GiB}$ ($1296\times2880\times2880\times2$ bytes).}
   \label{fig:stored_bytes}
 \end{figure}
 
@@ -2784,18 +2787,38 @@ Client stack: \texttt{numpy}, \texttt{boto3/botocore}, \texttt{fsspec/s3fs}, \te
 
 \subsection{Per-format schema specifics}
 \label{app:a6-schemas}
-Common logical shape $(N,2880,2880)$, $N\approx1300$, \texttt{uint16}; one frame per chunk/tile $(1,2880,2880)$.\\
+Common logical shape $(N,2880,2880)$, $N{=}1296$, \texttt{uint16}; one frame per chunk/tile $(1,2880,2880)$.\\
 \textbf{\gls{HDFfive}/\gls{HSDS}.} Domain \texttt{/hdf5/\{gzip|lz4|zstd\}/all\_data.h5}; dataset \texttt{/data}; compression \{\texttt{gzip}, \texttt{lz4}, \texttt{zstd}\}. Frames were written in batches of 16 into contiguous slices of the dataset using the \gls{HSDS} client with host-level threading for frame decode and I/O.\\
 \textbf{Zarr.} Store \texttt{s3://\dots/zarr/\{gzip|lz4|zstd\}.zarr}; array \texttt{/data}; codecs as above. Frames were written in batches of 16 contiguous slices, with threaded frame loading and a single chunk per frame.\\
-\textbf{TileDB.} URI \texttt{s3://\dots/tiledb/\{gzip|lz4|zstd\}.tdb}; domain dims \texttt{file:[0,N-1]}, \texttt{y:[0,2879]}, \texttt{x:[0,2879]}; tile extents $(1,2880,2880)$. Writes were grouped into fragments of 16 frames each, so the expected fragment count is $\lceil N/16\rceil$.\\
+\textbf{TileDB.} URI \texttt{s3://\dots/tiledb/\{gzip|lz4|zstd\}.tdb}; domain dims \texttt{file:[0,N-1]}, \texttt{y:[0,2879]}, \texttt{x:[0,2879]}; tile extents $(1,2880,2880)$. Writes were grouped into fragments of 16 frames each, so the expected fragment count is $\lceil N/16\rceil=81$.\\
 \textbf{\gls{ROOT}/\gls{TTree}.} File \texttt{s3://\dots/root/\{gzip|lz4|zstd\}.root}; \texttt{TTree img\_tree} with branch \texttt{data} ($2880\times2880$ \texttt{uint16}); one entry per frame. Entries were appended sequentially, one frame per event, with \texttt{gzip}, \texttt{lz4}, or \texttt{zstd} compression.\\
 \textbf{Parquet (pilot only).} Single file; 2880 list-of-2880 \texttt{uint16} columns; one row per frame; dictionaries disabled; rows appended sequentially with \texttt{gzip} or \texttt{lz4} compression only.
 
 \subsection{Data synthesis parameters}
 \label{app:a7-synthesis}
-\textbf{Seeds/RNG.} Global seed \texttt{979969114}. Python \texttt{random} and NumPy \texttt{Generator} (PCG64) seeded deterministically; per-frame seeds derived from global seed and frame index.\\
+\begin{table}[H]
+  \centering
+  \caption{Dataset facts and size definitions for the benchmark detector stack. The reported \(\sim\)\SI{20}{\gibi\byte} refers to the uncompressed pixel payload \(B_{\text{raw}}\), not the on-disk size of \gls{CBF} inputs or the stored size of any backend.}
+  \label{tab:dataset_facts}
+  \begin{tabular}{L{0.34\linewidth} L{0.60\linewidth}}
+    \toprule
+    Item & Value \\
+    \midrule
+    Seed source (raw) & 80 proprietary \gls{CBF} 1.5 frames from one detector acquisition (header convention \texttt{PILATUS\_1.2}; detector: Varex XRD-4343CT). The \gls{CBF} binary section uses byte-offset encoding (\texttt{x-CBF\_BYTE\_OFFSET}). Seed files are versioned under \texttt{Experiment/Base Data/} in the project repository (\url{https://github.com/CasperKristiansson/KTH-MSc-Thesis-Computer-Science}). \\
+    Sample/feature definition & One frame is one sample; each sample contains $2880\times2880=8{,}294{,}400$ pixel features (\texttt{uint16}, little-endian). \\
+    Synthetic expansion & Frames are sampled from the seed set and perturbed with deterministic RNG (below) until \(N{=}1296\approx1{,}300\) frames. Outputs are named \texttt{slice\_\{index\}.cbf} (zero-based indexing). \\
+    Per-frame raw size & \(B_{\text{frame}} = 2880\times2880\times2 = 16{,}588{,}800\) bytes \(=\)\SI{15.82}{\mebi\byte}. \\
+    Raw baseline size & \(B_{\text{raw}} = N\cdot B_{\text{frame}} = 21{,}499{,}084{,}800\) bytes \(=\)\SI{20.02}{\gibi\byte}. \\
+    Stored size definition & \(B^{\text{stored}}_{f,c}\) is the sum of all \gls{SThree} object sizes under a format\(\times\)codec prefix (data+metadata). Observed \(B^{\text{stored}}_{f,c}\) spans \SI{10.26}{\gibi\byte}–\SI{19.17}{\gibi\byte} (Appendix Table \ref{tab:object_counts}). \\
+    Transferred bytes (full scans) & \(B^{\text{dl}}_{f,c}\) is CloudWatch \texttt{BytesDownloadedSum} over the timed full-scan window (Appendix \ref{app:a4-metrics}); this is the volume term used for reported scan throughput. \\
+    Compressibility & Compression is reported as \(R_{f,c}=B_{\text{raw}}/B^{\text{stored}}_{f,c}\) (Eq.~\ref{eq:compression_ratio}); observed ratios span \(\approx1.04\)–\(\approx1.95\) depending on codec and backend (Appendix Table \ref{tab:object_counts}). \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{Seeds/RNG.} Global seed \texttt{979969114}. Python \texttt{random} and NumPy \texttt{Generator} (PCG64) seeded deterministically; per-frame seeds derived from the global seed and frame index.\\
 \textbf{Augmentation.} From 80 real \texttt{CBF} frames: intensity gain $g\in[0.85,1.15]$; local contrast $c\in[0.9,1.1]$; spatial jitter with prob 0.8 (integer circular shifts up to $\pm16$\,px); additive Gaussian noise with prob 0.9 ($\sigma\approx20$ counts); clip to $[0,65535]$; cast to \texttt{uint16}.\\
-\textbf{Targeting.} Compute frames to reach $\sim$20\,GiB; write \texttt{slice\_\{index\}.cbf}; ingest to stores.
+\textbf{Targeting.} Target the raw baseline \(B_{\text{raw}}\approx\)\SI{20.02}{\gibi\byte} by generating \(N{=}1296\) frames; write \texttt{slice\_\{index\}.cbf}; ingest to stores.
 
 \subsection{Parquet pilot notes}
 \label{app:a8-parquet}
@@ -3121,24 +3144,24 @@ zarr   & \gls{ZSTD} & slice & 83.932 & 94.424 & 133.233 & 182.695 \\
 
 \begin{table}[H]
   \centering
-  \caption{Object counts by store and codec; derived average KiB per object (metadata included). HSDS sizes tallied from shared \texttt{db/} by dataset UUID.}
+  \caption{Object counts by store and codec with stored size and compression ratio $R=B_{\text{raw}}/B^{\text{stored}}$ (\(B_{\text{raw}}=\)\SI{20.02}{\gibi\byte}; metadata included). HSDS sizes tallied from shared \texttt{db/} by dataset UUID.}
   \label{tab:object_counts}
-  \begin{tabular}{l l r r r l}
+  \begin{tabular}{l l r r r r l}
     \toprule
-    Format & Codec & Objects & Stored [GiB] & Avg [KiB/object] & Layout \\
+    Format & Codec & Objects & Stored [GiB] & $R$ & Avg [KiB/object] & Layout \\
     \midrule
-    \gls{HSDS}   & gzip & 5{,}183 & 11.11 &   2{,}247.8 & shard \\
-    \gls{HSDS}   & \gls{LZfour}  & 5{,}183 & 19.17 &   3{,}878.1 & shard \\
-    \gls{HSDS}   & \gls{ZSTD} & 5{,}183 & 10.67 &   2{,}158.4 & shard \\
-    \gls{ROOT}   & gzip &     1    & 11.09 & 11{,}626{,}174.2 & single-object \\
-    \gls{ROOT}   & \gls{LZfour}  &     1    & 13.31 & 13{,}956{,}389.1 & single-object \\
-    \gls{ROOT}   & \gls{ZSTD} &     1    & 10.26 & 10{,}759{,}260.2 & single-object \\
-    TileDB & gzip &     244  & 11.44 &     49{,}183.8 & fragment \\
-    TileDB & \gls{LZfour}  &     244  & 15.56 &     66{,}874.7 & fragment \\
-    TileDB & \gls{ZSTD} &     244  & 10.74 &     46{,}165.2 & fragment \\
-    Zarr   & gzip & 1{,}297  & 11.09 &      8{,}963.5 & chunk-per-object \\
-    Zarr   & \gls{LZfour}  & 1{,}297  & 10.40 &      8{,}407.2 & chunk-per-object \\
-    Zarr   & \gls{ZSTD} & 1{,}297  & 10.51 &      8{,}500.5 & chunk-per-object \\
+    \gls{HSDS}   & gzip & 5{,}183 & 11.11 & 1.80 &   2{,}247.8 & shard \\
+    \gls{HSDS}   & \gls{LZfour}  & 5{,}183 & 19.17 & 1.04 &   3{,}878.1 & shard \\
+    \gls{HSDS}   & \gls{ZSTD} & 5{,}183 & 10.67 & 1.88 &   2{,}158.4 & shard \\
+    \gls{ROOT}   & gzip &     1    & 11.09 & 1.81 & 11{,}626{,}174.2 & single-object \\
+    \gls{ROOT}   & \gls{LZfour}  &     1    & 13.31 & 1.50 & 13{,}956{,}389.1 & single-object \\
+    \gls{ROOT}   & \gls{ZSTD} &     1    & 10.26 & 1.95 & 10{,}759{,}260.2 & single-object \\
+    TileDB & gzip &     244  & 11.44 & 1.75 &     49{,}183.8 & fragment \\
+    TileDB & \gls{LZfour}  &     244  & 15.56 & 1.29 &     66{,}874.7 & fragment \\
+    TileDB & \gls{ZSTD} &     244  & 10.74 & 1.86 &     46{,}165.2 & fragment \\
+    Zarr   & gzip & 1{,}297  & 11.09 & 1.81 &      8{,}963.5 & chunk-per-object \\
+    Zarr   & \gls{LZfour}  & 1{,}297  & 10.40 & 1.93 &      8{,}407.2 & chunk-per-object \\
+    Zarr   & \gls{ZSTD} & 1{,}297  & 10.51 & 1.90 &      8{,}500.5 & chunk-per-object \\
     \bottomrule
   \end{tabular}
 \end{table}
