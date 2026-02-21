@@ -824,11 +824,11 @@ Parquet’s columnar design is well-suited to the tabular metadata portion of sc
 \label{sec:tiledb}
 TileDB is an open-source array storage engine for both dense and sparse data, organizing writes to immutable, timestamped \emph{fragments}. \cite{Papadopoulos2016TileDB,TileDBDataLayout}. Each fragment contains attribute data serialized into \emph{data tiles}. For object stores, TileDB uses a virtual filesystem with native backends for \gls{SThree}, Azure Blob Storage, and GCS. On \gls{AWS} \gls{SThree}, it writes using multipart uploads to create append-only fragment objects \cite{TileDBBackends,TileDBS3}. The array directory contains the schema, per-fragment data, and fragment metadata \cite{TileDBFragmentMeta}.
 
-Unlike chunk-per-object layouts, a single fragment typically produces a small, fixed set of objects. It generates one attribute file per attribute, one fragment-metadata file, one commit record, and the already-existing schema file. The total object count scales with the number of \emph{fragments} and attributes rather than the number of tiles, which reduces LIST/HEAD amplification on \gls{SThree} for large arrays \cite{TileDBDataLayout,TileDBFragmentMeta}. Excessive fragmentation, however, increases first-open overhead because readers must fetch per-fragment metadata \cite{TileDBConsolidateFragmentMeta}.
+Unlike chunk-per-object layouts, a single fragment typically produces a small, fixed set of objects. It generates one attribute file per attribute, one fragment-metadata file, one write-marker record, and the already-existing schema file. The total object count scales with the number of \emph{fragments} and attributes rather than the number of tiles, which reduces LIST/HEAD amplification on \gls{SThree} for large arrays \cite{TileDBDataLayout,TileDBFragmentMeta}. Excessive fragmentation, however, increases first-open overhead because readers must fetch per-fragment metadata \cite{TileDBConsolidateFragmentMeta}.
 
 Upon opening, TileDB loads fragment metadata and per-tile min-max statistics. The system then queries the pruned fragments and data tiles whose minimum-bounding rectangles (MBRs) do not intersect the requested subarray \cite{TileDBFragmentMeta,TileDBMBR}. Reads support ordered or unordered layouts, multi-range subarrays \cite{TileDBReadLayouts}.
 
-All writes create new immutable fragments and commit files, enabling lock-free multiple-reader/multiple-writer behavior and consistent reads at a chosen timestamp range (“time traveling”). Fragment merging helps compact many small fragments into larger ones, allowing reclaimed space \cite{TileDBTimeTravel}.
+All writes create new immutable fragments and write-marker files, enabling lock-free multiple-reader/multiple-writer behavior and consistent reads at a chosen timestamp range (“time traveling”). Fragment merging helps compact many small fragments into larger ones, allowing reclaimed space \cite{TileDBTimeTravel}.
 
 TileDB applies a per-attribute filter pipeline to tiles. Supported compressors include \texttt{gzip}, Zstandard, \texttt{lz4}, RLE, BZIP2, and integer-oriented transforms (bit-shuffle, bit-width reduction, double-delta). Checksums (MD5/SHA-256) are available for integrity \cite{TileDBCompression,TileDBChecksums,TileDBEncryption}.
 
@@ -1239,7 +1239,7 @@ This section specifies data sources, sampling, instrumentation, and release arti
 
 \subsection{Data Collection}
 \label{sec:dataCollection}
-The data‐collection plan for this thesis centers on a single dataset built from 80 real seed frames and synthetically expanded to \(\sim\)\SI{20}{\gibi\byte} (\(\sim\)1{,}300 frames). These frames statistically replicate the size, structure, and access patterns of real synchrotron and neutron experiments. Generating datasets on demand from a few real frames (rather than distributing the entire raw beamline dataset) avoids licensing constraints and guarantees that every experiment can be reproduced bit-for-bit.
+The data‐collection plan for this thesis centers on a single dataset built from 80 real seed frames and synthetically expanded to \(\sim\)\SI{20}{\gibi\byte} (\(\sim\)1{,}300 frames). These frames statistically replicate the size, structure, and access patterns of real synchrotron and neutron experiments. Generating the benchmark dataset from a small seed set reduces data sharing burden, and the synthesis procedure is deterministic given the same seeds and software versions (Appendix \ref{app:a7-synthesis}). We also release the raw timing logs and CloudWatch exports used for all reported statistics (Appendix \ref{app:a5b-availability}).
 Dataset facts and size definitions are summarized in Appendix Table \ref{tab:dataset_facts}.
 
 \subsubsection{Data Sources}
@@ -1261,7 +1261,7 @@ Full-scan time is measured from entering the scan read routine to completion of 
 No explicit OS cache flushes were performed between runs. Five warm-ups amortize cold-start effects (DNS, TLS, \gls{TCP}, metadata caches). Warm-up and replication policy are specified in Appendix\ref{app:a2-run-qc}.
 
 \subsubsection{Reproducibility and availability}
-Random seeds are fixed and logged with per-run timers, and CloudWatch aggregates are saved as \gls{JSON} with run IDs. The code and notebooks are released on GitHub at \url{https://github.com/CasperKristiansson/KTH-MSc-Thesis-Computer-Science}. Seed frames are stored under \texttt{Experiment/Base Data/} and all experiment notebooks and scripts are under \texttt{Experiment/}. Artifact versions, object paths, formats, codec settings, and synthesis seeds are documented in Appendices \ref{app:a5-libraries} and \ref{app:a7-synthesis}.
+Random seeds are fixed and logged with per-run timers, and CloudWatch aggregates are saved as \gls{JSON} with run IDs. The code and notebooks are released on GitHub at \url{https://github.com/CasperKristiansson/KTH-MSc-Thesis-Computer-Science}. The repository includes (i) seed frames under \texttt{Experiment/Base Data/} and the synthesis procedure (Appendix \ref{app:a7-synthesis}), and (ii) the raw measurement logs used to generate all reported tables and figures (\texttt{Experiment/Experiment Result/}). The full ingested \gls{SThree} dataset prefixes and the \gls{AWS} execution environment are not publicly hosted; rerunning timed experiments therefore requires re-provisioning comparable cloud resources and will reproduce the \emph{workflow} and analysis, not the exact wall-clock timings. Exact package versions and access paths are listed in Appendix \ref{app:a5-libraries}.
 
 
 
@@ -1305,7 +1305,7 @@ Each detector exposure is a dense two-dimensional frame. The specifications belo
 \end{itemize}
 
 \subsection{Preprocessing and synthetic augmentation}
-We started from $80$ raw \texttt{CBF} detector frames. Frames were enumerated in zero-based order, and recorded in a manifest that fixes the frame-index \,$\rightarrow$\, key mapping used later during ingestion. No resampling, normalization, or pixel edits were applied before augmentation.
+We started from $80$ raw \texttt{CBF} detector frames. Frames were enumerated in zero-based order; the naming convention \texttt{slice\_\{index\}.cbf} fixes the frame-index \,$\rightarrow$\, key mapping used later during ingestion. No resampling, normalization, or pixel edits were applied before augmentation.
 
 \subsubsection{Augmentation method}
 To scale the corpus for I/O benchmarking while preserving frame geometry and \texttt{uint16} encoding, additional frames were synthesized from the real frames using simple, distribution-preserving perturbations:
@@ -2783,7 +2783,15 @@ Per \{format, codec, pattern\} cell, the notebook wrote a timing log and a Cloud
 \subsection{Libraries and access paths}
 \label{app:a5-libraries}
 Client stack: \texttt{numpy}, \texttt{boto3/botocore}, \texttt{fsspec/s3fs}, \texttt{zarr}, \texttt{numcodecs} (\texttt{gzip}, \texttt{zstd}, \texttt{lz4}/Blosc), \texttt{h5pyd} (\gls{HSDS}), \texttt{tiledb} (TileDB-py), \texttt{pyarrow/parquet}, \texttt{ROOT}/\texttt{uproot}, \texttt{fabio}, \texttt{tqdm}, \texttt{matplotlib}. Access modes: \gls{HSDS} REST endpoint, \texttt{s3fs} URLs, TileDB S3 VFS.\\
-\textbf{Versioning.} Exact package versions are pinned in the accompanying code repository (environment file / lockfile); this appendix lists the primary libraries and access modes used in the experiments.
+\textbf{Versioning.} Package versions are pinned in \texttt{Experiment/requirements.txt}; \texttt{ROOT}/PyROOT is installed from the CERN ROOT distribution (see note in \texttt{Experiment/requirements.txt}).
+
+\subsection{Reproducibility and data availability}
+\label{app:a5b-availability}
+\textbf{Repository.} The project repository is hosted at \url{https://github.com/CasperKristiansson/KTH-MSc-Thesis-Computer-Science}.\\
+\textbf{Public artifacts.} Code/notebooks (\texttt{Experiment/}, \texttt{Report/}); seed frames (\texttt{Experiment/Base Data/}); run logs and CloudWatch exports (\texttt{Experiment/Experiment Result/}); derived tables (\texttt{Experiment/tables/}).\\
+\textbf{Entry points.} Dataset synthesis: \texttt{Experiment/base\_data\_generation.ipynb}. Ingestion to backends: \texttt{Experiment/data\_generation.ipynb}. Analysis/plots: \texttt{Experiment/plots.ipynb} and tables under \texttt{Experiment/tables/}.\\
+\textbf{Not publicly hosted.} The expanded synthetic dataset (\(\sim\)\SI{20}{\gibi\byte}) and the ingested \gls{SThree} prefixes are not distributed; rerunning timed experiments requires generating and ingesting the dataset into a user-controlled bucket under comparable provisioning (Appendix \ref{app:a1-testbed}).\\
+\textbf{Reproducibility scope.} Reported tables/figures are exactly reproducible from the published run logs, while timed end-to-end performance on \gls{AWS} is session-conditional and will vary across reruns due to cloud variability, cache state, and provisioning details.
 
 \subsection{Per-format schema specifics}
 \label{app:a6-schemas}
@@ -2804,7 +2812,7 @@ Common logical shape $(N,2880,2880)$, $N{=}1296$, \texttt{uint16}; one frame per
     \toprule
     Item & Value \\
     \midrule
-    Seed source (raw) & 80 proprietary \gls{CBF} 1.5 frames from one detector acquisition (header convention \texttt{PILATUS\_1.2}; detector: Varex XRD-4343CT). The \gls{CBF} binary section uses byte-offset encoding (\texttt{x-CBF\_BYTE\_OFFSET}). Seed files are versioned under \texttt{Experiment/Base Data/} in the project repository (\url{https://github.com/CasperKristiansson/KTH-MSc-Thesis-Computer-Science}). \\
+    Seed source (raw) & 80 proprietary \gls{CBF} 1.5 seed frames from one detector acquisition (header convention \texttt{PILATUS\_1.2}; detector: Varex XRD-4343CT). The \gls{CBF} binary section uses byte-offset encoding (\texttt{x-CBF\_BYTE\_OFFSET}). Seed files are versioned under \texttt{Experiment/Base Data/} in the project repository (\url{https://github.com/CasperKristiansson/KTH-MSc-Thesis-Computer-Science}); the upstream acquisition dataset beyond the seed set is not redistributed. \\
     Sample/feature definition & One frame is one sample; each sample contains $2880\times2880=8{,}294{,}400$ pixel features (\texttt{uint16}, little-endian). \\
     Synthetic expansion & Frames are sampled from the seed set and perturbed with deterministic RNG (below) until \(N{=}1296\approx1{,}300\) frames. Outputs are named \texttt{slice\_\{index\}.cbf} (zero-based indexing). \\
     Per-frame raw size & \(B_{\text{frame}} = 2880\times2880\times2 = 16{,}588{,}800\) bytes \(=\)\SI{15.82}{\mebi\byte}. \\
