@@ -299,11 +299,11 @@ eng
 
 
 \begin{scontents}[store-env=abstracts,print-env=true]
-Modern synchrotron and neutron beamlines stream at gigabytes per second, turning single experiments into multi-terabyte datasets and exposing latency limits of parallel file systems. This thesis evaluates which cloud-native storage solution on AWS S3 minimizes slice-level latency while preserving scan throughput and controlling costs drivers. Four back ends (HDF5 via HSDS, Zarr v3, TileDB, ROOT/TTree) and three codecs (gzip, LZ4, zstd) are benchmarked on a 20 GiB, $\sim$1{,}300-frame detector stack under two workloads, random single-frame reads and full sequential scans. Client timings are analyzed on a log scale with dependence-robust confidence intervals, with S3 request counts and stored size providing context.
+Modern synchrotron and neutron beamlines can stream at gigabytes per second, turning single experiments into multi-terabyte datasets and exposing latency limits of parallel file systems. This thesis benchmarks cloud-native storage layouts on AWS S3 using a single $\sim$20\,GiB, $\sim$1{,}300-frame detector stack, focusing on slice-level latency, scan throughput, and cost drivers. Four back ends (HDF5 via HSDS, Zarr v3, TileDB, ROOT/TTree) and three codecs (gzip, LZ4, zstd) are evaluated under two workloads: random single-frame reads and full sequential scans. Client timings are analyzed on a log scale with dependence-robust confidence intervals, with S3 request counts and stored size providing context.
 
-Results are descriptive and session-conditional. For interactive slices, Zarr is fastest with zstd (GM $\approx$155 ms) and with LZ4; TileDB is fastest with gzip. For full scans, TileDB delivers 2.2–3.2$\times$ higher throughput than Zarr across codecs (e.g., zstd $\approx$1.06 GiB/s for 20 GiB). ROOT is slow for frame-random reads despite a few GETs, indicating single-object paging and decode overheads. HDF5/HSDS trails on slice latency and scan throughput with LZ4, storing 19.17 GiB versus Zarr 10.40 GiB for the same payload.
+Results are descriptive and session-conditional for this dataset and AWS setup. For interactive slices, Zarr is fastest with zstd (GM $\approx$155 ms) and with LZ4; TileDB is fastest with gzip. For full scans, TileDB delivers 2.2–3.2$\times$ higher throughput than Zarr across codecs (e.g., zstd $\approx$1.06 GiB/s for 20 GiB). ROOT is slow for frame-random reads despite a few GETs, indicating single-object paging and decode overheads. HDF5/HSDS trails on slice latency and scan throughput with LZ4, storing 19.17 GiB versus Zarr 10.40 GiB for the same payload.
 
-The contribution is a reproducible AWS-native method and a decision matrix: choose Zarr+zstd when slice latency dominates and choose TileDB+zstd/LZ4 when throughput dominates.
+The contribution is a reproducible AWS-native benchmarking method and a decision matrix for the tested workloads: choose Zarr+zstd when slice latency dominates and choose TileDB+zstd/LZ4 when throughput dominates.
 \end{scontents}
 
 
@@ -377,7 +377,7 @@ Modern synchrotron and neutron experiments generate multi-GiB/s streams of multi
 
 Cloud-native layouts—chunked arrays (Zarr), fragmented dense/sparse arrays (TileDB), and tree/column layouts (\gls{ROOT}/\gls{TTree})—offer alternative trade-offs in latency, throughput, compression, CPU, and request intensity. This thesis provides a side-by-side evaluation of four cloud storage backends on \gls{AWS} under two canonical scattering access patterns: random single-frame reads (interactive slices) and full sequential scans (bulk post-processing).
 
-In this benchmark, the choice of layout and codec changes interactive single-frame latency by a factor of $\approx 2.6\times$ across the tested configurations (GM $\approx$155\,ms for Zarr+\texttt{zstd} versus GM $\approx$406\,ms for ROOT+\texttt{gzip}). For bulk processing, TileDB reduces full-scan GM time by $\approx 2.2$--$3.2\times$ relative to Zarr across codecs (e.g., GM $\approx$10.4\,s vs.\ $\approx$30.4\,s under \texttt{zstd}). Cost-relevant proxies also vary materially: request intensity differs by up to $\approx 3$--$4\times$ (GETs/GiB) between layouts for the same workload, and stored size can differ by $\approx 1.8\times$ for the same logical dataset under \texttt{lz4} (e.g., HSDS vs.\ Zarr). These effect sizes bound how much engineering choices in storage layout and compression can change beamline feedback latency, end-to-end pipeline time, and object-store cost posture in an \gls{SThree}-based workflow.
+In this benchmark, the choice of layout and codec changes interactive single-frame latency by a factor of $\approx 2.6\times$ across the tested configurations (GM $\approx$155\,ms for Zarr+\texttt{zstd} versus GM $\approx$406\,ms for ROOT+\texttt{gzip}). For bulk processing, TileDB reduces full-scan GM time by $\approx 2.2$--$3.2\times$ relative to Zarr across codecs (e.g., GM $\approx$10.4\,s vs.\ $\approx$30.4\,s under \texttt{zstd}). Cost-relevant proxies also vary materially: request intensity differs by up to $\approx 3$--$4\times$ (GETs/GiB) between layouts for the same workload, and stored size can differ by $\approx 1.8\times$ for the same logical dataset under \texttt{lz4} (e.g., HSDS vs.\ Zarr). These effect sizes illustrate the range observed in this benchmark for how engineering choices in storage layout and compression can change beamline feedback latency, end-to-end pipeline time, and object-store cost posture in an \gls{SThree}-based workflow.
 
 
 \section{Motivation and Context}
@@ -391,7 +391,7 @@ Cloud object storage, most notably Amazon \gls{SThree}, is now widely used for s
 
 Researchers have introduced a new generation of cloud-native data models to address these shortcomings. Zarr and related chunked layouts expose each array chunk as an independent object, enabling parallel GET/PUT with a configurable chunk size. Organizations tune chunking to balance object count and transfer efficiency \cite{moore2023ome}. Columnar storage formats such as Apache Parquet organize data in row groups and column stripes, pruning unneeded fields to reduce I/O usage \cite{ivanov2020impact}. TileDB provides dense and sparse array storage with tiled chunking and object-store backends, enabling parallel range reads/writes and reducing metadata and small-read overheads. In parallel, the high-energy physics community has extended \gls{ROOT}’s \gls{TTree} and \gls{TTree} abstractions to object-store backends, preserving branch-level selective reads \cite{abs-2107-07304}.
 
-Each approach offers distinct trade‐offs in latency, throughput, compression efficiency, \gls{CPU} overhead, and cost. Although individual formats have been benchmarked in isolation or within specific domains, to the best of the author’s knowledge, there is no comprehensive, side-by-side evaluation of realistic terabyte-scale scattering datasets on \gls{AWS}. Addressing this gap informs both beamline scientists seeking responsive, cost‐effective data access and data‐intensive computing engineers designing next‐generation, cloud‐native scientific platforms.
+Each approach offers distinct trade‐offs in latency, throughput, compression efficiency, \gls{CPU} overhead, and cost. Although individual formats have been benchmarked in isolation or within specific domains, to the best of the author’s knowledge, there is no comprehensive, side-by-side evaluation of these backends for scattering-style access patterns on \gls{AWS} \gls{SThree} under a controlled, end-to-end benchmark. Addressing this gap informs both beamline scientists seeking responsive, cost‐effective data access and data‐intensive computing engineers designing next‐generation, cloud‐native scientific platforms.
 
 \subsection{Research Question}
 \emph{How do four cloud storage backends—\gls{HDFfive}/\gls{HSDS}, Zarr v3, TileDB, and \gls{ROOT}/\gls{TTree}—compare on \gls{AWS} \gls{SThree} for two scattering access patterns: (1) random single-frame reads for interactive slicing and (2) full sequential scans for bulk processing, under common compression codecs (\texttt{gzip}, \texttt{lz4}, \texttt{zstd})?}
@@ -401,7 +401,7 @@ This section defines the problem, states the purpose, and lists the goals. It se
 
 \subsection{Problem}
 \label{sec:problem}
-Handling large-scale scattering datasets on \gls{AWS} \gls{SThree} reveals several limitations in current data platforms. First, partial reads of beamline slices, such as retrieving a single detector channel or angular data segment, can result in high latency due to the need to perform hundreds, if not thousands, of GET operations and metadata lookups, leading to delayed experimental feedback. Secondly, existing prior prototype evaluations have focused on moderate‐scale workloads. This thesis benchmarks each format on a single \SI{20}{\gibi\byte} detector dataset (\(\sim\)1{,}300 frames) to uncover performance, request behavior, and data ingestion considerations. Thirdly, the interaction between storage formats and compression algorithms (e.g., \texttt{zstd}, \texttt{lz4}, \texttt{gzip}) has not been systematically evaluated, making it unclear which format codec combinations best optimize latency and throughput for large-scale \gls{SThree}-based workflows. These industrial challenges raise questions for the data-intensive computing community: How can we systematically leverage and compare different storage backends to generate guidance for scientific users? Which combinations of performance and integration trade-offs matter most when designing cloud-native workflows for interactive, partial-retrieval use cases?
+Handling multi-terabyte scattering datasets on \gls{AWS} \gls{SThree} reveals several limitations in current data platforms. First, partial reads of beamline slices, such as retrieving a single detector channel or angular data segment, can result in high latency due to the need to perform hundreds, if not thousands, of GET operations and metadata lookups, leading to delayed experimental feedback. Secondly, existing prior prototype evaluations have focused on moderate‐scale workloads. This thesis benchmarks each format on a single \SI{20}{\gibi\byte} detector dataset (\(\sim\)1{,}300 frames) to uncover performance, request behavior, and data ingestion considerations. Thirdly, the interaction between storage formats and compression algorithms (e.g., \texttt{zstd}, \texttt{lz4}, \texttt{gzip}) has not been systematically evaluated, making it unclear which format codec combinations best optimize latency and throughput for \gls{SThree}-based workflows. These industrial challenges raise questions for the data-intensive computing community: How can we systematically leverage and compare different storage backends to generate guidance for scientific users? Which combinations of performance and integration trade-offs matter most when designing cloud-native workflows for interactive, partial-retrieval use cases?
 
 \subsection{Original problem and definition}
 This thesis defines the original industrial problem as optimizing the retrieval of small, targeted data slices (e.g., a single angle’s worth of diffraction frames) from multi-terabyte scattering datasets stored on \gls{AWS} \gls{SThree}. “Partial retrieval” denotes reading the required byte ranges or object keys rather than entire files. The study targets cloud-native, object-store workflows.
@@ -418,10 +418,10 @@ These questions are directly relevant to ongoing research in \gls{HPC} and data-
 \subsection{Purpose}
 Scientifically, the study quantifies trade-offs among latency, throughput, compression ratio, and request intensity for a realistic scattering workload on \gls{SThree}, using design-science methodology \cite{hevner2004design}. Outputs include a decision matrix and best-practice guidance.
 
-Secondly, it aims to provide Scatterin AB with a practical, evidence-based framework to optimize its cloud-based data platform for large-scale synchrotron and neutron-scattering experiments. This work offers concrete guidance on minimizing latency for partial-read use cases, maximizing throughput, and controlling pay-as-you-go costs across varying access patterns.
+Secondly, it aims to provide Scatterin AB with a practical, evidence-based framework to optimize its cloud-based data platform for high-throughput synchrotron and neutron-scattering experiments. This work offers concrete guidance on minimizing latency for partial-read use cases, maximizing throughput, and controlling pay-as-you-go costs across varying access patterns.
 
 \subsection{Goals}
-This thesis develops an experimentally validated decision framework to guide the selection and configuration of cloud-native storage solutions for large-scale \gls{AWS} synchrotron and neutron-scattering datasets. To achieve this, the following sub‐goals are defined:
+This thesis develops an experimentally validated decision framework to guide the selection and configuration of cloud-native storage solutions for scattering datasets on \gls{AWS} \gls{SThree}, evaluated on a single \SI{20}{\gibi\byte} detector stack. To achieve this, the following sub‐goals are defined:
 \begin{enumerate}
   \item \textbf{Prototype Development}
   \begin{itemize}
@@ -464,7 +464,7 @@ This thesis focuses exclusively on cloud-native, object-store–based workflows 
         \item \textbf{Compression algorithms:} This study uses three widely used codecs (\texttt{zstd}, \gls{LZfour}, and \texttt{gzip}) and does not compare other options, such as Snappy, Brotli, bzip2, or ZFP.
 \end{itemize}
 
-These delimitations ensure a focused, reproducible comparison of core performance and cost trade-offs for large-scale scientific data storage in \gls{AWS}.
+These delimitations ensure a focused, reproducible comparison of core performance and cost trade-offs for scattering-style object-store access on \gls{AWS}.
 
 \section{Structure of the Thesis}
 This thesis is organized into seven main chapters, followed by appendices:
@@ -729,7 +729,7 @@ Object stores provide scale but add request latency, immutability, and per-reque
 \label{sec:cloud-native-storage-models}
 Cloud object stores such as Amazon \gls{SThree}, Azure Blob Storage, and Google Cloud Storage provide effectively unlimited capacity and global accessibility. However, they introduce request latency, and per-request billing, which clash with the low-latency assumptions of traditional \gls{HPC} formats \cite{durbin2020cloud}. To exploit cloud elasticity without prohibitive slice-read costs, a new generation of \emph{cloud-native storage models} has emerged, each rethinking how scientific arrays or tables are partitioned, compressed, and addressed in an object store.
 
-This thesis does not attempt an extensive survey of all scientific file formats. The goal is to compare a small set of \emph{adoption-realistic} storage models that could reasonably be deployed for large-scale scattering data on Amazon \gls{SThree}, and that span the main design choices that drive object-store performance. The candidate set of storage methods was selected to satisfy three criteria:
+This thesis does not attempt an extensive survey of all scientific file formats. The goal is to compare a small set of \emph{adoption-realistic} storage models that could reasonably be deployed for multi-terabyte scattering data on Amazon \gls{SThree}, and that span the main design choices that drive object-store performance. The candidate set of storage methods was selected to satisfy three criteria:
 
 \begin{itemize}
   \item \textbf{Practical deployability on \gls{SThree}:} an open specification and a maintained implementation with native object-store support (client-side or via a service layer).
@@ -969,7 +969,7 @@ Taken together, the format descriptions in Section \ref{sec:cloud-native-storage
 \cleardoublepage
 \chapter{Methods}
 \label{ch:methods}
-We use an experimental benchmarking design within a design–science framework. Provisioned \gls{AWS} infrastructure and synthetic datasets that mirror beamline workloads exercise small-slice and full-scan access patterns to stress latency and throughput. A data-collection pipeline captures wall-clock time and per-session \gls{SThree} request counts, bytes, and service latencies (Appendix \ref{app:a4-metrics}). Replication and QC settings are in Appendix \ref{app:a2-run-qc}. A multi-criteria evaluation then converts these measurements into a decision matrix for selecting cloud-native storage.
+We use an experimental benchmarking design within a design–science framework. Provisioned \gls{AWS} infrastructure and a single \(\sim\)\SI{20}{\gibi\byte} synthetic detector stack derived from real beamline frames exercise small-slice and full-scan access patterns to stress latency and throughput. A data-collection pipeline captures wall-clock time and per-session \gls{SThree} request counts, bytes, and service latencies (Appendix \ref{app:a4-metrics}). Replication and QC settings are in Appendix \ref{app:a2-run-qc}. A multi-criteria evaluation then converts these measurements into a decision matrix for selecting cloud-native storage.
 
 \section{Research Design and Process}
 \label{sec:methods-design-process}
@@ -990,7 +990,7 @@ The research uses an iterative experimentation cycle in which preliminary findin
 Figure \ref{fig:researchprocess} summarizes four stages: planning the experiment, conducting the experiment, analyzing the data, and discussing the results. Together they define the benchmarking framework for the storage formats and codecs on \gls{AWS} \gls{SThree}.
 
 \subsubsection{Step 1: Planning the Experiment}
-The planning stage involved several crucial tasks. First, the objectives of the experiment were defined, focusing on the comparison of four timed storage formats (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}/\gls{TTree}) with Parquet as a pilot-only artifact (no timed runs) and three compression algorithms (\texttt{gzip}, \texttt{lz4}, \texttt{zstd}) concerning performance, scalability, and compression efficiency for partial retrieval of large-scale scattering data.
+The planning stage involved several crucial tasks. First, the objectives of the experiment were defined, focusing on the comparison of four timed storage formats (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}/\gls{TTree}) with Parquet as a pilot-only artifact (no timed runs) and three compression algorithms (\texttt{gzip}, \texttt{lz4}, \texttt{zstd}) concerning performance and compression efficiency for partial retrieval in scattering-style object-store workflows.
 
 Key benchmarking variables are read latency, derived throughput, and request- and byte-based outputs. Compression algorithms were selected because they are widely used in scientific workflows and supported across all tested formats.
 
@@ -1155,7 +1155,7 @@ In summary, the \emph{statistical hypotheses} behind H1.1--H3.2 are directional 
 
 \section{Experimental Testbed and Protocols}
 \label{sec:methods-testbed}
-We evaluate four timed cloud-native storage formats (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{TTree}); Parquet is pilot-only (no timed runs) on large-scale scattering datasets in \gls{AWS} \gls{SThree}. The hardware, region, libraries, ingestion, and run protocol are identical across RQ1–RQ3, with only the workload unit (slice vs full scan) differing, as defined in \ref{sec:methods-rq1}–\ref{sec:methods-rq2}.
+We evaluate four timed cloud-native storage formats (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{TTree}) on \gls{AWS} \gls{SThree} using a single \(\sim\)\SI{20}{\gibi\byte} detector dataset; Parquet is included as a pilot (ingest only, no timed runs). The hardware, region, libraries, ingestion, and run protocol are identical across RQ1–RQ3, with only the workload unit (slice vs full scan) differing, as defined in \ref{sec:methods-rq1}–\ref{sec:methods-rq2}.
 
 \subsection{Test Environment and Infrastructure Setup}
 The experiment runs on Amazon Web Services (\gls{AWS}). Storage backends use Amazon \gls{SThree}, and Amazon \gls{ECtwo} instances perform data processing and benchmarking (Figure \ref{fig:aws_topology}).
@@ -1180,7 +1180,7 @@ The experiment compares the four storage formats under two access patterns: smal
 In the small-slice pattern, each run performs a random single-frame read; each frame averages \(\sim\)\SI{15.82}{\mebi\byte}. This pattern represents interactive retrieval during and after experiments.
 
 \subsubsection{Full-Dataset Sequential Scans}
-In this pattern, each run performs a sequential read of the entire \SI{20}{\gibi\byte} dataset for each format–codec combination. This pattern stresses storage bandwidth and tests high-throughput processing of large data volumes.
+In this pattern, each run performs a sequential read of the entire \SI{20}{\gibi\byte} dataset for each format–codec combination. This pattern stresses storage bandwidth and tests high-throughput processing of full-dataset reads.
 
 \section{Metrics, Statistics, and Scoring}
 \label{sec:methods-metrics}
@@ -2589,7 +2589,7 @@ We state what the measurements support and where they do not generalize. Interna
 All planned runs were completed without failure, and warm-ups were excluded by design. Run order was randomized with a fixed seed. Serial dependence is handled via the moving-block bootstrap, and the log-time choice is supported by shape diagnostics (Section \ref{sec:run-inclusion-and-coverage}, Table \ref{tab:timing_diag_main}).
 
 \subsubsection{External validity}
-Findings reflect a single dataset, a single region, and a single client, with two access patterns and three codecs. Cross-format contrasts are \emph{descriptive} and \emph{session-conditional}. CloudWatch service metrics are used solely for descriptive context, not as causal evidence (Figures \ref{fig:cw_firstbyte_grid}, \ref{fig:cw_total_grid}).
+Findings reflect a single \(\sim\)\SI{20}{\gibi\byte} dataset, a single region, and a single client, with two access patterns and three codecs. The dataset size is sufficient to expose request/metadata overheads for the tested workloads, but it does not establish asymptotic behavior at multi-terabyte or petabyte scale. Cross-format contrasts are \emph{descriptive} and \emph{session-conditional}. CloudWatch service metrics are used solely for descriptive context, not as causal evidence (Figures \ref{fig:cw_firstbyte_grid}, \ref{fig:cw_total_grid}).
 
 \section{Deviations and exclusions}
 Parquet was piloted only and excluded from timed comparisons. When we scaled to complete ingestion and attempted full-dataset scans, a single large object (\(\sim\)34\, GiB for a \(\sim\)20\, GiB raw stack) incurred 3–4 min metadata open time and intermittent client instability on the \texttt{gzip} file, making it unsuitable for frame-granularity reads and unattractive even for bulk scans in this setup. The root cause is objectization and file semantics: a single-object, columnar Parquet file offers few opportunities for request-level parallelization and concentrates footer/metadata work at open. We therefore retain Parquet as a qualitative caution for $n$-D image stacks on \gls{SThree} single-object layouts and exclude it from quantitative timing (Chapter \ref{ch:resultsAndAnalysis}). A partitioned Parquet dataset with row-grouping aligned to frames might alter objectization, but designing and validating that variant was out of scope.
