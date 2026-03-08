@@ -394,7 +394,7 @@ Researchers have introduced a new generation of cloud-native data models to addr
 Each approach offers distinct trade‐offs in latency, throughput, compression efficiency, \gls{CPU} overhead, and cost. Although individual formats have been benchmarked in isolation or within specific domains, to the best of the author’s knowledge, there is no comprehensive, side-by-side evaluation of these backends for scattering-style access patterns on \gls{AWS} \gls{SThree} under a controlled, end-to-end benchmark. Addressing this gap informs both beamline scientists seeking responsive, cost‐effective data access and data‐intensive computing engineers designing next‐generation, cloud‐native scientific platforms.
 
 \subsection{Research Question}
-\emph{How do four cloud storage backends—\gls{HDFfive}/\gls{HSDS}, Zarr v3, TileDB, and \gls{ROOT}/\gls{TTree}—compare on \gls{AWS} \gls{SThree} for two scattering access patterns: (1) random single-frame reads for interactive slicing and (2) full sequential scans for bulk processing, under common compression codecs (\texttt{gzip}, \texttt{lz4}, \texttt{zstd})?}
+\emph{How do HDF5 via \gls{HSDS}, Zarr v3, TileDB, and \gls{ROOT}/\gls{TTree} compare on \gls{AWS} \gls{SThree} in terms of random single-frame read latency and full sequential scan throughput under \texttt{gzip}, \texttt{lz4}, and \texttt{zstd} compression?}
 
 \section{Problem, Purpose, and Goals}
 This section defines the problem, states the purpose, and lists the goals. It sets the basis for the comparisons used later in the thesis.
@@ -1239,7 +1239,6 @@ Each detector exposure is a dense two-dimensional frame. The specifications belo
 \subsection{Preprocessing and synthetic augmentation}
 We started from $80$ raw \texttt{CBF} detector frames. Frames were enumerated in zero-based order; the naming convention \texttt{slice\_\{index\}.cbf} fixes the frame-index \,$\rightarrow$\, key mapping used later during ingestion. No resampling, normalization, or pixel edits were applied before augmentation.
 
-\subsubsection{Augmentation method}
 To scale the corpus for I/O benchmarking while preserving frame geometry and \texttt{uint16} encoding, additional frames were synthesized from the real frames using simple, distribution-preserving perturbations:
 
 \begin{itemize}
