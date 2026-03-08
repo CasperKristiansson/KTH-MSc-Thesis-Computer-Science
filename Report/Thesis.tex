@@ -1132,11 +1132,9 @@ A single detector dataset of \(\sim\)\SI{20}{\gibi\byte} (\(N{=}1296\approx1{,}3
 \subsection{Experimental Parameters and Workloads}
 The experiment compares the four storage formats under two access patterns: small-slice reads and full-dataset sequential scans, reflecting typical beamline workflows. Runs were executed in sessions, one cell (format$\times$codec$\times$pattern) at a time, with within-session run order randomized using a fixed seed.
 
-\subsubsection{Small-Slice Reads}
-In the small-slice pattern, each run performs a random single-frame read; each frame averages \(\sim\)\SI{15.82}{\mebi\byte}. This pattern represents interactive retrieval during and after experiments.
+\textbf{Small-slice reads.} In this pattern, each run performs a random single-frame read; each frame averages \(\sim\)\SI{15.82}{\mebi\byte}. This pattern represents interactive retrieval during and after experiments.
 
-\subsubsection{Full-Dataset Sequential Scans}
-In this pattern, each run performs a sequential read of the entire $N$-frame dataset for each format–codec combination. This pattern stresses storage bandwidth and tests high-throughput processing of full-dataset reads.
+\textbf{Full-dataset sequential scans.} In this pattern, each run performs a sequential read of the entire $N$-frame dataset for each format--codec combination. This pattern stresses storage bandwidth and tests high-throughput processing of full-dataset reads.
 
 \section{Metrics, Statistics, and Scoring}
 \label{sec:methods-metrics}
@@ -1408,28 +1406,11 @@ This section summarizes the run protocol for each \{format$\times$codec$\times$p
 \subsection{Execution protocol}
 All reads ran on a single \gls{ECtwo} node in \texttt{eu-north-1}. For each \emph{format} $\times$ \emph{codec} $\times$ \emph{pattern}, we used a fixed warm-up followed by timed runs, with no cross-format concurrency (Appendix \ref{app:a2-run-qc}).
 
-\subsubsection{Sessions and schedule}
-Each \emph{session} targeted one cell (format, codec, pattern) and consisted of a small warm-up phase, an idle gap, and a block of timed repetitions where exact counts and timings are detailed in Appendix \ref{app:a2-run-qc}. Between sessions, formats did not overlap. \Gls{HSDS}, Zarr, TileDB, and \gls{ROOT} were run in separate sessions.
+Each \emph{session} targeted one cell (format, codec, pattern) and consisted of a small warm-up phase, an idle gap, and a block of timed repetitions where exact counts and timings are detailed in Appendix \ref{app:a2-run-qc}. Between sessions, formats did not overlap; \Gls{HSDS}, Zarr, TileDB, and \gls{ROOT} were run in separate sessions. A fixed seed ensured reproducibility: slice workloads used precomputed random frame indices, whereas full scans iterated over all frames (sampling details in Appendix \ref{app:a2-run-qc}).
 
-\subsubsection{Randomization and seeding}
-A fixed seed ensured reproducibility. Slice workloads used precomputed random frame indices, and where full scans iterated over all frames (sampling details in Appendix \ref{app:a2-run-qc}).
+Per run, we measured wall-clock time using a high-resolution timer around a single read call. The timer includes network transfer, decompression, and client decode, while log serialization is outside the timer. \gls{SThree} bucket request metrics were enabled and exported per session for request counts, bytes, and service-side latency summaries. Metric identifiers/statistics and the export schema are listed in Appendix \ref{app:a4-metrics}; timing windows, separation from warm-ups, inclusion and retry rules, cache-control assumptions, and repetition policy are specified in Appendix \ref{app:a2-run-qc}. Each session emitted a monotonic \texttt{run\_id}, and timed samples and CloudWatch aggregates were stored as \gls{JSON} with format/codec/pattern identifiers (log schema in Appendix \ref{app:a4-metrics}).
 
-\subsubsection{Timing definition}
-Per run, we measured wall-clock time using a high-resolution timer around a single read call. The timer includes network transfer, decompression, and client decode, where log serialization is outside the timer.
-
-\subsubsection{CloudWatch capture}
-\gls{SThree} bucket request metrics were enabled and exported per session for request counts, bytes, and service-side latency summaries. Metric identifiers/statistics and the export schema are listed in Appendix \ref{app:a4-metrics}; the timing window and separation from warm-ups are specified in Appendix \ref{app:a2-run-qc}.
-
-\subsubsection{Inclusion, failures, and retries}
-Inclusion, failure handling, and retry rules are specified in Appendix \ref{app:a2-run-qc}.
-
-\subsubsection{Caching and connections}
-Cache-control assumptions, warm-up schedule, and repetition policy are specified in Appendix \ref{app:a2-run-qc}.
-
-\subsubsection{Run IDs, filenames, and logs}
-Each session emitted a monotonic \texttt{run\_id}, and timed samples and CloudWatch aggregates were stored as \gls{JSON} with format/codec/pattern identifiers (log schema in Appendix \ref{app:a4-metrics}).
-
-\subsubsection{RQ hooks (protocol \& logging)}
+\textbf{RQ hooks (protocol \& logging).}
 \begin{itemize}
   \item \textbf{RQ1:} Timer scope per slice; log per-run times.
   \item \textbf{RQ2:} Timer scope per full scan; derive throughput from bytes/time; log per-run times.
