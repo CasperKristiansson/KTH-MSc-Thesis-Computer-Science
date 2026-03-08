@@ -870,7 +870,7 @@ Native support for \texttt{gzip} exists in all five tested backends. Because \te
 \label{sec:compression-lz4}
 Introduced in 2011, \texttt{lz4} emerged as a lightweight derivative of the Lempel–Ziv (\gls{LZseventyseven}) family, designed to maximize streaming throughput while keeping memory overhead to a minimum. Its open-source framing format defines a compact header, provides optional block and content checksums, and employs a skippable frame mechanism, allowing new features to be added without breaking older decoders. These attributes have led to widespread adoption in operating systems, high-performance storage engines, and scientific data formats where sub-millisecond decode latency is critical.
 
-The codec emphasizes extremely fast byte-wise parsing and a greedy match-finder that limits back-references to \SI{64}{\kilo\byte}. Because of this, the compression runs at $>$\SI{500}{\mega\byte\per\second} per core while decompression routinely exceeds \SIrange{2}{3}{\giga\byte\per\second}, albeit with modest ratios (1.2–1.7\(\times\) on floating-point data) \cite{lz42025,7440278}. A high-compression variant \texttt{lz4hc} improves the ratio by $\sim$15\,\% at 3–5 \(\times\) the \gls{CPU} cost.
+The codec emphasizes extremely fast byte-wise parsing and a greedy match-finder that limits back-references to \SI{64}{\kilo\byte}. Because of this, the compression runs at $>$\SI{500}{\mega\byte\per\second} per core while decompression routinely exceeds \SIrange{2}{3}{\giga\byte\per\second}, though with modest ratios (1.2–1.7\(\times\) on floating-point data) \cite{lz42025,7440278}. A high-compression variant \texttt{lz4hc} improves the ratio by $\sim$15\,\% at 3–5 \(\times\) the \gls{CPU} cost.
 
 Almeida \emph{et al.} compared \gls{LZfour} with \gls{ZLIB} on \gls{ROOT} HEP and climate grids, reporting \SIrange{1.0}{1.2}{\giga\byte\per\second} decompression (versus \SI{120}{\mega\byte\per\second} for \gls{ZLIB}) at the expense of only a 5–10\,\% ratio loss \cite{almeida2014two}. The \gls{VLDB}’24 “\gls{FCBench}” study recently measured the \gls{CPU} variant bitshuffle with \gls{LZfour} across 33 floating-point datasets. The study showed that it sustained \SI{0.9}{\giga\byte\per\second} compression and \SI{1.2}{\giga\byte\per\second} decompression on \SI{64}{\kilo\byte} blocks while achieving a median compression ratio of 1.43 \cite{chen2023fcbench}.
 
@@ -893,7 +893,7 @@ As a codec, \texttt{zstd} is a first-class option in Parquet and TileDB, and is 
 \section{Summary and Link to Problem Statement}
 \label{sec:summary-problem-statement}
 
-The background above shows how accelerating detector output and evolving collaboration models outpace traditional \gls{HPC} storage, while object storage introduces latency–cost trade-offs. The key insights, mapped directly to the thesis problem, are:
+The background chapter shows how accelerating detector output and evolving collaboration models outpace traditional \gls{HPC} storage, while object storage introduces latency–cost trade-offs. The key insights, mapped directly to the thesis problem, are:
 
 \begin{itemize}
   \item \textbf{Data rates:} Multi-\si{\giga\byte\per\second} streams and multi-\si{\tera\byte} experiments are routine.
