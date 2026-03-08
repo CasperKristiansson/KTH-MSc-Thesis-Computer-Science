@@ -1250,10 +1250,7 @@ To scale the corpus for I/O benchmarking while preserving frame geometry and \te
   \item Clip to $[0,65535]$ and cast back to \texttt{uint16}.
 \end{itemize}
 
-Random choices used fixed Python and NumPy seeds (Appendix \ref{app:a7-synthesis}).
-
-\subsubsection{Size targeting and parallelization}
-We targeted $N{=}1296$ frames (raw pixel payload \(\sim\)\SI{20.02}{\gibi\byte}; Appendix Table \ref{tab:dataset_facts}) by estimating average slice size and computing the required frame count. Outputs were written as \gls{CBF} frames and then uploaded to \gls{AWS} \gls{SThree} (implementation details in Appendix \ref{app:a7-synthesis}).
+Random choices used fixed Python and NumPy seeds (Appendix \ref{app:a7-synthesis}). We targeted $N{=}1296$ frames (raw pixel payload \(\sim\)\SI{20.02}{\gibi\byte}; Appendix Table \ref{tab:dataset_facts}) by estimating average slice size and computing the required frame count. Outputs were written as \gls{CBF} frames and then uploaded to \gls{AWS} \gls{SThree} (implementation details in Appendix \ref{app:a7-synthesis}).
 
 \section{Infrastructure and software}
 All experiments ran in a single \gls{AWS} region (\texttt{eu-north-1}) on one \gls{ECtwo} node, with all artifacts stored in one \gls{SThree} bucket. \gls{HDFfive} used a local \gls{HSDS} service; Zarr, TileDB, \gls{ROOT}, and the Parquet pilot wrote directly to \gls{SThree} via client libraries. \gls{SThree} bucket analytics and CloudWatch request metrics captured request counts, bytes, and service latencies per session.
@@ -2270,14 +2267,11 @@ Across formats, zstd consistently outperforms gzip on both slice latency and ful
 \subsection{Cost and storage posture}
 Stored size is mostly codec-driven, but \texttt{lz4} shows substantial format variation (\gls{HSDS} 19.17\,GiB vs Zarr 10.40\,GiB vs TileDB 15.56\,GiB, see Table \ref{tab:object_counts}). For compact storage, prefer \texttt{zstd} or \texttt{gzip} and avoid \texttt{lz4}+\gls{HSDS} unless storage is unconstrained.
 
-\subsubsection{Request cost proxy}
-For slice-heavy workloads, watch \emph{GETs/GiB}. In this experiment, \textbf{TileDB} and \textbf{Zarr} deliver lower GETs/GiB at competitive or better latency than \textbf{\gls{HDFfive}/\gls{HSDS}}. This indicates a more favorable request-cost posture at equal performance. See Table \ref{tab:cross_slice_latency_vs_gets} and Figure \ref{fig:cross_slice_latency_vs_gets}.
+\textbf{Request cost proxy.} For slice-heavy workloads, watch \emph{GETs/GiB}. In this experiment, \textbf{TileDB} and \textbf{Zarr} deliver lower GETs/GiB at competitive or better latency than \textbf{\gls{HDFfive}/\gls{HSDS}}. This indicates a more favorable request-cost posture at equal performance. See Table \ref{tab:cross_slice_latency_vs_gets} and Figure \ref{fig:cross_slice_latency_vs_gets}.
 
-\subsubsection{Storage cost proxy}
-Stored size is mainly \emph{codec-driven}, where \texttt{zstd} and \texttt{gzip} compress more than \texttt{lz4}. Between-format differences at a fixed codec are small and are consistent with additional layout metadata rather than payload differences. See Figures \ref{fig:stored_bytes}, \ref{fig:compression_rates}.
+\textbf{Storage cost proxy.} Stored size is mainly \emph{codec-driven}, where \texttt{zstd} and \texttt{gzip} compress more than \texttt{lz4}. Between-format differences at a fixed codec are small and are consistent with additional layout metadata rather than payload differences. See Figures \ref{fig:stored_bytes}, \ref{fig:compression_rates}.
 
-\subsubsection{Counterexample}
-\textbf{\gls{ROOT}} shows that a few requests do not imply speed or efficiency. It has the lowest \emph{GETs/GiB} yet poor slice latency and scan throughput due to single-object paging and decode overhead. See Tables \ref{tab:cross_slice_latency_vs_gets}, \ref{tab:cross_full_throughput_vs_gets} and the per-codec MBB results (slices: Tables \ref{tab:slice_gzip_mbb}, \ref{tab:slice_lz4_mbb}, \ref{tab:slice_zstd_mbb} and full scans tables \ref{tab:full_gzip_mbb}, \ref{tab:full_lz4_mbb}, \ref{tab:full_zstd_mbb}).
+\textbf{Counterexample.} \textbf{\gls{ROOT}} shows that a few requests do not imply speed or efficiency. It has the lowest \emph{GETs/GiB} yet poor slice latency and scan throughput due to single-object paging and decode overhead. See Tables \ref{tab:cross_slice_latency_vs_gets}, \ref{tab:cross_full_throughput_vs_gets} and the per-codec MBB results (slices: Tables \ref{tab:slice_gzip_mbb}, \ref{tab:slice_lz4_mbb}, \ref{tab:slice_zstd_mbb} and full scans tables \ref{tab:full_gzip_mbb}, \ref{tab:full_lz4_mbb}, \ref{tab:full_zstd_mbb}).
 
 
 \section{Threats to validity and limits}
