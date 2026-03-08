@@ -156,7 +156,7 @@ nopostdot]{glossaries}
 \input{custom_configuration}
 
 \title{From Experiment to Insight: A Comparative Study of Storage Approaches for Large-Scale Synchrotron and Neutron Scattering Data on AWS}
-\subtitle{Benchmarking HDF5/HSDS, Zarr, TileDB, and ROOT/TTree for Partial Retrieval and Whole-Dataset Sequential Sweeps}
+\subtitle{Benchmarking HDF5/HSDS, Zarr, TileDB, and ROOT/TTree for Random Single-Frame Reads and Full Sequential Scans}
 
 % \alttitle{Från experiment till insikt: En jämförande studie av lagringsmetoder för storskaliga synkrotron- och neutronstrålningsdata på AWS}
 % \altsubtitle{-Undertitle-}
@@ -542,7 +542,8 @@ Beam time at synchrotron and neutron facilities is scarce and expensive. Experim
 
 At Shanghai Synchrotron Radiation Facility, automated pipelines tied into the metadata catalog provide progress notifications and interactive dashboards for real-time feedback \cite{wang2024accelerating}.
 
-\subsubsection{Implications for the storage stack}
+These workflow requirements translate directly into storage-system requirements:
+
 \begin{itemize}
   \item \textbf{Latency}: scientists often request slices of data (quick-look radiographs or azimuthal-integrated diffraction rings). Data retrieval times must stay in the sub-second regime to keep up with the experiments.
   \item \textbf{Throughput}: full 3-D reconstruction or machine-learning inference may pull hundreds of contiguous gigabytes at the end of a scan, often requiring burst bandwidths of $\ge\!\SI{10}{\giga\byte\per\second}$.
@@ -1123,7 +1124,6 @@ The experiment runs on Amazon Web Services (\gls{AWS}). Storage backends use Ama
   \label{fig:aws_topology}
 \end{figure}
 
-\subsubsection{Hardware, region, and network controls}
 All runs are executed in a single \gls{AWS} region with the \gls{SThree} bucket co-located. No CloudFront, \gls{SThree} Transfer Acceleration, or cross-region traffic was used. Full region and network settings are listed in Appendix \ref{app:a1-testbed}.
 
 \subsection{Data Ingestion and Configuration}
@@ -1171,7 +1171,6 @@ For each pair of formats within a codec $\times$ pattern, the statistical null i
 \subsection{Uncertainty in AWS}
 \Gls{AWS} introduces time-varying latency and variance that cannot be fully controlled. We mitigated this issue by using a single region with the \gls{SThree} bucket co-located, a Gateway VPC endpoint, and fixed client settings. Operational controls and randomization are documented in Appendix \ref{app:a2-run-qc}. Formats were executed in \emph{separate sessions} with no cross-format overlap. Consequently, cross-format contrasts are \textbf{descriptive, session-conditional}. Inference is limited to within-cell estimands (GM, \gls{Pninetyfive}, throughput) with dependence-robust bootstrap \glspl{CI}. CloudWatch aggregates are per-session and reported descriptively (no inference, no cross-session averaging of percentiles).
 
-\subsubsection{Deviation: Parquet pilot-only}
 Parquet was piloted in a single-object layout but excluded from the timed results due to high metadata open time and rapid object growth observed in the pilot runs. This pilot documents one concrete mapping of an $n$-D detector stack into a single Parquet object and should not be interpreted as a general performance statement about Parquet as a partitioned format family (Appendix \ref{app:a8-parquet}). The pilot and rationale are documented in Chapter \ref{ch:whatYouDid}, where Parquet is presented only qualitatively. Timed comparisons cover four formats: \gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{TTree}.
 
 
@@ -1341,8 +1340,6 @@ Frames were tabularized as rows with 2D rows as fixed-size lists. \textit{Note:}
   \item For each frame, per-row arrays were assembled into a one-row table and appended to the Parquet file (Appendix \ref{app:a6-schemas}).
 \end{itemize}
 
-\subsubsection{Single-object Parquet pilot and exclusion (deviation)}
-\label{subsubsec:parquet-pilot-exclusion}
 Parquet was implemented as a single file with $2880$ list-of-$2880$ \texttt{uint16} columns (\texttt{row\_0}\dots\texttt{row\_2879}), one appended row per frame, with \texttt{gzip} and \texttt{lz4} compression where dictionaries disabled.
 
 \textbf{Observed during pilot:}
