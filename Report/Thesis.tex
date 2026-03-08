@@ -470,7 +470,7 @@ These facilities have a direct impact on the industry. At the European Synchrotr
 \subsubsection{Typical beamline architecture}
 A beamline shapes the beam with mirrors, slits, and monochromators, then positions the specimen on a multi-axis stage. A high-speed detector records 2-D or 3-D data at up to thousands of frames per second. A \gls{DAQ} server buffers frames on local \gls{NVMe} \gls{SSD}s or a burst buffer and writes to storage. Historically, the stream targets a parallel file system (Lustre/\gls{GPFS}), but in recent years object-store workflows have been introduced as an alternative (Figure \ref{fig:beamline-journey}).
 
-\begin{figure}[!ht]
+\begin{figure}[H]
   \centering
   \includegraphics[width=\linewidth]{figures/beamline_data_journey.jpg}
   \caption{
@@ -532,9 +532,6 @@ Indexing a single 2-D detector frame by additional experimental coordinates turn
 \end{figure}
 
 When these axes are combined, experiments can generate 5-D or 6-D datasets. For example, a $2048\times2048$ detector recording 1800 rotation angles, 50 energy points, and 20-time delays already contains $\sim150\times10^{9}$ pixels ($\approx$\,\SI{300}{\giga\byte} at 16-bit depth). These arrays enable multivariate analyses but impose heavy storage and I/O demands. Some beamlines further append polarization, external field strength, or environmental parameters (temperature, pressure, electrochemical potential), further increasing data dimensionality and storage complexity.
-
-\subsubsection{Real-world automotive example}
-The automotive industry uses neutron radiography to visualize water and ice formation within polymer-electrolyte fuel-cell stacks during rapid cold starts. The study used an operational neutron imaging system to map liquid distribution in a Toyota single cell down to sub-second time scales, informing design tweaks that mitigate performance losses \cite{yoshimune2024neutron}.
 
 \subsection{Experimental Workflows and Iterative Analysis}
 \label{sec:experimental-workflows-feedback-loops}
