@@ -1322,7 +1322,7 @@ Zarr uses one chunk per frame where we record store paths, array geometry, chunk
 \end{itemize}
 
 \subsection{Apache Parquet on \texorpdfstring{\gls{SThree}}{S3} (single-object pilot)}
-Frames were tabularized as rows with 2D rows as fixed-size lists. \textit{Note:} Parquet was piloted only in a single-object layout and is excluded from timed results due to an operational stop (see section \ref{subsubsec:parquet-pilot-exclusion} and Appendix \ref{app:a8-parquet}).
+Frames were tabularized as rows with 2D rows as fixed-size lists. \textit{Note:} Parquet was piloted only in a single-object layout and is excluded from timed results due to an operational stop; see Appendix \ref{app:a8-parquet}.
 
 \textbf{Layout:}
 \begin{itemize}
@@ -3054,7 +3054,7 @@ zarr   & \gls{ZSTD} & slice & 83.932 & 94.424 & 133.233 & 182.695 \\
 \subsection{League tables for configuration selection}
 The main text reports representative league tables for slice \texttt{gzip} and \texttt{zstd} and for full scans under \texttt{zstd}. This appendix lists the remaining league tables used for the decision matrix.
 
-\paragraph{Slice}
+\textbf{Slice.}
 \begin{table}[H]
   \centering
   \caption{Slice — \texttt{lz4}: league table.}
@@ -3071,7 +3071,7 @@ The main text reports representative league tables for slice \texttt{gzip} and \
   \end{tabular}
 \end{table}
 
-\paragraph{Full scan}
+\textbf{Full scan.}
 \begin{table}[H]
   \centering
   \caption{Full — \texttt{gzip}: league table.}
@@ -3150,8 +3150,7 @@ The main text reports representative league tables for slice \texttt{gzip} and \
 
 We aggregate latency, tail behavior, request intensity, and stored size into 0–100 normalized scores per codec$\times$pattern to support configuration choices. Figures \ref{fig:scores-slice-gzip}–\ref{fig:scores-full-zstd} and Tables \ref{tab:scores-slice-gzip}–\ref{tab:scores-full-zstd} show the resulting score matrices. For slices, TileDB and Zarr dominate the Pareto frontier for gzip and zstd, while Zarr is favored under LZ4. For full scans, TileDB clearly dominates on throughput and overall score for all codecs.
 
-\paragraph{Slice}
-Scores are 0–100 per metric using robust min–max (5th–95th percentiles) within each codec$\times$pattern where higher is better. Weights: GM 0.60, $p_{95}$ 0.20, GETs/GiB 0.10, Stored 0.10.
+\textbf{Slice.} Scores are 0–100 per metric using robust min–max (5th–95th percentiles) within each codec$\times$pattern where higher is better. Weights: GM 0.60, $p_{95}$ 0.20, GETs/GiB 0.10, Stored 0.10.
 
 \begin{table}[H]
   \centering
@@ -3201,8 +3200,7 @@ Scores are 0–100 per metric using robust min–max (5th–95th percentiles) wi
   \end{tabular}
 \end{table}
 
-\paragraph{Full Scan}
-Scores are 0–100 per metric, using robust min–max normalization within codec$\times$  pattern where higher scores are better. Weights: throughput 0.60, GETs/GiB 0.15, Stored 0.15, $p_{95}$ 0.10.
+\textbf{Full scan.} Scores are 0–100 per metric, using robust min–max normalization within codec$\times$pattern where higher scores are better. Weights: throughput 0.60, GETs/GiB 0.15, Stored 0.15, $p_{95}$ 0.10.
 
 \begin{table}[H]
   \centering
