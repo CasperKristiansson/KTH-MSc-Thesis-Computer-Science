@@ -1179,24 +1179,22 @@ Parquet was piloted in a single-object layout but excluded from the timed result
 \label{sec:methods-data-reprod}
 This section specifies data sources, sampling, instrumentation, and release artifacts needed to rerun the experiments.
 
-\subsection{Data Collection}
-\label{sec:dataCollection}
 The data‐collection plan for this thesis centers on a single dataset built from 80 real seed frames and synthetically expanded to \(\sim\)\SI{20}{\gibi\byte} (\(\sim\)1{,}300 frames). These frames statistically replicate the size, structure, and access patterns of real synchrotron and neutron experiments. Generating the benchmark dataset from a small seed set reduces data sharing burden, and the synthesis procedure is deterministic given the same seeds and software versions (Appendix \ref{app:a7-synthesis}). We also release the raw timing logs and CloudWatch exports used for all reported statistics (Appendix \ref{app:a5b-availability}).
 Dataset facts and size definitions are summarized in Appendix Table \ref{tab:dataset_facts}.
 
-\subsubsection{Data Sources}
+\subsection{Data Sources}
 Detector stack (raw pixel payload $\sim$\SI{20}{\gibi\byte}): $N{=}1296$ \gls{CBF} frames at 16-bit depth derived from 80 seed frames from one experiment. One frame constitutes one sample and contains $2880\times2880$ pixel features (\(\sim\)\SI{15.82}{\mebi\byte} uncompressed). A jitter–noise routine perturbs intensity, offset, spatial shifts, and noise to synthesize the remaining frames (Appendix \ref{app:a7-synthesis}, Appendix Table \ref{tab:dataset_facts}).
 
-\subsubsection{Sampling Strategy}
+\subsection{Sampling Strategy}
 Two patterns were executed on the same dataset. For the slice workload, each run reads one randomly selected frame (\(\sim\)\SI{15.82}{\mebi\byte}) and each backend uses its native physical granularity, so a frame maps to different numbers of objects across formats. For the scanning workload, the entire $N$-frame dataset is read sequentially. Within-session run order was randomized with a fixed seed, and no cross-format concurrency occurred.
 
-\subsubsection{Instrumentation and Metric Logging}
+\subsection{Instrumentation and Metric Logging}
 Full-scan time is measured from entering the scan read routine to completion of the scan with all data materialized/decoded by the client library; slice-read time is measured from entering the single-frame read routine until it returns a fully materialized frame. These timers include network transfer, decompression, and client decode, while log serialization is outside the timer. Throughput equals bytes divided by time. Accordingly, we record client start and stop timestamps together with bytes per run, per-session \gls{SThree} aggregates such as request counts, transferred bytes, and latency percentiles (identifiers and statistics in Appendix \ref{app:a4-metrics}), and \gls{SThree} sizes per format--codec combination for the compression calculations.
 
-\subsubsection{Validity and Reliability Measures}
+\subsection{Validity and Reliability Measures}
 No explicit cache-clearing was performed between repetitions, so the reported latency and throughput results should be interpreted as \emph{warm, within-session} behavior rather than cold-open first-touch performance. Cache regime and replication policy are specified in Appendix \ref{app:a2-run-qc}.
 
-\subsubsection{Reproducibility and availability}
+\subsection{Reproducibility and availability}
 Random seeds are fixed and logged with per-run timers, and CloudWatch aggregates are saved as \gls{JSON} with run IDs. The code and notebooks are released on GitHub at \url{https://github.com/CasperKristiansson/KTH-MSc-Thesis-Computer-Science}. The repository includes (i) seed frames under \texttt{Experiment/Base Data/} and the synthesis procedure (Appendix \ref{app:a7-synthesis}), and (ii) the raw measurement logs used to generate all reported tables and figures (\texttt{Experiment/Experiment Result/}). The full ingested \gls{SThree} dataset prefixes and the \gls{AWS} execution environment are not publicly hosted; rerunning timed experiments therefore requires re-provisioning comparable cloud resources and will reproduce the \emph{workflow} and analysis, not the exact wall-clock timings. Exact package versions and access paths are listed in Appendix \ref{app:a5-libraries}.
 
 
