@@ -301,7 +301,7 @@ eng
 \begin{scontents}[store-env=abstracts,print-env=true]
 Modern synchrotron and neutron beamlines can stream at gigabytes per second, turning single experiments into multi-terabyte datasets and exposing latency limits of parallel file systems. This thesis benchmarks cloud-native storage layouts on AWS S3 using a single $\sim$20\,GiB, $\sim$1{,}300-frame detector stack, focusing on slice-level latency, scan throughput, and cost drivers. Four backends (HDF5 via HSDS, Zarr v3, TileDB, ROOT/TTree) and three codecs (gzip, LZ4, zstd) are evaluated under two workloads: random single-frame reads and full sequential scans. Client timings are analyzed on a log scale with dependence-robust confidence intervals, with S3 request counts and stored size providing context.
 
-Results are descriptive and session-conditional for this dataset and AWS setup. For interactive slices, Zarr is fastest with zstd (GM $\approx$155 ms) and with LZ4; TileDB is fastest with gzip. For full scans, TileDB delivers 2.2–3.2$\times$ higher throughput than Zarr across codecs (e.g., zstd $\approx$1.06 GiB/s for 20 GiB). ROOT is slow for frame-random reads despite a few GETs, indicating single-object paging and decode overheads. HDF5/HSDS trails on slice latency and scan throughput with LZ4, storing 19.17 GiB versus Zarr 10.40 GiB for the same payload.
+Results are descriptive and session-conditional for this dataset and AWS setup. For interactive slices, Zarr is fastest with zstd (GM $\approx$155 ms) and with LZ4; TileDB is fastest with gzip. For full scans, TileDB completes the same logical dataset in 2.2–3.2$\times$ lower GM scan time than Zarr across codecs; the transferred-byte throughput summaries follow the same ordering (e.g., zstd $\approx$1.06 GiB/s for 20 GiB). ROOT/TTree is slow for frame-random reads despite a few GETs, indicating single-object paging and decode overheads. HDF5/HSDS trails on slice latency and scan throughput with LZ4, storing 19.17 GiB versus Zarr 10.40 GiB for the same payload.
 
 The contribution is a reproducible AWS-native benchmarking method and a decision matrix for the tested workloads: choose Zarr+zstd when slice latency dominates and choose TileDB+zstd/LZ4 when throughput dominates.
 \end{scontents}
@@ -326,7 +326,7 @@ swe
 \begin{scontents}[store-env=abstracts,print-env=true]
 Vid moderna synkrotron- och neutronanläggningar genereras dataflöden på flera gigabyte per sekund. Enskilda experiment kan därmed leda till datamängder på flera terabyte, vilket tydliggör latensbegränsningar i parallella filsystem. I denna avhandling jämförs molnnativa lagringsformat på AWS S3 med en datamängd om cirka 20\,GiB och cirka 1\,300 bilder som testfall. Fokus ligger på latens vid läsning av enskilda bilder, datahastighet vid sekventiell genomläsning av hela datamängden samt kostnadsdrivande faktorer. Fyra lagringslösningar (HDF5 via HSDS, Zarr v3, TileDB och ROOT/TTree) och tre kodekar (gzip, LZ4 och zstd) utvärderas för två åtkomstmönster: slumpmässig läsning av enskilda bilder och sekventiell genomläsning av hela datamängden. Körtider på klientsidan analyseras på logaritmisk skala med beroenderobusta konfidensintervall, och antalet S3-förfrågningar samt lagrad datamängd används som kompletterande mått.
 
-Resultaten är deskriptiva och gäller den studerade datamängden i den aktuella AWS-miljön; de bör därför tolkas som sessionsbundna. För interaktiv läsning av enskilda bilder är Zarr snabbast med zstd (GM $\approx$155 ms) och även med LZ4, medan TileDB är snabbast med gzip. Vid sekventiell genomläsning av hela datamängden ger TileDB 2,2--3,2$\times$ högre datahastighet än Zarr för samtliga kodekar (exempelvis zstd $\approx$1,06 GiB/s för 20 GiB). ROOT är långsamt vid slumpmässig läsning av bilder trots få GET-förfrågningar, vilket tyder på overhead från paginering och avkodning i en lagringslayout med ett enda objekt. HDF5/HSDS presterar sämre både vad gäller latens vid bildläsning och datahastighet vid helavläsning med LZ4 och lagrar 19,17 GiB jämfört med 10,40 GiB för Zarr för samma nyttolast.
+Resultaten är deskriptiva och gäller den studerade datamängden i den aktuella AWS-miljön; de bör därför tolkas som sessionsbundna. För interaktiv läsning av enskilda bilder är Zarr snabbast med zstd (GM $\approx$155 ms) och även med LZ4, medan TileDB är snabbast med gzip. Vid sekventiell genomläsning av hela datamängden läser TileDB igenom samma logiska datamängd på 2,2--3,2$\times$ lägre GM-skanningstid än Zarr för samtliga kodekar; sammanfattningarna av överförd datahastighet följer samma ordning (exempelvis zstd $\approx$1,06 GiB/s för 20 GiB). ROOT är långsamt vid slumpmässig läsning av bilder trots få GET-förfrågningar, vilket tyder på overhead från paginering och avkodning i en lagringslayout med ett enda objekt. HDF5/HSDS presterar sämre både vad gäller latens vid bildläsning och datahastighet vid helavläsning med LZ4 och lagrar 19,17 GiB jämfört med 10,40 GiB för Zarr för samma nyttolast.
 
 Avhandlingens huvudsakliga bidrag är en reproducerbar metod för prestandamätning på AWS samt en beslutsmatris för de studerade användningsfallen: välj Zarr+zstd när latens vid läsning av enskilda bilder är viktigast, och välj TileDB+zstd/LZ4 när datahastighet prioriteras.
 \end{scontents}
@@ -406,7 +406,7 @@ Researchers have introduced a new generation of cloud-native data models to addr
 Each approach offers distinct trade‐offs in latency, throughput, compression efficiency, \gls{CPU} overhead, and cost. Although individual formats have been benchmarked in isolation or within specific domains, to the best of the author’s knowledge, there is no comprehensive, side-by-side evaluation of these backends for scattering-style access patterns on \gls{AWS} \gls{SThree} under a controlled, end-to-end benchmark. Addressing this gap informs both beamline scientists seeking responsive, cost‐effective data access and data‐intensive computing engineers designing next‐generation, cloud‐native scientific platforms.
 
 \subsection{Research Question}
-\emph{How do HDF5 via \gls{HSDS}, Zarr v3, TileDB, and \gls{ROOT}/\gls{TTree} compare on \gls{AWS} \gls{SThree} in terms of random single-frame read latency and full sequential scan throughput under \texttt{gzip}, \texttt{lz4}, and \texttt{zstd} compression?}
+\emph{How do HDF5 via \gls{HSDS}, Zarr v3, TileDB, and \gls{ROOT}/\gls{TTree} compare on \gls{AWS} \gls{SThree} in terms of random single-frame read latency and full sequential scan performance, measured by GM scan time and transferred-byte throughput, under \texttt{gzip}, \texttt{lz4}, and \texttt{zstd} compression?}
 
 \section{Problem, Purpose, and Goals}
 This section defines the problem, states the purpose, and lists the goals. It sets the basis for the comparisons used later in the thesis.
@@ -427,16 +427,16 @@ Scientifically, the study quantifies trade-offs among latency, throughput, compr
 Secondly, it aims to provide Scatterin AB with a practical, evidence-based framework to optimize its cloud-based data platform for high-throughput synchrotron and neutron-scattering experiments. This work offers concrete guidance on minimizing latency for partial-read use cases, maximizing throughput, and controlling pay-as-you-go costs across varying access patterns.
 
 \subsection{Goals}
-This thesis develops an experimentally validated decision framework to guide the selection and configuration of cloud-native storage solutions for scattering datasets on \gls{AWS} \gls{SThree}, evaluated on a single \SI{20}{\gibi\byte} detector stack. Concretely, the work has three operational goals. First, it builds comparable prototypes by ingesting a single \SI{20}{\gibi\byte} dense 3D detector stack (\(\sim\)1{,}300 frames) into four timed backends: \gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{TTree}, while applying consistent chunking and matched codec families (\texttt{zstd}, \texttt{lz4}, \texttt{gzip}) across backends. Because each backend exposes these codecs through its own filter or codec stack, the comparison should be read as an implementation-level benchmark rather than as a fully harmonized comparison of raw codec kernels alone. Second, it benchmarks two read patterns, full scans and random single-frame reads, while recording stored size, requests per GiB, and client timings, and reporting geometric-mean latency or throughput together with 95th percentiles. Third, it synthesizes the empirical results into a decision matrix that relates workload patterns, compression choices, and integration concerns to format-specific behavior, and then turns that synthesis into ranked best-practice recommendations.
+This thesis develops an experimentally validated decision framework to guide the selection and configuration of cloud-native storage solutions for scattering datasets on \gls{AWS} \gls{SThree}, evaluated on a single \SI{20}{\gibi\byte} detector stack. Concretely, the work has three operational goals. First, it builds comparable prototypes by ingesting a single \SI{20}{\gibi\byte} dense 3D detector stack (\(\sim\)1{,}300 frames) into four timed backends: \gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{TTree}, while applying consistent chunking and matched codec families (\texttt{zstd}, \texttt{lz4}, \texttt{gzip}) across backends. Because each backend exposes these codecs through its own filter or codec stack, the comparison should be read as an implementation-level benchmark rather than as a fully harmonized comparison of raw codec kernels alone. Second, it benchmarks two read patterns, full scans and random single-frame reads, while recording stored size, requests per GiB, and client timings, and reporting geometric-mean latency for slices, geometric-mean scan time for full scans, transferred-byte throughput summaries, and 95th percentiles. Third, it synthesizes the empirical results into a decision matrix that relates workload patterns, compression choices, and integration concerns to format-specific behavior, and then turns that synthesis into ranked best-practice recommendations.
 
 \subsection{Research Questions (RQs)}
-To structure the investigation, the thesis poses three research questions. \textbf{RQ1} concerns interactive latency: for random single-frame reads on \gls{SThree}, which backend and codec minimize geometric-mean latency and control $p_{95}$? \textbf{RQ2} concerns bulk throughput: for full-dataset scans, which backend and codec maximize geometric-mean throughput with stable $p_{95}$? \textbf{RQ3} addresses cost posture and mechanisms: how do layout and codec choices change GETs/GiB and stored size, and how do these factors explain client timings?
+To structure the investigation, the thesis poses three research questions. \textbf{RQ1} concerns interactive latency: for random single-frame reads on \gls{SThree}, which backend and codec minimize geometric-mean latency and control $p_{95}$? \textbf{RQ2} concerns full-scan performance: for full-dataset scans, which backend and codec minimize geometric-mean scan time and, correspondingly, deliver the highest transferred-byte throughput with stable $p_{95}$? \textbf{RQ3} addresses cost posture and mechanisms: how do layout and codec choices change GETs/GiB and stored size, and how do these factors explain client timings?
 
 \section{Methodology and Scope}
 This section outlines the benchmarking methodology and the study scope. It specifies datasets, workloads, metrics, and the delimitations for reproducibility.
 
 \subsection{Research Methodology}
-We use an \emph{experimental benchmarking} approach within a design–science framework to evaluate four timed storage backends on \gls{AWS} (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}/\gls{TTree}). Apache Parquet is included only as a single-object pilot (ingest only, no timed runs; Appendix \ref{app:a8-parquet}). The benchmark dataset is a single dense detector stack of approximately \SI{20}{\gibi\byte} (\(\sim\)1{,}300 frames). Two workloads are evaluated: random single-frame reads and full scans. We report geometric-mean latency or throughput with dependence-robust 95\% confidence intervals and $p_{95}$ latency/throughput. Detailed descriptions of infrastructure, randomization, logging, and estimator choices are provided in Chapter \ref{ch:methods} and the Appendix.
+We use an \emph{experimental benchmarking} approach within a design–science framework to evaluate four timed storage backends on \gls{AWS} (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}/\gls{TTree}). Apache Parquet is included only as a single-object pilot (ingest only, no timed runs; Appendix \ref{app:a8-parquet}). The benchmark dataset is a single dense detector stack of approximately \SI{20}{\gibi\byte} (\(\sim\)1{,}300 frames). Two workloads are evaluated: random single-frame reads and full scans. We report geometric-mean latency for slices, geometric-mean scan time for full scans, transferred-byte throughput summaries where relevant, and dependence-robust 95\% confidence intervals with $p_{95}$ summaries. Detailed descriptions of infrastructure, randomization, logging, and estimator choices are provided in Chapter \ref{ch:methods} and the Appendix.
 
 \subsection{Delimitations}
 This thesis focuses exclusively on cloud-native, object-store–based workflows within the \gls{AWS} ecosystem. Only \gls{AWS} services (\gls{SThree}, \gls{ECtwo}) are considered, so the study does not include Azure, Google Cloud, or on-premises \gls{HPC} clusters. Quantitative results cover four timed formats (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}/\gls{TTree}), while Apache Parquet appears only as a single-object, ingest-only pilot and is excluded from timed comparisons (Appendix \ref{app:a8-parquet}). The benchmarks use one dense 3D detector dataset of roughly \SI{20}{\gibi\byte} (\(\sim\)1{,}300 frames), and the quantitative evaluation is limited to the two access patterns that dominate user experience and transferred volume in this setting: random single-frame reads (\(\sim\)\SI{15.82}{\mebi\byte} per frame) and full sequential scans. Other patterns, such as metadata-only queries, random single-element lookups, streaming ingestion, and multi-client contention, are treated qualitatively or left to future work. Likewise, the codec comparison is limited to three widely used alternatives, \texttt{zstd}, \gls{LZfour}, and \texttt{gzip}, rather than extending to Snappy, Brotli, bzip2, or ZFP. Codec labels are aligned across backends, but implementations remain backend-specific; in particular, the Zarr \texttt{lz4} condition uses the Python stack's Blosc(\texttt{lz4}) path, so codec effects should be interpreted at the evaluated implementation level. These delimitations ensure a focused, reproducible comparison of core performance and cost trade-offs for scattering-style object-store access on \gls{AWS}.
@@ -800,11 +800,13 @@ TileDB applies a per-attribute filter pipeline to tiles. Supported compressors i
 \label{sec:root-rntuple}
 \gls{ROOT} is an object-oriented C++ framework developed at \gls{CERN} to handle the petabyte-scale data streams of high-energy-physics experiments \cite{blomer2020evolution}. Its core storage abstraction, \gls{TTree}, stores events as rows and detector variables as \emph{branches}. The format splits each branch into contiguous \emph{baskets}, allowing readers to load them independently. This column-friendly layout lets analysis jobs load only the necessary branches, minimizing I/O and deserialization overhead, a property directly relevant to slice-level scattering analysis.
 
+This thesis benchmarks the \gls{ROOT}/\gls{TTree} path only. \gls{RNTuple} is discussed here as the newer redesign of \gls{ROOT} I/O and as future context, but it was not part of the timed benchmark.
+
 After two decades of incremental evolution, \emph{\gls{TTree}} showed architectural limits for modern heterogeneous hardware and cloud storage. The \gls{RNTuple} project, therefore, re-implements \gls{ROOT} I/O with a stricter columnar layout, page-based compression, and a self-describing, versioned metadata footer \cite{blomer2020evolution}. Pages (\(\approx\)\,\SIrange{8}{16}{\kilo\byte}) are grouped into clusters so that entirely columnar reads issue a single contiguous request, while sparse event selections fetch only the referenced pages. By decoupling metadata from data pages, \gls{RNTuple} avoids rewriting the entire file when appending events, which is critical for streaming detectors and results in improved partial reads.
 
 Through the generic \gls{ROOT} Page Source interface, pages can reside in \gls{POSIX} files, over \gls{HTTP}(S), or as individual \gls{SThree} objects \cite{rootRNTuple2025}. Scaling studies by Blomer showed near-linear throughput up to \(\mathcal{O}(10^{2})\) concurrent readers on a >100‐core \gls{HPC} cluster served by a \gls{DAOS} object store, achieving an aggregated read rate above \SI{35}{\giga\byte\per\second} before the storage system became the bottleneck \cite{blomer2024root}.
 
-This architecture provides high-throughput, scalable, and selective access to petabyte-scale datasets on \gls{HPC} systems and in the cloud, which is relevant for slice-level scattering analyses.
+This newer \gls{RNTuple} architecture provides high-throughput, scalable, and selective access to petabyte-scale datasets on \gls{HPC} systems and in the cloud. In this thesis it serves as background and future context only; the measured \gls{ROOT} results are for \gls{TTree}.
 
 \subsection{Format design trade-offs for this thesis}
 \label{sec:format-tradeoffs}
@@ -852,7 +854,7 @@ The strengths of this study are:
 The drawbacks are higher first-open costs when fragment counts are high and slightly higher per-fragment complexity than in a pure chunk-per-object layout. These design choices make TileDB a strong candidate for high-throughput full scans (RQ2) and for moderate-latency slices that benefit from pruned, long-range reads (RQ1, RQ3).
 
 \subsubsection{ROOT/TTree}
-ROOT’s TTree and its modern RNTuple redesign treat data as a columnar event store. Conceptually, each branch is a column; data are organized into small pages grouped into clusters, and a separate index describes which pages belong to which cluster. A read of a contiguous range of events on a few branches can be served by a single or a small number of long-range GETs; a sparse selection of events or an awkward “frame-shaped” slice may touch many small pages. The format’s strengths are:
+The timed ROOT condition in this thesis is specifically \gls{ROOT}/\gls{TTree}; \gls{RNTuple} is discussed only as the newer redesign and as future context. In \gls{TTree}, each branch behaves like a column and data are organized into baskets that can be fetched independently. A read of a contiguous range of events on a few branches can be served by a single or a small number of long-range GETs; a sparse selection of events or an awkward “frame-shaped” slice may touch many small pages. The format’s strengths are:
 
 \begin{itemize}
     \item fine-grained, columnar access for event-style analyses
@@ -998,7 +1000,7 @@ This section maps the three research questions to their experimental units and e
 \subsubsection{RQ2 — Full-dataset throughput}
 \begin{itemize}
   \item \textbf{Workload.} Full sequential scans over the $\sim$20 GiB array. Replication and isolation: Appendix \ref{app:a2-run-qc}.
-  \item \textbf{Estimands.} GM throughput (GiB/s) with 95\% intervals; 95th percentile scan time. Statistical settings: Appendix \ref{app:a3-stats}.
+  \item \textbf{Estimands.} GM scan time as the clearest same-logical-dataset completion metric, GM throughput (GiB/s) as transferred bytes divided by time, and 95th percentile scan time. Statistical settings: Appendix \ref{app:a3-stats}.
   \item \textbf{Scope.} Descriptive, session-conditional.
 \end{itemize}
 \label{sec:methods-rq2}
@@ -1009,7 +1011,7 @@ This section maps the three research questions to their experimental units and e
 \begin{itemize}
   \item \textbf{Service/request metrics.} Per-session \gls{SThree} GET counts, downloaded bytes, and latency percentiles at 1-minute granularity (Appendix \ref{app:a4-metrics}). Derive GETs per repetition and GETs per GiB (descriptive only).
   \item \textbf{Storage metrics.} Stored bytes on \gls{SThree} per \{format, codec\}, counting data+metadata objects; compression ratios relative to raw baseline; object counts to characterise layout/objectization.
-  \item \textbf{Linkage.} Relate GM latency (RQ1) and GM throughput (RQ2) to GETs/GiB and objectization. CloudWatch latencies are contextual, not causal; no inference can be made from service/request metrics.
+  \item \textbf{Linkage.} Relate GM latency (RQ1), GM scan time, and transferred-byte GM throughput (RQ2) to GETs/GiB and objectization. CloudWatch latencies are contextual, not causal; no inference can be made from service/request metrics.
 \end{itemize}
 
 \subsection{Hypotheses}
@@ -1041,7 +1043,7 @@ Based on the storage models in Section \ref{sec:cloud-native-storage-models}, th
 
 \subsection{Statistical formulation and evaluation}
 \label{sec:methods-statistical-hypotheses}
-The verbal hypotheses in H1.1--H3.2 do not all reduce to one common pairwise contrast. Instead, they concern four estimand classes: geometric-mean (GM) time for slice latency, GM throughput for full scans, compression ratio, and request intensity (GETs/GiB). We therefore define the relevant estimands separately and evaluate them descriptively using the procedures in Section \ref{sec:methods-metrics} and Appendix \ref{app:a3-stats}.
+The verbal hypotheses in H1.1--H3.2 do not all reduce to one common pairwise contrast. Instead, they concern four estimand classes: geometric-mean (GM) time for slice latency, GM scan time together with transferred-byte GM throughput for full scans, compression ratio, and request intensity (GETs/GiB). We therefore define the relevant estimands separately and evaluate them descriptively using the procedures in Section \ref{sec:methods-metrics} and Appendix \ref{app:a3-stats}.
 
 For each cell defined by \emph{format} $f$, \emph{codec} $c$, and \emph{pattern} $p\in\{\text{slice},\text{full}\}$, let $T_{fcp,1},\dots,T_{fcp,n}$ denote the repeated wall-clock times and
 
@@ -1186,9 +1188,9 @@ The experiment compares the four storage formats under two access patterns: smal
 This section turns measurements into evidence by defining estimands, quantifying uncertainty, and scoring alternatives so the decision matrix reflects speed, reliability, and efficiency. The log-time and bootstrap machinery applies directly to the timing estimands in RQ1–RQ2, while RQ3 combines those timing summaries with descriptive request and storage metrics as specified in \ref{sec:methods-rq-map}.
 
 \subsection{Performance Metrics and Evaluation Criteria}
-We evaluate each format along four dimensions. \textbf{Latency} is reported for both slice and full-scan workloads as geometric-mean time with dependence-robust 95\% \glspl{CI} on the log scale, together with the 95th percentile and its interval (Appendix \ref{app:a3-stats}). \textbf{Throughput} for full scans is reported as geometric-mean GiB/s derived from bytes divided by time and analyzed on the log scale with MBB 95\% \glspl{CI}. \textbf{Request intensity} is measured as GETs per repetition and GETs per GiB using per-session \gls{SThree} aggregates (Appendix \ref{app:a4-metrics}). \textbf{Compression} is summarized through total stored bytes on \gls{SThree} and compression ratio relative to the raw baseline.
+We evaluate each format along four dimensions. \textbf{Latency} is reported for both slice and full-scan workloads as geometric-mean time with dependence-robust 95\% \glspl{CI} on the log scale, together with the 95th percentile and its interval (Appendix \ref{app:a3-stats}). For full scans, GM scan time is the clearest same-logical-dataset completion metric across formats. \textbf{Throughput} for full scans is additionally reported as geometric-mean GiB/s derived from transferred/downloaded bytes divided by time and analyzed on the log scale with MBB 95\% \glspl{CI}. \textbf{Request intensity} is measured as GETs per repetition and GETs per GiB using per-session \gls{SThree} aggregates (Appendix \ref{app:a4-metrics}). \textbf{Compression} is summarized through total stored bytes on \gls{SThree} and compression ratio relative to the raw baseline.
 
-Cross-format contrast views are reported descriptively. For slice latency, the primary effect-size view is the GM time ratio within each codec family. For full scans, the primary performance contrast is GM throughput, while GM time ratios are retained as a supporting appendix view within each codec family.
+Cross-format contrast views are reported descriptively. For slice latency, the primary effect-size view is the GM time ratio within each codec family. For full scans, GM scan time is the primary same-logical-dataset comparison, while GM throughput is reported as an operational transferred-byte throughput summary; GM time ratios are retained as a supporting appendix view within each codec family.
 
 \subsection{Decision-matrix scoring (normalization and weights)}
 For downstream selection, we compute normalized 0–100 scores per codec\(\times\)pattern using robust min–max scaling within that family (lower bound = 5th percentile, upper bound = 95th percentile, clipped).
@@ -1198,13 +1200,13 @@ For slice workloads, the score weights GM latency at 0.60, \(p_{95}\) at 0.20, G
 League tables are ranked by the primary objective (slice: GM latency; full: throughput), with tie-breakers matching those in the Results section.
 
 \subsection{Statistical methods}
-Timings are positive and multiplicative, so we analyze $\ln(\text{time})$ per cell (format$\times$codec$\times$pattern). The primary estimands are geometric-mean (GM) time, reported with 95\% intervals on the log scale and back-transformed; tail latency ($p_{95}$), reported with 95\% intervals on the original scale; and full-scan throughput in GiB/s, computed from bytes divided by time and analyzed on the log scale with the same interval procedure. Bootstrap and sensitivity settings are given in Appendix \ref{app:a3-stats}.
+Timings are positive and multiplicative, so we analyze $\ln(\text{time})$ per cell (format$\times$codec$\times$pattern). The primary estimands are geometric-mean (GM) time, reported with 95\% intervals on the log scale and back-transformed; tail latency ($p_{95}$), reported with 95\% intervals on the original scale; and full-scan throughput in GiB/s, computed from transferred/downloaded bytes divided by time and analyzed on the log scale with the same interval procedure. For same-logical-dataset full-scan comparisons, GM scan time is the clearest completion metric. Bootstrap and sensitivity settings are given in Appendix \ref{app:a3-stats}.
 
-Within each codec$\times$pattern, the appendix ratio plots are reported as GM time \emph{ratios} versus Zarr and are \textbf{descriptive, session-conditional}. For full scans, the main-text performance comparisons are based on GM throughput, with the GM-time ratio plots used only as a supporting view. Diagnostics include Q–Q plots on $\ln(\text{time})$, lag-1 autocorrelation, and a run-order trend test (Appendix \ref{app:a2-run-qc}).
+Within each codec$\times$pattern, the appendix ratio plots are reported as GM time \emph{ratios} versus Zarr and are \textbf{descriptive, session-conditional}. For full scans, the main-text performance comparisons are based on GM scan time, with GM throughput reported alongside it as an operational transferred-byte summary and the GM-time ratio plots used as a supporting view. Diagnostics include Q–Q plots on $\ln(\text{time})$, lag-1 autocorrelation, and a run-order trend test (Appendix \ref{app:a2-run-qc}).
 
 Per-session \gls{SThree} aggregates are used descriptively only; identifiers and statistics are listed in Appendix \ref{app:a4-metrics}. We do not average percentiles across sessions or attach inferential intervals to service metrics. Warm-up and replication policy are defined in Appendix \ref{app:a2-run-qc}.
 
-For all between-format comparisons we treat \emph{ratios of geometric means} as the primary effect size for time-based outcomes. For latency, this is the ratio of GM times between two formats on the original scale (for example, GM$_\text{ROOT}$/GM$_\text{Zarr}$), where values below~1 indicate that the numerator is faster. Because we analyse $\ln(\text{time})$, these ratios correspond to differences of means on the log scale. Empirically, response‑time distributions in computer systems are right‑skewed and often close to lognormal, so working on the log scale and reporting geometric means is standard in performance evaluation. For full scans, the primary reported performance estimand is GM throughput in GiB/s, obtained by dividing session-specific downloaded GiB by GM time. Because downloaded bytes can differ across formats, descriptive GM-time ratios and GM-throughput contrasts need not coincide; the appendix ratio plots therefore show GM time ratios versus Zarr, while throughput values are reported directly in the tables. Nonparametric effect sizes are reported as \emph{median ratios} in the robustness tables.
+For all between-format comparisons we treat \emph{ratios of geometric means} as the primary effect size for time-based outcomes. For latency, this is the ratio of GM times between two formats on the original scale (for example, GM$_\text{ROOT}$/GM$_\text{Zarr}$), where values below~1 indicate that the numerator is faster. Because we analyse $\ln(\text{time})$, these ratios correspond to differences of means on the log scale. Empirically, response‑time distributions in computer systems are right‑skewed and often close to lognormal, so working on the log scale and reporting geometric means is standard in performance evaluation. For full scans, GM scan time is the clearest same-logical-dataset completion estimand. We additionally report GM throughput in GiB/s, obtained by dividing session-specific downloaded GiB by GM time; this should be read as a transferred-byte throughput summary of the stored representation. Because downloaded bytes can differ across formats, descriptive GM-time ratios and GM-throughput contrasts need not coincide; the appendix ratio plots therefore show GM time ratios versus Zarr, while throughput values are reported directly in the tables. Nonparametric effect sizes are reported as \emph{median ratios} in the robustness tables.
 
 For pairwise time-ratio contrasts within a codec $\times$ pattern family, the descriptive reference value is 1. Rather than performing formal tests, we present 95\% confidence intervals for the ratio and interpret them descriptively.
 
@@ -1256,7 +1258,7 @@ Random seeds are fixed and logged with per-run timers, and CloudWatch aggregates
 \cleardoublepage
 \chapter{What you did}
 \label{ch:whatYouDid}
-This chapter documents how the artifacts were built and run. It specifies the dataset and augmentation strategy, the \gls{AWS} environment and client software, how each backend (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}, Parquet) was ingested on \gls{SThree}, the monitoring and logging setup, and deviations from the plan, including the pilot-only evaluation of Parquet.
+This chapter documents how the artifacts were built and run. It specifies the dataset and augmentation strategy, the \gls{AWS} environment and client software, how each backend (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}/\gls{TTree}, Parquet) was ingested on \gls{SThree}, the monitoring and logging setup, and deviations from the plan, including the pilot-only evaluation of Parquet.
 
 \section{Dataset and preprocessing}
 All experiments used a single detector stack derived from 80 real \texttt{CBF} frames and expanded to a raw pixel payload of \(\sim\)\SI{20}{\gibi\byte} (\(N{=}1296\approx1{,}300\) frames; Appendix Table \ref{tab:dataset_facts}).
@@ -1292,13 +1294,13 @@ To scale the corpus for I/O benchmarking while preserving frame geometry and \te
 Random choices used fixed Python and NumPy seeds (Appendix \ref{app:a7-synthesis}). We targeted $N{=}1296$ frames (raw pixel payload \(\sim\)\SI{20.02}{\gibi\byte}; Appendix Table \ref{tab:dataset_facts}) by estimating average slice size and computing the required frame count. Outputs were written as \gls{CBF} frames and then uploaded to \gls{AWS} \gls{SThree} (implementation details in Appendix \ref{app:a7-synthesis}).
 
 \section{Infrastructure and software}
-All experiments ran in a single \gls{AWS} region (\texttt{eu-north-1}) on one \gls{ECtwo} node, with all artifacts stored in one \gls{SThree} bucket. \gls{HDFfive} used a local \gls{HSDS} service; Zarr, TileDB, \gls{ROOT}, and the Parquet pilot wrote directly to \gls{SThree} via client libraries. \gls{SThree} bucket analytics and CloudWatch request metrics captured request counts, bytes, and service latencies per session.
+All experiments ran in a single \gls{AWS} region (\texttt{eu-north-1}) on one \gls{ECtwo} node, with all artifacts stored in one \gls{SThree} bucket. HDF5 access in the timed benchmark was provided via a local \gls{HSDS} service; Zarr, TileDB, \gls{ROOT}/\gls{TTree}, and the Parquet pilot wrote directly to \gls{SThree} via client libraries. \gls{SThree} bucket analytics and CloudWatch request metrics captured request counts, bytes, and service latencies per session.
 
-\textbf{Region and bucket.} The benchmark used a single \gls{SThree} bucket in \texttt{eu-north-1}, with distinct prefixes for inputs, intermediate artifacts, and final format stores (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}, Parquet). The exact bucket name and prefixes are listed in Appendix \ref{app:a1-testbed}.
+\textbf{Region and bucket.} The benchmark used a single \gls{SThree} bucket in \texttt{eu-north-1}, with distinct prefixes for inputs, intermediate artifacts, and final format stores (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}/\gls{TTree}, Parquet). The exact bucket name and prefixes are listed in Appendix \ref{app:a1-testbed}.
 
 \textbf{Monitoring and metrics.} Bucket analytics were enabled to track object counts and byte growth over time. In addition, CloudWatch \gls{SThree} request metrics were enabled at 1-minute resolution and exported per session (request counts, bytes, and service-side latency summaries). Metric identifiers and statistics are listed in Appendix \ref{app:a4-metrics}.
 
-\textbf{HSDS service.} \gls{HDFfive} access was provided by \gls{HSDS} running via Docker on the \gls{ECtwo} node, following the vendor’s \gls{AWS} instructions \cite{hdfgroup-hsds-aws-docker}. The service wrote to the benchmark \gls{SThree} bucket and exposed a local HTTP endpoint where environment variables and configuration are listed in Appendix \ref{app:a1-testbed}.
+\textbf{HSDS service.} HDF5 access in the timed benchmark was provided by \gls{HSDS} running via Docker on the \gls{ECtwo} node, following the vendor’s \gls{AWS} instructions \cite{hdfgroup-hsds-aws-docker}. The service wrote to the benchmark \gls{SThree} bucket and exposed a local HTTP endpoint where environment variables and configuration are listed in Appendix \ref{app:a1-testbed}.
 
 \textbf{Other backends.} Zarr, TileDB, \gls{ROOT}/\gls{TTree}, and Parquet required no separate service. They used client libraries to write directly to \gls{SThree} with the instance role.
 
@@ -1386,11 +1388,11 @@ Parquet was implemented as a single file with $2880$ list-of-$2880$ \texttt{uint
   \item Each fragment contributes internal files (data, metadata, footers) under the array URI.
 \end{itemize}
 
-\subsection{ROOT / TTree} \gls{ROOT} encodes all frames into a single file per codec; this notes the tree layout, compression, and access pattern.
+\subsection{ROOT / TTree} \gls{ROOT}/\gls{TTree} encodes all frames into a single file per codec; this notes the tree layout, compression, and access pattern.
 
 \textbf{Tree layout:}
 \begin{itemize}
-  \item Files: one \gls{ROOT} file per codec under a dedicated prefix.
+  \item Files: one ROOT/TTree file per codec under a dedicated prefix.
   \item \texttt{TTree} \texttt{img\_tree} with one branch \texttt{data} of length $2880\times2880$ \texttt{uint16}; one entry per frame.
 \end{itemize}
 
@@ -1401,7 +1403,7 @@ Parquet was implemented as a single file with $2880$ list-of-$2880$ \texttt{uint
 
 \textbf{Objectization:}
 \begin{itemize}
-  \item Single \gls{ROOT} object per codec. Selective reads use \gls{HTTP}/\gls{SThree} range-GETs into baskets/pages.
+  \item Single ROOT/TTree object per codec. Selective reads use \gls{HTTP}/\gls{SThree} range-GETs into baskets/pages.
 \end{itemize}
 
 \subsection{RQ links from the layout choices}
@@ -1419,7 +1421,7 @@ This section summarizes the run protocol for each \{format$\times$codec$\times$p
 \subsection{Execution protocol}
 All reads ran on a single \gls{ECtwo} node in \texttt{eu-north-1}. For each \emph{format} $\times$ \emph{codec} $\times$ \emph{pattern}, we used a fixed warm-up followed by timed runs, with no cross-format concurrency (Appendix \ref{app:a2-run-qc}).
 
-Each \emph{session} targeted one cell (format, codec, pattern) and consisted of a small warm-up phase, an idle gap, and a block of timed repetitions where exact counts and timings are detailed in Appendix \ref{app:a2-run-qc}. Between sessions, formats did not overlap; \Gls{HSDS}, Zarr, TileDB, and \gls{ROOT} were run in separate sessions. A fixed seed ensured reproducibility: slice workloads used precomputed random frame indices, whereas full scans iterated over all frames (sampling details in Appendix \ref{app:a2-run-qc}).
+Each \emph{session} targeted one cell (format, codec, pattern) and consisted of a small warm-up phase, an idle gap, and a block of timed repetitions where exact counts and timings are detailed in Appendix \ref{app:a2-run-qc}. Between sessions, formats did not overlap; \Gls{HSDS}, Zarr, TileDB, and ROOT/TTree were run in separate sessions. A fixed seed ensured reproducibility: slice workloads used precomputed random frame indices, whereas full scans iterated over all frames (sampling details in Appendix \ref{app:a2-run-qc}).
 
 Per run, we measured wall-clock time using a high-resolution timer around a single read call. The timer includes network transfer, decompression, and client decode, while log serialization is outside the timer. \gls{SThree} bucket request metrics were enabled and exported per session for request counts, bytes, and service-side latency summaries. Metric identifiers/statistics and the export schema are listed in Appendix \ref{app:a4-metrics}; timing windows, separation from warm-ups, inclusion and retry rules, cache-control assumptions, and repetition policy are specified in Appendix \ref{app:a2-run-qc}. Each session emitted a monotonic \texttt{run\_id}, and timed samples and CloudWatch aggregates were stored as \gls{JSON} with format/codec/pattern identifiers (log schema in Appendix \ref{app:a4-metrics}).
 
@@ -1456,11 +1458,11 @@ Runs followed the fixed warm-up and timing protocol where integrity checks verif
 \label{ch:resultsAndAnalysis}
 This chapter reports the empirical results of benchmarking four storage backends on Amazon \gls{SThree}, \gls{HDFfive} via \gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{TTree} under two workload patterns on a single $\sim$20 GiB detector stack ($\sim$1{,}300 frames, \texttt{uint16}). Parquet is included as a pilot-only storage engine (no timed results). Each timed backend is evaluated with three codecs (\texttt{gzip}, \texttt{lz4}, \texttt{zstd}). We present outcomes for (i) partial retrieval of a single frame ($\sim$15.82 MiB), and (ii) full sequential scans of the dataset.
 
-Metrics include client-observed timing, service-side behavior, and storage footprint, with timings analyzed on a log scale. For each {format$\times$codec$\times$pattern} cell, we report geometric-mean (GM) time with dependence-robust 95\% \glspl{CI} via a moving-block bootstrap (MBB; settings in Appendix \ref{app:a3-stats}). Tail behavior is summarized by $p_{95}$ with the same procedure. For full scans, we also report throughput (GiB/s) derived from bytes/time. Storage footprint is reported as stored bytes and compression ratio relative to the raw array. Request intensity (GETs/rep, GETs/GiB) is derived from CloudWatch session aggregates.
+Metrics include client-observed timing, service-side behavior, and storage footprint, with timings analyzed on a log scale. For each {format$\times$codec$\times$pattern} cell, we report geometric-mean (GM) time with dependence-robust 95\% \glspl{CI} via a moving-block bootstrap (MBB; settings in Appendix \ref{app:a3-stats}). Tail behavior is summarized by $p_{95}$ with the same procedure. For full scans, GM scan time is the primary completion metric and transferred-byte throughput (GiB/s) is additionally reported as bytes/time. Storage footprint is reported as stored bytes and compression ratio relative to the raw array. Request intensity (GETs/rep, GETs/GiB) is derived from CloudWatch session aggregates.
 
 Cross-format contrasts are \textbf{descriptive, session-conditional} because formats run in separate sessions. Warm-ups are excluded; $n=50$ timed repetitions per cell are analyzed. All comparisons should therefore be read as associations in this specific dataset and testbed; the design does not support general causal claims about the formats beyond this setting.
 
-This chapter is organized by \emph{RQ1} (interactive slice latency, section \ref{sec:rq1-results}), \emph{RQ2} (full-dataset throughput, section \ref{sec:rq2-results}), and \emph{RQ3} (cost posture and mechanisms, section \ref{sec:rq3-results}).
+This chapter is organized by \emph{RQ1} (interactive slice latency, section \ref{sec:rq1-results}), \emph{RQ2} (full-dataset scan performance, section \ref{sec:rq2-results}), and \emph{RQ3} (cost posture and mechanisms, section \ref{sec:rq3-results}).
 
 \section{Inventory and data hygiene}
 \label{sec:results-inventory}
@@ -1566,7 +1568,7 @@ This section reports client-observed timings for partial (single-frame) retrieva
 This section quantifies interactive (single-frame) latency for each \{format, codec\} cell. We focus on geometric-mean (GM) latency and $p_{95}$ with dependence-robust 95\% \glspl{CI} (MBB settings in Appendix \ref{app:a3-stats}). All contrasts are descriptive and session-conditional. A codec-level summary across formats is provided later in Figure \ref{fig:codec_summary}. Detailed dependence-robust CI and ratio plots for each codec and format appear in Appendix Figures \ref{fig:slice_gzip_gm_mbb}–\ref{fig:slice_zstd_ratios_point}.
 
 \subsubsection{gzip}
-Table \ref{tab:slice_gzip_mbb} reports GM slice latency and $p_{95}$ for each format under \texttt{gzip}. TileDB is fastest, with a GM latency of about 195~ms, followed by Zarr ($\sim$229~ms) and HDF5/HSDS ($\sim$241~ms), while \gls{ROOT} is roughly twice as slow at $\sim$406~ms. In effect-size terms (GM ratios vs.\ Zarr), TileDB’s GM is $\approx 0.85\times$ Zarr (about 15\% lower latency), HDF5/HSDS is $\approx 1.05\times$ Zarr (about 5\% higher latency), and \gls{ROOT} is $\approx 1.77\times$ Zarr (about 77\% higher latency). The $p_{95}$ point estimates follow the same ordering (TileDB $<\,$Zarr$<\,$HDF5/HSDS$<\,$ROOT); for TileDB and Zarr, the $p_{95}$ CIs partially overlap, so the tail difference between those two should be read as descriptive, but both lie well below HDF5/HSDS and \gls{ROOT}. Overall, under \texttt{gzip}, chunked (Zarr) and fragment-based (TileDB) layouts yield substantially lower slice latency and lower tail latency than the single-object \gls{ROOT} layout in this dataset. The full dependence-robust CI curves and GM ratio plots for this codec are shown in Appendix Figures \ref{fig:slice_gzip_gm_mbb}–\ref{fig:slice_gzip_ratios_point}.
+Table \ref{tab:slice_gzip_mbb} reports GM slice latency and $p_{95}$ for each format under \texttt{gzip}. TileDB is fastest, with a GM latency of about 195~ms, followed by Zarr ($\sim$229~ms) and HDF5/HSDS ($\sim$241~ms), while ROOT/TTree is roughly twice as slow at $\sim$406~ms. In effect-size terms (GM ratios vs.\ Zarr), TileDB’s GM is $\approx 0.85\times$ Zarr (about 15\% lower latency), HDF5/HSDS is $\approx 1.05\times$ Zarr (about 5\% higher latency), and ROOT/TTree is $\approx 1.77\times$ Zarr (about 77\% higher latency). The $p_{95}$ point estimates follow the same ordering (TileDB $<\,$Zarr$<\,$HDF5/HSDS$<\,$ROOT/TTree); for TileDB and Zarr, the $p_{95}$ CIs partially overlap, so the tail difference between those two should be read as descriptive, but both lie well below HDF5/HSDS and ROOT/TTree. Overall, under \texttt{gzip}, chunked (Zarr) and fragment-based (TileDB) layouts yield substantially lower slice latency and lower tail latency than the single-object ROOT/TTree layout in this dataset. The full dependence-robust CI curves and GM ratio plots for this codec are shown in Appendix Figures \ref{fig:slice_gzip_gm_mbb}–\ref{fig:slice_gzip_ratios_point}.
 
 
 \begin{table}[H]
@@ -1579,14 +1581,14 @@ Table \ref{tab:slice_gzip_mbb} reports GM slice latency and $p_{95}$ for each fo
     \midrule
     TileDB & 50 & 195.33\,[181.42,\,209.74] & 262.24\,[231.98,\,318.13] \\
     Zarr   & 50 & 229.30\,[222.72,\,236.39] & 282.96\,[262.02,\,313.81] \\
-    \gls{HDFfive}   & 50 & 241.18\,[231.63,\,251.94] & 341.74\,[295.08,\,364.32] \\
-    \gls{ROOT}   & 50 & 406.29\,[396.64,\,416.04] & 471.31\,[450.79,\,501.10] \\
+    HDF5/HSDS   & 50 & 241.18\,[231.63,\,251.94] & 341.74\,[295.08,\,364.32] \\
+    ROOT/TTree   & 50 & 406.29\,[396.64,\,416.04] & 471.31\,[450.79,\,501.10] \\
     \bottomrule
   \end{tabular}
 \end{table}
 
 \subsubsection{LZ4}
-For \texttt{lz4}/slice, GM latencies and $p_{95}$ are given in Table \ref{tab:slice_lz4_mbb}. Zarr is fastest at about 176~ms, with TileDB ($\sim$214~ms) and HDF5/HSDS ($\sim$222~ms) following closely behind, and \gls{ROOT} again the slowest at $\sim$328~ms. Relative to Zarr, TileDB’s GM latency is $\approx 1.22\times$ (about 22\% slower), HDF5/HSDS is $\approx 1.26\times$ (about 26\% slower), and \gls{ROOT} is $\approx 1.87\times$ (about 87\% slower). A notable difference from \texttt{gzip} is that Zarr’s $p_{95}$ is higher and its $p_{95}$/GM ratio is larger, reflecting heavier tails under \texttt{lz4}; the $p_{95}$ CIs for Zarr and TileDB are both wide and overlap. The relatively wide $p_{95}$ CIs mean that tail contrasts between Zarr and TileDB/HDF5 should be interpreted cautiously. The more stable signal is the GM ranking, which remains Zarr~$<$~TileDB~$\approx$~HDF5/HSDS~$\ll$~\gls{ROOT}. Appendix Figures \ref{fig:slice_lz4_gm_mbb}–\ref{fig:slice_lz4_ratios_point} show the full CI and ratio behavior.
+For \texttt{lz4}/slice, GM latencies and $p_{95}$ are given in Table \ref{tab:slice_lz4_mbb}. Zarr is fastest at about 176~ms, with TileDB ($\sim$214~ms) and HDF5/HSDS ($\sim$222~ms) following closely behind, and ROOT/TTree again the slowest at $\sim$328~ms. Relative to Zarr, TileDB’s GM latency is $\approx 1.22\times$ (about 22\% slower), HDF5/HSDS is $\approx 1.26\times$ (about 26\% slower), and ROOT/TTree is $\approx 1.87\times$ (about 87\% slower). A notable difference from \texttt{gzip} is that Zarr’s $p_{95}$ is higher and its $p_{95}$/GM ratio is larger, reflecting heavier tails under \texttt{lz4}; the $p_{95}$ CIs for Zarr and TileDB are both wide and overlap. The relatively wide $p_{95}$ CIs mean that tail contrasts between Zarr and TileDB/HDF5/HSDS should be interpreted cautiously. The more stable signal is the GM ranking, which remains Zarr~$<$~TileDB~$\approx$~HDF5/HSDS~$\ll$~ROOT/TTree. Appendix Figures \ref{fig:slice_lz4_gm_mbb}–\ref{fig:slice_lz4_ratios_point} show the full CI and ratio behavior.
 
 
 \begin{table}[H]
@@ -1599,14 +1601,14 @@ For \texttt{lz4}/slice, GM latencies and $p_{95}$ are given in Table \ref{tab:sl
     \midrule
     Zarr   & 50 & 175.84\,[158.86,\,194.77] & 349.19\,[280.68,\,414.36] \\
     TileDB & 50 & 214.27\,[203.42,\,227.45] & 274.37\,[260.99,\,402.94] \\
-    \gls{HDFfive}   & 50 & 222.35\,[214.94,\,229.53] & 273.11\,[250.50,\,280.97] \\
-    \gls{ROOT}   & 50 & 328.31\,[314.05,\,343.65] & 380.41\,[368.60,\,429.22] \\
+    HDF5/HSDS   & 50 & 222.35\,[214.94,\,229.53] & 273.11\,[250.50,\,280.97] \\
+    ROOT/TTree   & 50 & 328.31\,[314.05,\,343.65] & 380.41\,[368.60,\,429.22] \\
     \bottomrule
   \end{tabular}
 \end{table}
 
 \subsubsection{zstd}
-For \texttt{zstd}/slice, Table \ref{tab:slice_zstd_mbb} shows that Zarr is fastest, with a GM latency of about 155~ms. TileDB ($\sim$177~ms) and HDF5/HSDS ($\sim$210~ms) are slower but still clearly separated from \gls{ROOT} ($\sim$269~ms). The corresponding effect sizes vs.\ Zarr are $\approx 1.14\times$ for TileDB (about 14\% slower), $\approx 1.35\times$ for HDF5/HSDS (about 35\% slower), and $\approx 1.74\times$ for \gls{ROOT} (about 74\% slower). The $p_{95}$ point estimates display the same ordering, and differences are large in magnitude, especially between \gls{ROOT} and the other formats. CIs for Zarr, TileDB, and HDF5/HSDS overlap to some extent, so tail contrasts among those three are descriptive rather than sharp, but all three have markedly lower tails than \gls{ROOT}. Detailed MBB CI curves and GM ratio plots for \texttt{zstd}/slice are provided in Appendix Figures \ref{fig:slice_zstd_gm_mbb}–\ref{fig:slice_zstd_ratios_point}.
+For \texttt{zstd}/slice, Table \ref{tab:slice_zstd_mbb} shows that Zarr is fastest, with a GM latency of about 155~ms. TileDB ($\sim$177~ms) and HDF5/HSDS ($\sim$210~ms) are slower but still clearly separated from ROOT/TTree ($\sim$269~ms). The corresponding effect sizes vs.\ Zarr are $\approx 1.14\times$ for TileDB (about 14\% slower), $\approx 1.35\times$ for HDF5/HSDS (about 35\% slower), and $\approx 1.74\times$ for ROOT/TTree (about 74\% slower). The $p_{95}$ point estimates display the same ordering, and differences are large in magnitude, especially between ROOT/TTree and the other formats. CIs for Zarr, TileDB, and HDF5/HSDS overlap to some extent, so tail contrasts among those three are descriptive rather than sharp, but all three have markedly lower tails than ROOT/TTree. Detailed MBB CI curves and GM ratio plots for \texttt{zstd}/slice are provided in Appendix Figures \ref{fig:slice_zstd_gm_mbb}–\ref{fig:slice_zstd_ratios_point}.
 
 
 \begin{table}[H]
@@ -1619,19 +1621,19 @@ For \texttt{zstd}/slice, Table \ref{tab:slice_zstd_mbb} shows that Zarr is faste
     \midrule
     Zarr   & 50 & 155.09\,[149.19,\,161.91] & 194.77\,[176.71,\,242.63] \\
     TileDB & 50 & 176.83\,[164.98,\,189.88] & 249.79\,[205.50,\,312.41] \\
-    \gls{HDFfive}   & 50 & 210.00\,[205.12,\,215.20] & 254.79\,[235.60,\,286.18] \\
-    \gls{ROOT}   & 50 & 269.12\,[263.83,\,274.91] & 311.12\,[291.81,\,340.58] \\
+    HDF5/HSDS   & 50 & 210.00\,[205.12,\,215.20] & 254.79\,[235.60,\,286.18] \\
+    ROOT/TTree   & 50 & 269.12\,[263.83,\,274.91] & 311.12\,[291.81,\,340.58] \\
     \bottomrule
   \end{tabular}
 \end{table}
 
 
-\subsection{RQ2 — Full-dataset throughput}
+\subsection{RQ2 — Full-dataset scan performance}
 \label{sec:rq2-results}
-Throughput (GiB/s) is computed as session-specific downloaded GiB per timed repetition divided by GM time, with uncertainty obtained by the same dependence-robust bootstrap transformation on the log scale (Appendix \ref{app:a3-stats}); summary values appear alongside times in Table \ref{tab:cross_full_throughput_vs_gets}.
+This section reports full-scan performance primarily through GM scan time, with transferred-byte throughput (GiB/s) additionally computed as session-specific downloaded GiB per timed repetition divided by GM time and propagated through the same dependence-robust bootstrap transformation on the log scale (Appendix \ref{app:a3-stats}); summary values appear alongside times in Table \ref{tab:cross_full_throughput_vs_gets}.
 
 \subsubsection{gzip}
-Table \ref{tab:full_gzip_mbb} reports GM full-scan latencies and $p_{95}$ for each format under \texttt{gzip}. TileDB has both the lowest GM time and the highest reported GM throughput, at about 11.3~s and $\approx 1.04$~GiB/s, followed by Zarr at $\approx 35.6$~s (0.32~GiB/s). HDF5/HSDS and \gls{ROOT} are substantially slower. In the supporting GM-time ratio view versus Zarr, TileDB’s GM time is $\approx 0.32\times$ Zarr, HDF5/HSDS is $\approx 4.4\times$ Zarr, and \gls{ROOT} is $\approx 12.4\times$ Zarr. The $p_{95}$ point estimates follow the same ordering. The CIs are narrow relative to the gap between TileDB and \gls{ROOT}, suggesting that a few extreme runs do not drive the substantial throughput differences; however, all tail summaries are interpreted descriptively. These patterns are consistent with the throughput–versus–GETs/GiB view in Table \ref{tab:cross_full_throughput_vs_gets} and Figure \ref{fig:cross_full_throughput_vs_gets}. Detailed dependence-robust CI and GM-time-ratio curves for \texttt{gzip}/full scans are provided in Appendix Figures \ref{fig:full_gzip_gm_mbb}–\ref{fig:full_gzip_ratios_point}.
+Table \ref{tab:full_gzip_mbb} reports GM full-scan latencies and $p_{95}$ for each format under \texttt{gzip}. TileDB has both the lowest GM time and the highest reported GM throughput, at about 11.3~s and $\approx 1.04$~GiB/s, followed by Zarr at $\approx 35.6$~s (0.32~GiB/s). HDF5/HSDS and ROOT/TTree are substantially slower. In the supporting GM-time ratio view versus Zarr, TileDB’s GM time is $\approx 0.32\times$ Zarr, HDF5/HSDS is $\approx 4.4\times$ Zarr, and ROOT/TTree is $\approx 12.4\times$ Zarr. The $p_{95}$ point estimates follow the same ordering. The CIs are narrow relative to the gap between TileDB and ROOT/TTree, suggesting that a few extreme runs do not drive the substantial throughput differences; however, all tail summaries are interpreted descriptively. These patterns are consistent with the throughput–versus–GETs/GiB view in Table \ref{tab:cross_full_throughput_vs_gets} and Figure \ref{fig:cross_full_throughput_vs_gets}. Detailed dependence-robust CI and GM-time-ratio curves for \texttt{gzip}/full scans are provided in Appendix Figures \ref{fig:full_gzip_gm_mbb}–\ref{fig:full_gzip_ratios_point}.
 
 \begin{table}[H]
   \centering
@@ -1643,8 +1645,8 @@ Table \ref{tab:full_gzip_mbb} reports GM full-scan latencies and $p_{95}$ for ea
     \midrule
     TileDB & 50 & 11\,254\,[10\,994,\,11\,529] & 12\,419\,[11\,728,\,12\,846] \\
     Zarr   & 50 & 35\,598\,[35\,280,\,35\,926] & 36\,415\,[35\,871,\,36\,447] \\
-    \gls{HDFfive}   & 50 & 156\,966\,[156\,394,\,157\,761] & 159\,600\,[157\,119,\,162\,739] \\
-    \gls{ROOT}   & 50 & 442\,484\,[434\,012,\,451\,398] & 464\,301\,[451\,985,\,468\,891] \\
+    HDF5/HSDS   & 50 & 156\,966\,[156\,394,\,157\,761] & 159\,600\,[157\,119,\,162\,739] \\
+    ROOT/TTree   & 50 & 442\,484\,[434\,012,\,451\,398] & 464\,301\,[451\,985,\,468\,891] \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1652,7 +1654,7 @@ Table \ref{tab:full_gzip_mbb} reports GM full-scan latencies and $p_{95}$ for ea
 
 
 \subsubsection{LZ4}
-For \texttt{lz4}/full scans, Table \ref{tab:full_lz4_mbb} shows that TileDB again achieves the highest reported GM throughput, with a GM time of about 13.6~s (1.17~GiB/s). Zarr follows at $\approx 29.5$~s (0.37~GiB/s). In the supporting GM-time ratio view versus Zarr, TileDB’s GM time is $\approx 0.46\times$ Zarr, while HDF5/HSDS and \gls{ROOT} are much slower at $\approx 5.1\times$ and $\approx 12.3\times$ Zarr, respectively. The $p_{95}$ point estimates mirror this ranking, and CIs are comparatively tight for TileDB and Zarr, which supports the qualitative picture of TileDB as the highest-throughput format for this workload. These supporting GM-time ratios agree with the codec-level summary in Section \ref{sec:ans-rq2}. The full set of CI curves and GM-time-ratio plots for \texttt{lz4}/full scans is shown in Appendix Figures \ref{fig:full_lz4_gm_mbb}–\ref{fig:full_lz4_ratios_point}.
+For \texttt{lz4}/full scans, Table \ref{tab:full_lz4_mbb} shows that TileDB again achieves the highest reported GM throughput, with a GM time of about 13.6~s (1.17~GiB/s). Zarr follows at $\approx 29.5$~s (0.37~GiB/s). In the supporting GM-time ratio view versus Zarr, TileDB’s GM time is $\approx 0.46\times$ Zarr, while HDF5/HSDS and ROOT/TTree are much slower at $\approx 5.1\times$ and $\approx 12.3\times$ Zarr, respectively. The $p_{95}$ point estimates mirror this ranking, and CIs are comparatively tight for TileDB and Zarr, which supports the qualitative picture of TileDB as the highest-throughput format for this workload. These supporting GM-time ratios agree with the codec-level summary in Section \ref{sec:ans-rq2}. The full set of CI curves and GM-time-ratio plots for \texttt{lz4}/full scans is shown in Appendix Figures \ref{fig:full_lz4_gm_mbb}–\ref{fig:full_lz4_ratios_point}.
 
 \begin{table}[H]
   \centering
@@ -1664,8 +1666,8 @@ For \texttt{lz4}/full scans, Table \ref{tab:full_lz4_mbb} shows that TileDB agai
     \midrule
     TileDB & 50 & 13\,602\,[13\,265,\,13\,871] & 14\,387\,[13\,977,\,14\,568] \\
     Zarr   & 50 & 29\,483\,[29\,255,\,29\,741] & 30\,280\,[29\,707,\,30\,395] \\
-    \gls{HDFfive}   & 50 & 151\,427\,[151\,201,\,151\,666] & 152\,780\,[152\,179,\,153\,033] \\
-    \gls{ROOT}   & 50 & 363\,490\,[358\,672,\,367\,871] & 375\,031\,[369\,041,\,376\,388] \\
+    HDF5/HSDS   & 50 & 151\,427\,[151\,201,\,151\,666] & 152\,780\,[152\,179,\,153\,033] \\
+    ROOT/TTree   & 50 & 363\,490\,[358\,672,\,367\,871] & 375\,031\,[369\,041,\,376\,388] \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1673,7 +1675,7 @@ For \texttt{lz4}/full scans, Table \ref{tab:full_lz4_mbb} shows that TileDB agai
 
 
 \subsubsection{zstd}
-Under \texttt{zstd}, Table \ref{tab:full_zstd_mbb} shows that TileDB has the lowest GM full-scan time and the highest reported GM throughput, at about 10.4~s ($\approx 1.06$~GiB/s). Zarr follows at $\approx 30.4$~s (0.35~GiB/s), while HDF5/HSDS and \gls{ROOT} have much longer scan times and much lower throughput. In the supporting GM-time ratio view versus Zarr, TileDB’s GM time is $\approx 0.34\times$, HDF5/HSDS is $\approx 5.0\times$, and \gls{ROOT} is $\approx 12.3\times$. The $p_{95}$ statistics follow the same ordering and are numerically far apart, particularly between TileDB/Zarr and \gls{ROOT}. For Zarr versus TileDB/HDF5, the CIs overlap, so tail contrasts among those three remain descriptive, but all three exhibit substantially lower tails than \gls{ROOT}. These results are consistent with the cross-metric view in Table \ref{tab:cross_full_throughput_vs_gets} and Figure \ref{fig:cross_full_throughput_vs_gets}. Appendix Figures \ref{fig:full_zstd_gm_mbb}–\ref{fig:full_zstd_ratios_point} and Figures \ref{fig:tail-full-p95-hd-ci-vs-L} and Table \ref{tab:tail-full-zstd-p95-selected} provide the corresponding CI and tail-sensitivity plots.
+Under \texttt{zstd}, Table \ref{tab:full_zstd_mbb} shows that TileDB has the lowest GM full-scan time and the highest reported GM throughput, at about 10.4~s ($\approx 1.06$~GiB/s). Zarr follows at $\approx 30.4$~s (0.35~GiB/s), while HDF5/HSDS and ROOT/TTree have much longer scan times and much lower throughput. In the supporting GM-time ratio view versus Zarr, TileDB’s GM time is $\approx 0.34\times$, HDF5/HSDS is $\approx 5.0\times$, and ROOT/TTree is $\approx 12.3\times$. The $p_{95}$ statistics follow the same ordering and are numerically far apart, particularly between TileDB/Zarr and ROOT/TTree. For Zarr versus TileDB/HDF5/HSDS, the CIs overlap, so tail contrasts among those three remain descriptive, but all three exhibit substantially lower tails than ROOT/TTree. These results are consistent with the cross-metric view in Table \ref{tab:cross_full_throughput_vs_gets} and Figure \ref{fig:cross_full_throughput_vs_gets}. Appendix Figures \ref{fig:full_zstd_gm_mbb}–\ref{fig:full_zstd_ratios_point} and Figures \ref{fig:tail-full-p95-hd-ci-vs-L} and Table \ref{tab:tail-full-zstd-p95-selected} provide the corresponding CI and tail-sensitivity plots.
 
 \begin{table}[H]
   \centering
@@ -1685,19 +1687,19 @@ Under \texttt{zstd}, Table \ref{tab:full_zstd_mbb} shows that TileDB has the low
     \midrule
     TileDB & 50 & 10\,384\,[10\,123,\,10\,687] & 11\,506\,[10\,696,\,11\,771] \\
     Zarr   & 50 & 30\,365\,[30\,167,\,30\,555] & 31\,093\,[30\,714,\,31\,406] \\
-    \gls{HDFfive}   & 50 & 151\,497\,[151\,071,\,151\,996] & 153\,273\,[152\,072,\,155\,554] \\
-    \gls{ROOT}   & 50 & 373\,589\,[357\,497,\,390\,216] & 437\,730\,[419\,904,\,452\,208] \\
+    HDF5/HSDS   & 50 & 151\,497\,[151\,071,\,151\,996] & 153\,273\,[152\,072,\,155\,554] \\
+    ROOT/TTree   & 50 & 373\,589\,[357\,497,\,390\,216] & 437\,730\,[419\,904,\,452\,208] \\
     \bottomrule
   \end{tabular}
 \end{table}
 
 \subsection{Codec comparison (summary)}
-To summarize the codec trade-offs for this dataset, Figure \ref{fig:codec_summary} compares gzip, LZ4, and zstd side-by-side for each format. The top panel reports GM slice latency, and the bottom panel reports GM full-scan throughput, both with dependence-robust 95\% confidence intervals.
+To summarize the codec trade-offs for this dataset, Figure \ref{fig:codec_summary} compares gzip, LZ4, and zstd side-by-side for each format. The top panel reports GM slice latency, and the bottom panel reports transferred-byte GM full-scan throughput, both with dependence-robust 95\% confidence intervals.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{figures/graphs/fig_codec_summary_by_format.pdf}
-  \caption{Codec comparison by format. Top: GM slice latency (ms); bottom: GM full-scan throughput (GiB/s). Bars are grouped by format with one bar per codec (gzip, LZ4, zstd); error bars show dependence-robust 95\% CIs.}
+  \caption{Codec comparison by format. Top: GM slice latency (ms); bottom: transferred-byte GM full-scan throughput (GiB/s). Bars are grouped by format with one bar per codec (gzip, LZ4, zstd); error bars show dependence-robust 95\% CIs.}
   \label{fig:codec_summary}
 \end{figure}
 
@@ -1714,7 +1716,7 @@ This section links performance to request intensity and service latencies, then 
 This section links client performance to request intensity and service latencies to clarify mechanisms behind observed differences. All relationships are descriptive and session-conditional. Figures show per-session points with dependence-robust \glspl{CI}.
 
 \subsubsection{Slice: latency vs GETs per GiB}
-Figure \ref{fig:cross_slice_latency_vs_gets} links slice latency to request intensity on \gls{SThree} by plotting GM latency against GETs/GiB for each format and codec. Table \ref{tab:cross_slice_latency_vs_gets} lists the underlying values. For Zarr and TileDB, lower GETs/GiB coincide with lower GM latency, while ROOT shows low GETs/GiB but high latency due to its single-object layout and paging overhead. In this dataset, lower GETs/GiB is associated with lower GM latency for chunked stores (Zarr, TileDB), but not for \gls{ROOT}, which combines low GETs/GiB with high latency. Request intensity appears to account for part of the observed differences, but layout, object size, and decode paths also vary, and the experiment is not designed to attribute causal contributions between these factors.
+Figure \ref{fig:cross_slice_latency_vs_gets} links slice latency to request intensity on \gls{SThree} by plotting GM latency against GETs/GiB for each format and codec. Table \ref{tab:cross_slice_latency_vs_gets} lists the underlying values. For Zarr and TileDB, lower GETs/GiB coincide with lower GM latency, while ROOT/TTree shows low GETs/GiB but high latency due to its single-object layout and paging overhead. In this dataset, lower GETs/GiB is associated with lower GM latency for chunked stores (Zarr, TileDB), but not for ROOT/TTree, which combines low GETs/GiB with high latency. Request intensity appears to account for part of the observed differences, but layout, object size, and decode paths also vary, and the experiment is not designed to attribute causal contributions between these factors.
 
 \begin{figure}[H]
   \centering
@@ -1731,29 +1733,29 @@ Figure \ref{fig:cross_slice_latency_vs_gets} links slice latency to request inte
     \toprule
     Format & Codec & GETs/GiB & GM latency (ms) & $p_{95}$ (ms) \\
     \midrule
-    \gls{HDFfive}  & gzip & 482.2 & 241 & 342 \\
+    HDF5/HSDS  & gzip & 482.2 & 241 & 342 \\
     Zarr  & gzip & 126.7 & 229 & 283 \\
     TileDB& gzip & 113.3 & 195 & 262 \\
-    \gls{ROOT}  & gzip &  61.3 & 406 & 471 \\
-    \gls{HDFfive}  & \gls{LZfour}  & 270.5 & 222 & 273 \\
+    ROOT/TTree  & gzip &  61.3 & 406 & 471 \\
+    HDF5/HSDS  & \gls{LZfour}  & 270.5 & 222 & 273 \\
     Zarr  & \gls{LZfour}  & 135.0 & 176 & 349 \\
     TileDB& \gls{LZfour}  &  83.2 & 214 & 274 \\
-    \gls{ROOT}  & \gls{LZfour}  &  51.1 & 328 & 380 \\
-    \gls{HDFfive}  & \gls{ZSTD} & 488.0 & 210 & 255 \\
+    ROOT/TTree  & \gls{LZfour}  &  51.1 & 328 & 380 \\
+    HDF5/HSDS  & \gls{ZSTD} & 488.0 & 210 & 255 \\
     Zarr  & \gls{ZSTD} & 136.6 & 155 & 195 \\
     TileDB& \gls{ZSTD} & 120.7 & 177 & 250 \\
-    \gls{ROOT}  & \gls{ZSTD} &  66.2 & 269 & 311 \\
+    ROOT/TTree  & \gls{ZSTD} &  66.2 & 269 & 311 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\subsubsection{Scan: throughput vs GETs per GiB}
-Relate full-scan throughput to request intensity. Throughput is plotted on a log scale using GM time. GETs/GiB are session aggregates. \textbf{Descriptive only}.
+\subsubsection{Scan: transferred-byte throughput vs GETs per GiB}
+Relate full-scan transferred-byte throughput to request intensity. Throughput is derived from session-specific downloaded bytes and GM time; GETs/GiB are session aggregates. \textbf{Descriptive only}.
 
 \begin{figure}[H]
   \centering
   \includegraphics[width=\linewidth]{figures/graphs/fig_cross_full_throughput_vs_GETsGiB_grid.pdf}
-  \caption{Full scan: GM throughput (GiB/s, dependence-robust CI from time) versus GETs per GiB by format and codec. Points are per session; no inference.}
+  \caption{Full scan: transferred-byte GM throughput (GiB/s, dependence-robust CI from time) versus GETs per GiB by format and codec. Points are per session; no inference.}
   \label{fig:cross_full_throughput_vs_gets}
 \end{figure}
 
@@ -1767,16 +1769,16 @@ Relate full-scan throughput to request intensity. Throughput is plotted on a log
     \midrule
     TileDB & gzip &  94.6 &  11.254 & 1.037 \\
     Zarr   & gzip & 116.8 &  35.598 & 0.318 \\
-    \gls{HDFfive}   & gzip & 137.7 & 156.966 & 0.072 \\
-    \gls{ROOT}   & gzip &  58.5 & 442.484 & 0.051 \\
+    HDF5/HSDS   & gzip & 137.7 & 156.966 & 0.072 \\
+    ROOT/TTree   & gzip &  58.5 & 442.484 & 0.051 \\
     TileDB & \gls{LZfour}  &  93.7 &  13.602 & 1.167 \\
     Zarr   & \gls{LZfour}  & 124.5 &  29.483 & 0.368 \\
-    \gls{HDFfive}   & \gls{LZfour}  &  79.6 & 151.427 & 0.129 \\
-    \gls{ROOT}   & \gls{LZfour}  &  48.7 & 363.490 & 0.075 \\
+    HDF5/HSDS   & \gls{LZfour}  &  79.6 & 151.427 & 0.129 \\
+    ROOT/TTree   & \gls{LZfour}  &  48.7 & 363.490 & 0.075 \\
     TileDB & \gls{ZSTD} &  96.9 &  10.384 & 1.055 \\
     Zarr   & \gls{ZSTD} & 123.2 &  30.365 & 0.353 \\
-    \gls{HDFfive}   & \gls{ZSTD} & 142.2 & 151.497 & 0.072 \\
-    \gls{ROOT}   & \gls{ZSTD} &  63.2 & 373.589 & 0.056 \\
+    HDF5/HSDS   & \gls{ZSTD} & 142.2 & 151.497 & 0.072 \\
+    ROOT/TTree   & \gls{ZSTD} &  63.2 & 373.589 & 0.056 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1809,8 +1811,8 @@ We confirm central tendency using the sample median with moving–block bootstra
     \midrule
     TileDB & 50 & 201.65 & [179.32, 218.75] & 0.880 \\
     Zarr   & 50 & 229.18 & [219.95, 236.79] & 1.000 \\
-    \gls{HDFfive}   & 50 & 234.12 & [217.50, 241.29] & 1.022 \\
-    \gls{ROOT}   & 50 & 407.67 & [391.61, 418.37] & 1.779 \\
+    HDF5/HSDS   & 50 & 234.12 & [217.50, 241.29] & 1.022 \\
+    ROOT/TTree   & 50 & 407.67 & [391.61, 418.37] & 1.779 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1825,8 +1827,8 @@ We confirm central tendency using the sample median with moving–block bootstra
     \midrule
     TileDB & 1.0 & 1.0 & 0.0 \\
     Zarr   & 2.0 & 2.0 & 0.0 \\
-    \gls{HDFfive}   & 3.0 & 3.0 & 0.0 \\
-    \gls{ROOT}   & 4.0 & 4.0 & 0.0 \\
+    HDF5/HSDS   & 3.0 & 3.0 & 0.0 \\
+    ROOT/TTree   & 4.0 & 4.0 & 0.0 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1841,8 +1843,8 @@ We confirm central tendency using the sample median with moving–block bootstra
     \midrule
     Zarr   & 50 & 160.60 & [143.33, 197.33] & 1.000 \\
     TileDB & 50 & 202.33 & [193.75, 223.94] & 1.260 \\
-    \gls{HDFfive}   & 50 & 218.70 & [209.11, 229.81] & 1.362 \\
-    \gls{ROOT}   & 50 & 332.89 & [316.05, 349.75] & 2.073 \\
+    HDF5/HSDS   & 50 & 218.70 & [209.11, 229.81] & 1.362 \\
+    ROOT/TTree   & 50 & 332.89 & [316.05, 349.75] & 2.073 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1857,8 +1859,8 @@ We confirm central tendency using the sample median with moving–block bootstra
     \midrule
     Zarr   & 1.0 & 1.0 & 0.0 \\
     TileDB & 2.0 & 2.0 & 0.0 \\
-    \gls{HDFfive}   & 3.0 & 3.0 & 0.0 \\
-    \gls{ROOT}   & 4.0 & 4.0 & 0.0 \\
+    HDF5/HSDS   & 3.0 & 3.0 & 0.0 \\
+    ROOT/TTree   & 4.0 & 4.0 & 0.0 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1874,8 +1876,8 @@ We confirm central tendency using the sample median with moving–block bootstra
     \midrule
     Zarr   & 50 & 154.12 & [143.12, 161.81] & 1.000 \\
     TileDB & 50 & 177.97 & [165.49, 197.45] & 1.155 \\
-    \gls{HDFfive}   & 50 & 205.19 & [200.07, 211.67] & 1.331 \\
-    \gls{ROOT}   & 50 & 263.98 & [260.80, 271.68] & 1.713 \\
+    HDF5/HSDS   & 50 & 205.19 & [200.07, 211.67] & 1.331 \\
+    ROOT/TTree   & 50 & 263.98 & [260.80, 271.68] & 1.713 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1890,8 +1892,8 @@ We confirm central tendency using the sample median with moving–block bootstra
     \midrule
     Zarr   & 1.0 & 1.0 & 0.0 \\
     TileDB & 2.0 & 2.0 & 0.0 \\
-    \gls{HDFfive}   & 3.0 & 3.0 & 0.0 \\
-    \gls{ROOT}   & 4.0 & 4.0 & 0.0 \\
+    HDF5/HSDS   & 3.0 & 3.0 & 0.0 \\
+    ROOT/TTree   & 4.0 & 4.0 & 0.0 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1910,8 +1912,8 @@ We confirm central tendency using the sample median with moving–block bootstra
     \midrule
     TileDB & 50 & 11\,187 & [10\,869, 11\,486] & 0.315 \\
     Zarr   & 50 & 35\,555 & [35\,151, 36\,057] & 1.000 \\
-    \gls{HDFfive}   & 50 & 156\,805 & [156\,246, 157\,025] & 4.410 \\
-    \gls{ROOT}   & 50 & 442\,069 & [432\,257, 455\,224] & 12.433 \\
+    HDF5/HSDS   & 50 & 156\,805 & [156\,246, 157\,025] & 4.410 \\
+    ROOT/TTree   & 50 & 442\,069 & [432\,257, 455\,224] & 12.433 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1926,8 +1928,8 @@ We confirm central tendency using the sample median with moving–block bootstra
     \midrule
     TileDB & 1.0 & 1.0 & 0.0 \\
     Zarr   & 2.0 & 2.0 & 0.0 \\
-    \gls{HDFfive}   & 3.0 & 3.0 & 0.0 \\
-    \gls{ROOT}   & 4.0 & 4.0 & 0.0 \\
+    HDF5/HSDS   & 3.0 & 3.0 & 0.0 \\
+    ROOT/TTree   & 4.0 & 4.0 & 0.0 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1942,8 +1944,8 @@ We confirm central tendency using the sample median with moving–block bootstra
     \midrule
     TileDB & 50 & 13\,702 & [13\,151, 13\,894] & 0.465 \\
     Zarr   & 50 & 29\,461 & [29\,286, 29\,668] & 1.000 \\
-    \gls{HDFfive}   & 50 & 151\,378 & [151\,023, 151\,529] & 5.138 \\
-    \gls{ROOT}   & 50 & 364\,053 & [359\,639, 369\,897] & 12.357 \\
+    HDF5/HSDS   & 50 & 151\,378 & [151\,023, 151\,529] & 5.138 \\
+    ROOT/TTree   & 50 & 364\,053 & [359\,639, 369\,897] & 12.357 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1958,8 +1960,8 @@ We confirm central tendency using the sample median with moving–block bootstra
     \midrule
     TileDB & 1.0 & 1.0 & 0.0 \\
     Zarr   & 2.0 & 2.0 & 0.0 \\
-    \gls{HDFfive}   & 3.0 & 3.0 & 0.0 \\
-    \gls{ROOT}   & 4.0 & 4.0 & 0.0 \\
+    HDF5/HSDS   & 3.0 & 3.0 & 0.0 \\
+    ROOT/TTree   & 4.0 & 4.0 & 0.0 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1974,8 +1976,8 @@ We confirm central tendency using the sample median with moving–block bootstra
     \midrule
     TileDB & 50 & 10\,283 & [9\,931, 10\,620] & 0.340 \\
     Zarr   & 50 & 30\,253 & [30\,150, 30\,461] & 1.000 \\
-    \gls{HDFfive}   & 50 & 151\,476 & [151\,087, 151\,658] & 5.007 \\
-    \gls{ROOT}   & 50 & 367\,066 & [354\,750, 402\,529] & 12.133 \\
+    HDF5/HSDS   & 50 & 151\,476 & [151\,087, 151\,658] & 5.007 \\
+    ROOT/TTree   & 50 & 367\,066 & [354\,750, 402\,529] & 12.133 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -1990,8 +1992,8 @@ We confirm central tendency using the sample median with moving–block bootstra
     \midrule
     TileDB & 1.0 & 1.0 & 0.0 \\
     Zarr   & 2.0 & 2.0 & 0.0 \\
-    \gls{HDFfive}   & 3.0 & 3.0 & 0.0 \\
-    \gls{ROOT}   & 4.0 & 4.0 & 0.0 \\
+    HDF5/HSDS   & 3.0 & 3.0 & 0.0 \\
+    ROOT/TTree   & 4.0 & 4.0 & 0.0 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -2011,8 +2013,8 @@ We estimate $p_{95}$ with the Harrell–Davis quantile and dependence-robust 95\
     \toprule
     Format & $p_{95}$ (ms) & 95\% \gls{CI} (ms) & \gls{CI} width (ms) & $\ell^{\ast}$ \\
     \midrule
-    \gls{HDFfive}   & 344.70 & [302.25, 366.59] & 64.34 & 8  \\
-    \gls{ROOT}   & 479.58 & [453.33, 503.94] & 50.61 & 10 \\
+    HDF5/HSDS   & 344.70 & [302.25, 366.59] & 64.34 & 8  \\
+    ROOT/TTree   & 479.58 & [453.33, 503.94] & 50.61 & 10 \\
     TileDB & 274.99 & [239.68, 330.97] & 91.30 & 6  \\
     Zarr   & 293.99 & [266.30, 314.06] & 47.76 & 10 \\
     \bottomrule
@@ -2027,8 +2029,8 @@ We estimate $p_{95}$ with the Harrell–Davis quantile and dependence-robust 95\
     \toprule
     Format & $p_{95}$ (ms) & 95\% \gls{CI} (ms) & \gls{CI} width (ms) & $\ell^{\ast}$ \\
     \midrule
-    \gls{HDFfive}   & 274.94 & [256.95, 280.35] & 23.40 & 4  \\
-    \gls{ROOT}   & 393.55 & [373.21, 439.37] & 66.16 & 4  \\
+    HDF5/HSDS   & 274.94 & [256.95, 280.35] & 23.40 & 4  \\
+    ROOT/TTree   & 393.55 & [373.21, 439.37] & 66.16 & 4  \\
     TileDB & 321.57 & [261.70, 407.99] & 146.29 & 10 \\
     Zarr   & 370.84 & [298.23, 404.56] & 106.33 & 10 \\
     \bottomrule
@@ -2043,8 +2045,8 @@ We estimate $p_{95}$ with the Harrell–Davis quantile and dependence-robust 95\
     \toprule
     Format & $p_{95}$ (ms) & 95\% \gls{CI} (ms) & \gls{CI} width (ms) & $\ell^{\ast}$ \\
     \midrule
-    \gls{HDFfive}   & 264.69 & [242.89, 288.24] & 45.35 & 4 \\
-    \gls{ROOT}   & 321.45 & [298.81, 339.12] & 40.31 & 4 \\
+    HDF5/HSDS   & 264.69 & [242.89, 288.24] & 45.35 & 4 \\
+    ROOT/TTree   & 321.45 & [298.81, 339.12] & 40.31 & 4 \\
     TileDB & 274.79 & [227.79, 307.66] & 79.87 & 4 \\
     Zarr   & 206.34 & [178.68, 253.86] & 75.18 & 8 \\
     \bottomrule
@@ -2062,8 +2064,8 @@ We estimate $p_{95}$ with the Harrell–Davis quantile and dependence-robust 95\
     \toprule
     Format & $p_{95}$ (ms) & 95\% \gls{CI} (ms) & \gls{CI} width (ms) & $\ell^{\ast}$ \\
     \midrule
-    \gls{HDFfive}   & 160\,558 & [157\,142, 162\,905] & 5\,763 & 10 \\
-    \gls{ROOT}   & 465\,371 & [451\,293, 469\,620] & 18\,327 & 10 \\
+    HDF5/HSDS   & 160\,558 & [157\,142, 162\,905] & 5\,763 & 10 \\
+    ROOT/TTree   & 465\,371 & [451\,293, 469\,620] & 18\,327 & 10 \\
     TileDB & 12\,528  & [11\,830, 12\,834]   & 1\,004  & 6 \\
     Zarr   & 36\,417  & [35\,871, 36\,445]   & 574     & 10 \\
     \bottomrule
@@ -2078,8 +2080,8 @@ We estimate $p_{95}$ with the Harrell–Davis quantile and dependence-robust 95\
     \toprule
     Format & $p_{95}$ (ms) & 95\% \gls{CI} (ms) & \gls{CI} width (ms) & $\ell^{\ast}$ \\
     \midrule
-    \gls{HDFfive}   & 152\,821 & [152\,328, 153\,067] & 738  & 4 \\
-    \gls{ROOT}   & 375\,321 & [369\,349, 376\,319] & 6\,970 & 10 \\
+    HDF5/HSDS   & 152\,821 & [152\,328, 153\,067] & 738  & 4 \\
+    ROOT/TTree   & 375\,321 & [369\,349, 376\,319] & 6\,970 & 10 \\
     TileDB & 14\,427  & [14\,068, 14\,582]   & 513  & 8 \\
     Zarr   & 30\,297  & [29\,738, 30\,409]   & 670  & 10 \\
     \bottomrule
@@ -2094,8 +2096,8 @@ We estimate $p_{95}$ with the Harrell–Davis quantile and dependence-robust 95\
     \toprule
     Format & $p_{95}$ (ms) & 95\% \gls{CI} (ms) & \gls{CI} width (ms) & $\ell^{\ast}$ \\
     \midrule
-    \gls{HDFfive}   & 154\,112 & [152\,178, 155\,549] & 3\,371 & 8 \\
-    \gls{ROOT}   & 441\,405 & [423\,524, 453\,744] & 30\,219 & 4 \\
+    HDF5/HSDS   & 154\,112 & [152\,178, 155\,549] & 3\,371 & 8 \\
+    ROOT/TTree   & 441\,405 & [423\,524, 453\,744] & 30\,219 & 4 \\
     TileDB & 11\,567  & [10\,790, 11\,809]   & 1\,019  & 10 \\
     Zarr   & 31\,207  & [30\,815, 31\,389]   & 573    & 4 \\
     \bottomrule
@@ -2103,7 +2105,7 @@ We estimate $p_{95}$ with the Harrell–Davis quantile and dependence-robust 95\
 \end{table}
 
 \subsection{Summary tables for downstream decision matrix}
-This section reports representative summary tables used in the downstream decision matrix; the complete set is provided in Appendix Section \ref{app:supplementary}. Entries are \emph{session-conditional} and descriptive, where we report geometric mean (GM) latency with dependence-robust 95\% \glspl{CI} and $p_{95}$ (\gls{CI}). For full scans, we also include GM throughput (GiB/s, \gls{CI}), and each table lists \gls{SThree} GETs/GiB and stored size (GiB).
+This section reports representative summary tables used in the downstream decision matrix; the complete set is provided in Appendix Section \ref{app:supplementary}. Entries are \emph{session-conditional} and descriptive, where we report geometric mean (GM) latency with dependence-robust 95\% \glspl{CI} and $p_{95}$ (\gls{CI}). For full scans, we also include transferred-byte GM throughput (GiB/s, \gls{CI}), and each table lists \gls{SThree} GETs/GiB and stored size (GiB).
 
 \subsubsection{Per-codec league tables}
 This subsection presents representative per-codec league tables to summarize practical rankings; remaining league tables are reported in Appendix Section \ref{app:supplementary}. Scores use the stated primary objective and tie-breakers and totals are descriptive and session-conditional.
@@ -2122,8 +2124,8 @@ We show representative league tables for \texttt{gzip} and \texttt{zstd} in the 
     \midrule
     1 & tiledb & 195 \ [181, 210] & 262 \ [232, 318] & 113.3 & 11.44 \\
     2 & zarr   & 229 \ [223, 236] & 283 \ [262, 314] & 126.7 & 11.09 \\
-    3 & \gls{HDFfive}   & 241 \ [232, 252] & 342 \ [295, 364] & 482.2 & 11.11 \\
-    4 & \gls{ROOT}   & 406 \ [397, 416] & 471 \ [451, 501] & 61.3  & 11.09 \\
+    3 & HDF5/HSDS   & 241 \ [232, 252] & 342 \ [295, 364] & 482.2 & 11.11 \\
+    4 & ROOT/TTree   & 406 \ [397, 416] & 471 \ [451, 501] & 61.3  & 11.09 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -2138,8 +2140,8 @@ We show representative league tables for \texttt{gzip} and \texttt{zstd} in the 
     \midrule
     1 & zarr   & 155 \ [149, 162] & 195 \ [177, 243] & 136.6 & 10.51 \\
     2 & tiledb & 177 \ [165, 190] & 250 \ [205, 312] & 120.7 & 10.74 \\
-    3 & \gls{HDFfive}   & 210 \ [205, 215] & 255 \ [236, 286] & 488.0 & 10.67 \\
-    4 & \gls{ROOT}   & 269 \ [264, 275] & 311 \ [292, 341] & 66.2  & 10.26 \\
+    3 & HDF5/HSDS   & 210 \ [205, 215] & 255 \ [236, 286] & 488.0 & 10.67 \\
+    4 & ROOT/TTree   & 269 \ [264, 275] & 311 \ [292, 341] & 66.2  & 10.26 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -2159,8 +2161,8 @@ We show the \texttt{zstd} full-scan league table in the main text; the correspon
     \midrule
     1 & tiledb & \makecell[r]{1.055\\\footnotesize([1.025, 1.082])} & \makecell[r]{10\,384\\\footnotesize([10\,123, 10\,687])} & 96.9  & 10.74 \\
     2 & zarr   & \makecell[r]{0.353\\\footnotesize([0.351, 0.356])} & \makecell[r]{30\,365\\\footnotesize([30\,167, 30\,555])} & 123.2 & 10.51 \\
-    3 & \gls{HDFfive}   & \makecell[r]{0.072\\\footnotesize([0.072, 0.072])} & \makecell[r]{151\,497\\\footnotesize([151\,071, 151\,996])} & 142.2 & 10.67 \\
-    4 & \gls{ROOT}   & \makecell[r]{0.056\\\footnotesize([0.054, 0.059])} & \makecell[r]{373\,589\\\footnotesize([357\,497, 390\,216])} & 63.2  & 10.26 \\
+    3 & HDF5/HSDS   & \makecell[r]{0.072\\\footnotesize([0.072, 0.072])} & \makecell[r]{151\,497\\\footnotesize([151\,071, 151\,996])} & 142.2 & 10.67 \\
+    4 & ROOT/TTree   & \makecell[r]{0.056\\\footnotesize([0.054, 0.059])} & \makecell[r]{373\,589\\\footnotesize([357\,497, 390\,216])} & 63.2  & 10.26 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -2196,39 +2198,39 @@ This thesis uses normalized score matrices as a compact multi-criteria view for 
 \cleardoublepage
 \chapter{Discussion}
 \label{ch:discussion}
-This chapter interprets the results, links them to layout and request behavior, and states the limits where all cross-format contrasts remain descriptive and session-conditional. It then answers \emph{RQ1} (slice latency in Section \ref{sec:rq1-results}), \emph{RQ2} (scan throughput in Section \ref{sec:rq2-results}), and \emph{RQ3} (cost posture in Section \ref{sec:rq3-results}), followed by the decision matrix and threats to validity.
+This chapter interprets the results, links them to layout and request behavior, and states the limits where all cross-format contrasts remain descriptive and session-conditional. It then answers \emph{RQ1} (slice latency in Section \ref{sec:rq1-results}), \emph{RQ2} (full-scan performance in Section \ref{sec:rq2-results}), and \emph{RQ3} (cost posture in Section \ref{sec:rq3-results}), followed by the decision matrix and threats to validity.
 
 \section{Answers to the research questions}
 \label{sec:discussion-bottomline}
-This section reports winners by workload and codec, using GM latency (slices) and GM throughput (full scans) with dependence-robust 95\% \glspl{CI} and $p_{95}$ for tail risk. All contrasts are \emph{descriptive} and \emph{session-conditional}.
+This section reports winners by workload and codec, using GM latency for slices and GM scan time for full scans, together with transferred-byte throughput summaries, dependence-robust 95\% \glspl{CI}, and $p_{95}$ for tail risk. All contrasts are \emph{descriptive} and \emph{session-conditional}.
 
 \subsection{Answer to RQ1 — Interactive slice latency}
 \label{sec:ans-rq1}
 Single-frame reads have two stress areas: (i) layout/objectization, which sets how many objects and round–trips each request touches, and (ii) decode cost, which depends on the codec and the library path. RQ1 and hypotheses H1.1–H1.3 (Section \ref{sec:methods-hypotheses}) ask how these factors shape slice-level GM latency and $p_{95}$. We judge the winners by geometric mean (GM) latency with dependence-robust 95\% \glspl{CI} and use $p_{95}$ to flag tail risk. The references below point to the slice tables and figures for each codec.
 
-\textbf{Zarr is the fastest in terms of GM slice latency} for \texttt{zstd} in this dataset. Its GM \gls{CI} lies fully below TileDB’s, which is second, followed by \gls{HDFfive}/\gls{HSDS} and then \gls{ROOT}. The $p_{95}$ ordering mirrors the center, indicating Zarr combines a fast typical latency with controlled tails. Mechanistically, this matches a chunk–per–frame layout that amortizes \gls{SThree} RTT via client concurrency, while \texttt{zstd} keeps the decode cost moderate. See Table \ref{tab:slice_zstd_mbb} and Figures \ref{fig:slice_zstd_gm_mbb}, \ref{fig:slice_zstd_p95_mbb}, \ref{fig:slice_zstd_ratios_point}. GM deltas show that Zarr is $\approx 12\%$ faster than TileDB (Table \ref{tab:slice_zstd_mbb}). Together, the three codecs confirm H1.1–H1.2: chunked/fragmented formats consistently beat ROOT on GM latency, Zarr leads for \texttt{zstd} and \texttt{lz4}, and TileDB leads for \texttt{gzip}.
+\textbf{Zarr is the fastest in terms of GM slice latency} for \texttt{zstd} in this dataset. Its GM \gls{CI} lies fully below TileDB’s, which is second, followed by \gls{HDFfive}/\gls{HSDS} and then ROOT/TTree. The $p_{95}$ ordering mirrors the center, indicating Zarr combines a fast typical latency with controlled tails. Mechanistically, this matches a chunk–per–frame layout that amortizes \gls{SThree} RTT via client concurrency, while \texttt{zstd} keeps the decode cost moderate. See Table \ref{tab:slice_zstd_mbb} and Figures \ref{fig:slice_zstd_gm_mbb}, \ref{fig:slice_zstd_p95_mbb}, \ref{fig:slice_zstd_ratios_point}. GM deltas show that Zarr is $\approx 12\%$ faster than TileDB (Table \ref{tab:slice_zstd_mbb}). Together, the three codecs confirm H1.1–H1.2: chunked/fragmented formats consistently beat ROOT/TTree on GM latency, Zarr leads for \texttt{zstd} and \texttt{lz4}, and TileDB leads for \texttt{gzip}.
 
-\textbf{Zarr remains fastest on GM latency} under \texttt{lz4}. \textbf{TileDB and \gls{HDFfive}/\gls{HSDS} are close} behind it, with overlapping \glspl{CI} between those two, and \gls{ROOT} is slowest. A trade–off appears in the tails: Zarr’s $p_{95}$ is higher and has wider CIs than TileDB and \gls{HDFfive}/\gls{HSDS}, consistent with \texttt{lz4}’s bias toward decode speed over compactness. If an application is strongly tail–sensitive, TileDB’s lower and more stable $p_{95}$ may offset its slightly higher GM. See Table \ref{tab:slice_lz4_mbb} and Figures \ref{fig:slice_lz4_gm_mbb}, \ref{fig:slice_lz4_p95_mbb}, \ref{fig:slice_lz4_ratios_point}. GM deltas show that Zarr is $\approx 18\%$ faster than TileDB and $\approx 21\%$ faster than \gls{HDFfive}/\gls{HSDS} (Table \ref{tab:slice_lz4_mbb}). This supports H1.1 and H1.2 for \texttt{lz4}: Zarr is the fastest layout on GM latency, while TileDB and HDF5/HSDS sit close behind, and ROOT remains clearly slower.
+\textbf{Zarr remains fastest on GM latency} under \texttt{lz4}. \textbf{TileDB and \gls{HDFfive}/\gls{HSDS} are close} behind it, with overlapping \glspl{CI} between those two, and ROOT/TTree is slowest. A trade–off appears in the tails: Zarr’s $p_{95}$ is higher and has wider CIs than TileDB and \gls{HDFfive}/\gls{HSDS}, consistent with \texttt{lz4}’s bias toward decode speed over compactness. If an application is strongly tail–sensitive, TileDB’s lower and more stable $p_{95}$ may offset its slightly higher GM. See Table \ref{tab:slice_lz4_mbb} and Figures \ref{fig:slice_lz4_gm_mbb}, \ref{fig:slice_lz4_p95_mbb}, \ref{fig:slice_lz4_ratios_point}. GM deltas show that Zarr is $\approx 18\%$ faster than TileDB and $\approx 21\%$ faster than \gls{HDFfive}/\gls{HSDS} (Table \ref{tab:slice_lz4_mbb}). This supports H1.1 and H1.2 for \texttt{lz4}: Zarr is the fastest layout on GM latency, while TileDB and HDF5/HSDS sit close behind, and ROOT/TTree remains clearly slower.
 
-\textbf{TileDB wins} \texttt{gzip} slices with non-overlapping GM \glspl{CI} versus Zarr. Zarr is next and outperforms \gls{HDFfive}/\gls{HSDS}, where \gls{ROOT} again is slowest by a wide margin. This pattern aligns with \texttt{gzip}’s higher \gls{CPU} cost, which leads to TileDB’s fewer, larger fragments reducing request overhead enough to compensate for \texttt{gzip} decode, while Zarr’s per–frame objects incur more round–trips. Ordering is consistent in $p_{95}$ and in the Zarr–referenced ratio view. See Table \ref{tab:slice_gzip_mbb} and Figures \ref{fig:slice_gzip_gm_mbb}, \ref{fig:slice_gzip_p95_mbb}, \ref{fig:slice_gzip_ratios_point}. GM deltas show that TileDB is $\approx 17\%$ faster than Zarr (Table \ref{tab:slice_gzip_mbb}). These gzip/slice results are consistent with H1.1 (all chunked/fragmented layouts are faster than ROOT) and with H1.2’s expectation that TileDB’s fragment layout can win under \texttt{gzip} by reducing request fan-out.
+\textbf{TileDB wins} \texttt{gzip} slices with non-overlapping GM \glspl{CI} versus Zarr. Zarr is next and outperforms \gls{HDFfive}/\gls{HSDS}, where ROOT/TTree again is slowest by a wide margin. This pattern aligns with \texttt{gzip}’s higher \gls{CPU} cost, which leads to TileDB’s fewer, larger fragments reducing request overhead enough to compensate for \texttt{gzip} decode, while Zarr’s per–frame objects incur more round–trips. Ordering is consistent in $p_{95}$ and in the Zarr–referenced ratio view. See Table \ref{tab:slice_gzip_mbb} and Figures \ref{fig:slice_gzip_gm_mbb}, \ref{fig:slice_gzip_p95_mbb}, \ref{fig:slice_gzip_ratios_point}. GM deltas show that TileDB is $\approx 17\%$ faster than Zarr (Table \ref{tab:slice_gzip_mbb}). These gzip/slice results are consistent with H1.1 (all chunked/fragmented layouts are faster than ROOT/TTree) and with H1.2’s expectation that TileDB’s fragment layout can win under \texttt{gzip} by reducing request fan-out.
 
-Across codecs in this dataset, the winner patterns align with evidence of request intensity: lower GETs/GiB contributes, but does not predict slice latency across formats; object size, parallelism, and decode paths matter. At the same time, \gls{ROOT}’s single–object layout shows that “few GETs” does not guarantee speed, because paging and decode path overhead dominate. See Figure \ref{fig:cross_slice_latency_vs_gets} and Table \ref{tab:cross_slice_latency_vs_gets}.
+Across codecs in this dataset, the winner patterns align with evidence of request intensity: lower GETs/GiB contributes, but does not predict slice latency across formats; object size, parallelism, and decode paths matter. At the same time, ROOT/TTree’s single–object layout shows that “few GETs” does not guarantee speed, because paging and decode path overhead dominate. See Figure \ref{fig:cross_slice_latency_vs_gets} and Table \ref{tab:cross_slice_latency_vs_gets}.
 
 Nonparametric summaries reproduce the same slice rankings by codec, and Harrell–Davis $p_{95}$ with an $\ell$–grid preserves ordering, including the heavier tails for \texttt{lz4}/Zarr. See Figure \ref{fig:np_slice_ratios_grid} and Tables \ref{tab:np_slice_gzip_median}, \ref{tab:np_slice_lz4_median}, \ref{tab:np_slice_zstd_median}, and the tail–sensitivity artifacts in Figure \ref{fig:tail-slice-p95-hd-ci-vs-L} and Tables \ref{tab:tail-slice-gzip-p95-selected}–\ref{tab:tail-slice-zstd-p95-selected}. Throughout this chapter, such “consistency” language refers to agreement in the \emph{ordering of central tendencies} (GM and median) across formats. It does not mean that every GM estimate is exact, especially in more variable cells such as \texttt{lz4} slices for Zarr and TileDB, where the CIs for means and tails are comparatively wide.
 
-\subsection{Answer to RQ2 — Full-dataset throughput}
+\subsection{Answer to RQ2 — Full-dataset scan performance}
 \label{sec:ans-rq2}
-Full–dataset reads test sustained sequential delivery and decode under continuous concurrency. RQ2 and hypotheses H2.1–H2.3 (Section \ref{sec:methods-hypotheses}) focus on GM throughput (GiB/s), computed from session-specific downloaded GiB per repetition and GM time with dependence–robust 95\% \glspl{CI}; $p_{95}$ times are used to check stability. All cross–format contrasts are \emph{descriptive} and \emph{session–conditional}. Across \texttt{zstd}, \texttt{lz4}, and \texttt{gzip}, \textbf{TileDB leads by a wide margin}, \textbf{Zarr is consistently second}, and \textbf{\gls{HDFfive}/\gls{HSDS} and \gls{ROOT} come last}.
+Full–dataset reads test sustained sequential delivery and decode under continuous concurrency. RQ2 and hypotheses H2.1–H2.3 (Section \ref{sec:methods-hypotheses}) use GM scan time as the clearest same-logical-dataset completion metric and also report GM throughput (GiB/s), computed from session-specific downloaded GiB per repetition and GM time with dependence–robust 95\% \glspl{CI}. The latter should be read as transferred-byte throughput of the stored representation rather than as a pure logical-payload throughput. $p_{95}$ times are used to check stability. All cross–format contrasts are \emph{descriptive} and \emph{session–conditional}. Across \texttt{zstd}, \texttt{lz4}, and \texttt{gzip}, \textbf{TileDB leads by a wide margin}, \textbf{Zarr is consistently second}, and \textbf{\gls{HDFfive}/\gls{HSDS} and ROOT/TTree come last}.
 
 Supporting GM-time ratios versus Zarr show that TileDB’s full-scan GM time is $\approx 0.32\times$ under \texttt{gzip}, $\approx 0.46\times$ under \texttt{lz4}, and $\approx 0.34\times$ under \texttt{zstd}; see Tables \ref{tab:full_gzip_mbb}, \ref{tab:full_lz4_mbb}, and \ref{tab:full_zstd_mbb}.
 
-Under \texttt{zstd}, \textbf{TileDB is the clear throughput leader.} Zarr is a distant second, and \gls{HDFfive}/\gls{HSDS} and \gls{ROOT} are far behind. GM time and its \gls{CI} show clean separation, and the ratio view reinforces TileDB’s advantage. $p_{95}$ times follow the same ordering and are far apart in magnitude, particularly between TileDB/Zarr and \gls{ROOT}, which supports the same qualitative throughput ordering for both center and tail in this dataset. See Table \ref{tab:full_zstd_mbb} and Figures \ref{fig:full_zstd_gm_mbb}, \ref{fig:full_zstd_p95_mbb}, \ref{fig:full_zstd_ratios_point}. These full-scan results across codecs support H2.1 (TileDB $>$ Zarr $>$ HDF5/HSDS $>$ ROOT on GM throughput) and H2.2 (both \texttt{lz4} and \texttt{zstd} improve throughput relative to \texttt{gzip} for our throughput metric (downloaded bytes/time)).
+Under \texttt{zstd}, \textbf{TileDB is the clear throughput leader.} Zarr is a distant second, and \gls{HDFfive}/\gls{HSDS} and ROOT/TTree are far behind. GM time and its \gls{CI} show clean separation, and the ratio view reinforces TileDB’s advantage. $p_{95}$ times follow the same ordering and are far apart in magnitude, particularly between TileDB/Zarr and ROOT/TTree, which supports the same qualitative throughput ordering for both center and tail in this dataset. See Table \ref{tab:full_zstd_mbb} and Figures \ref{fig:full_zstd_gm_mbb}, \ref{fig:full_zstd_p95_mbb}, \ref{fig:full_zstd_ratios_point}. These full-scan results across codecs support H2.1 (TileDB $>$ Zarr $>$ HDF5/HSDS $>$ ROOT/TTree on GM throughput) and H2.2 (both \texttt{lz4} and \texttt{zstd} improve throughput relative to \texttt{gzip} for our throughput metric (downloaded bytes/time)).
 
-Under \texttt{lz4}, \textbf{TileDB remains first and Zarr second.} Faster decode narrows absolute times but does not change ranks. \Gls{HDFfive}/\gls{HSDS} and \gls{ROOT} stay well behind. $p_{95}$ CIs are relatively tight for TileDB and Zarr compared with the gap to \gls{ROOT}, which supports the qualitative picture of TileDB as the highest-throughput format and Zarr second for this workload. See Table \ref{tab:full_lz4_mbb} and Figures \ref{fig:full_lz4_gm_mbb}, \ref{fig:full_lz4_p95_mbb}, \ref{fig:full_lz4_ratios_point}.
+Under \texttt{lz4}, \textbf{TileDB remains first and Zarr second.} Faster decode narrows absolute times but does not change ranks. \Gls{HDFfive}/\gls{HSDS} and ROOT/TTree stay well behind. $p_{95}$ CIs are relatively tight for TileDB and Zarr compared with the gap to ROOT/TTree, which supports the qualitative picture of TileDB as the highest-throughput format and Zarr second for this workload. See Table \ref{tab:full_lz4_mbb} and Figures \ref{fig:full_lz4_gm_mbb}, \ref{fig:full_lz4_p95_mbb}, \ref{fig:full_lz4_ratios_point}.
 
-Under \texttt{gzip}, \textbf{TileDB still leads and Zarr is second.} \texttt{gzip}’s higher \gls{CPU} cost lifts absolute times for all formats, but ordering is unchanged. \Gls{HDFfive}/\gls{HSDS} and \gls{ROOT} remain the slowest. $p_{95}$ point estimates are ordered in the same way as the GMs, so tail summaries do not contradict the GM-based throughput ordering. See Table \ref{tab:full_gzip_mbb} and Figures \ref{fig:full_gzip_gm_mbb}, \ref{fig:full_gzip_p95_mbb}, \ref{fig:full_gzip_ratios_point}.
+Under \texttt{gzip}, \textbf{TileDB still leads and Zarr is second.} \texttt{gzip}’s higher \gls{CPU} cost lifts absolute times for all formats, but ordering is unchanged. \Gls{HDFfive}/\gls{HSDS} and ROOT/TTree remain the slowest. $p_{95}$ point estimates are ordered in the same way as the GMs, so tail summaries do not contradict the GM-based throughput ordering. See Table \ref{tab:full_gzip_mbb} and Figures \ref{fig:full_gzip_gm_mbb}, \ref{fig:full_gzip_p95_mbb}, \ref{fig:full_gzip_ratios_point}.
 
-In these experiments, throughput patterns align with request intensity and layout: TileDB attains high throughput with moderate GETs/GiB, thanks to fragment–backed long reads. Zarr has higher GETs/GiB yet parallelizes effectively, whereas \gls{HDFfive} via \gls{HSDS} shows higher GETs/GiB but poorer streaming performance. \Gls{ROOT} has few GETs/GiB but still has low throughput because its single–object layout and paging/decode overhead dominate. See Figure \ref{fig:cross_full_throughput_vs_gets} and Table \ref{tab:cross_full_throughput_vs_gets}.
+In these experiments, throughput patterns align with request intensity and layout: TileDB attains high throughput with moderate GETs/GiB, thanks to fragment–backed long reads. Zarr has higher GETs/GiB yet parallelizes effectively, whereas \gls{HDFfive} via \gls{HSDS} shows higher GETs/GiB but poorer streaming performance. ROOT/TTree has few GETs/GiB but still has low throughput because its single–object layout and paging/decode overhead dominate. See Figure \ref{fig:cross_full_throughput_vs_gets} and Table \ref{tab:cross_full_throughput_vs_gets}.
 
 CloudWatch FirstByte and TotalRequest latencies are stable within sessions and do not reflect the large cross–format gaps in client timings, where the dominant drivers are layout and decode rather than differences in \gls{SThree} service timing. See Figures \ref{fig:cw_firstbyte_grid}, \ref{fig:cw_total_grid}.
 
@@ -2236,7 +2238,7 @@ Nonparametric centers yield the same ranks across codecs, and the HD $p_{95}$ se
 
 \subsection{RQ3 — Cost posture and mechanisms (summary)}
 \label{sec:ans-rq3}
-Chunk/fragment layouts (Zarr, TileDB) produce low–to–moderate GETs/GiB and are associated with lower GM slice latency and higher scan throughput in this dataset. In contrast, \gls{HSDS} yields higher GETs/GiB, and \gls{ROOT} is the counterexample: few GETs yet slow due to single-object paging and decode (Section \ref{sec:rq3-results}; Figures \ref{fig:cross_slice_latency_vs_gets}, \ref{fig:cross_full_throughput_vs_gets}). Storage posture is codec-driven overall (zstd $\approx$ gzip $<$ lz4), with a significant inflation for \texttt{lz4}+\gls{HSDS} compared with Zarr/TileDB at the same payload (Table \ref{tab:object_counts}, Figure \ref{fig:stored_bytes}, Figure \ref{fig:compression_rates}). \gls{SThree} FirstByte/TotalRequest latencies are stable across sessions and do not explain cross-format gaps; they serve as context only (Figure \ref{fig:cw_firstbyte_grid}, Figure \ref{fig:cw_total_grid}). Mechanistically, objectization determines request patterns, and the codec defines the bytes transferred together; these factors are consistent with the client timings observed in \ref{sec:rq1-results}–\ref{sec:rq2-results}.
+Chunk/fragment layouts (Zarr, TileDB) produce low–to–moderate GETs/GiB and are associated with lower GM slice latency and higher scan throughput in this dataset. In contrast, \gls{HSDS} yields higher GETs/GiB, and ROOT/TTree is the counterexample: few GETs yet slow due to single-object paging and decode (Section \ref{sec:rq3-results}; Figures \ref{fig:cross_slice_latency_vs_gets}, \ref{fig:cross_full_throughput_vs_gets}). Storage posture is codec-driven overall (zstd $\approx$ gzip $<$ lz4), with a significant inflation for \texttt{lz4}+\gls{HSDS} compared with Zarr/TileDB at the same payload (Table \ref{tab:object_counts}, Figure \ref{fig:stored_bytes}, Figure \ref{fig:compression_rates}). \gls{SThree} FirstByte/TotalRequest latencies are stable across sessions and do not explain cross-format gaps; they serve as context only (Figure \ref{fig:cw_firstbyte_grid}, Figure \ref{fig:cw_total_grid}). Mechanistically, objectization determines request patterns, and the codec defines the bytes transferred together; these factors are consistent with the client timings observed in \ref{sec:rq1-results}–\ref{sec:rq2-results}.
 
 These findings address H3.1–H3.2: codec choice (especially \texttt{lz4} vs \texttt{zstd}/\texttt{gzip}) dominates stored GiB, Zarr and TileDB offer a more favorable request+storage posture than HSDS+\texttt{lz4} or ROOT, and the relatively flat CloudWatch service latencies confirm that \gls{SThree} service timing is a background factor rather than a primary driver of client-observed performance.
 
@@ -2249,10 +2251,10 @@ We explain the observed rankings by linking objectization and GETs per GiB to cl
 This section explains \emph{why} the observed orderings occur. We link layout-driven objectization and request intensity (GETs/GiB) to client timings, show that \gls{SThree} service latencies are stable and not causal, and summarize codec \gls{CPU}–bytes trade-offs. In this experiment, request intensity contributes to performance within chunked and fragmented stores, but it does not fully predict outcomes: lower GETs/GiB often coincides with higher full-scan throughput and can coincide with lower slice GM latency, yet cases like TileDB vs Zarr show that object size, parallelism, and decode paths can dominate even when GETs/GiB is lower (Figures \ref{fig:cross_slice_latency_vs_gets}, \ref{fig:cross_full_throughput_vs_gets}; Tables \ref{tab:cross_slice_latency_vs_gets}, \ref{tab:cross_full_throughput_vs_gets}).
 
 \subsubsection{Objectization and layout}
-Objectization for each storage backend determines the request pattern. Zarr/\gls{HSDS} materializes roughly one data object per frame (plus metadata), TileDB writes a small number of immutable fragments (each with internal files), and \gls{ROOT}/\gls{TTree} stores a single large object. Per–frame layouts expose more opportunities for client concurrency, fragment layouts trade fewer objects for long sequential reads, and single–object layouts minimize GET count but constrain parallelism to range requests within one key. This matches the data in Table \ref{tab:object_counts} and Figure \ref{fig:object_counts}. In practice, concurrency benefits Zarr and TileDB, while \gls{ROOT} shows few GETs but slow performance because paging and decoding dominate once request latency is amortized.
+Objectization for each storage backend determines the request pattern. Zarr/\gls{HSDS} materializes roughly one data object per frame (plus metadata), TileDB writes a small number of immutable fragments (each with internal files), and \gls{ROOT}/\gls{TTree} stores a single large object. Per–frame layouts expose more opportunities for client concurrency, fragment layouts trade fewer objects for long sequential reads, and single–object layouts minimize GET count but constrain parallelism to range requests within one key. This matches the data in Table \ref{tab:object_counts} and Figure \ref{fig:object_counts}. In practice, concurrency benefits Zarr and TileDB, while ROOT/TTree shows few GETs but slow performance because paging and decoding dominate once request latency is amortized.
 
 \subsubsection{Request intensity vs client timing}
-In this experiment, lower request intensity is associated with better client outcomes in both chunked and fragmented stores. Fewer GETs/GiB are associated with lower slice GM and higher full-scan throughput for Zarr and TileDB (Figure \ref{fig:cross_slice_latency_vs_gets}, Figure \ref{fig:cross_full_throughput_vs_gets}, Tables \ref{tab:cross_slice_latency_vs_gets}, \ref{tab:cross_full_throughput_vs_gets}). The pattern is not universal: \gls{ROOT} has very low GETs/GiB yet poor latency and throughput because the single-object layout, small pages, and decode costs limit effective parallelism. GETs/GiB is one factor, but does not predict latency across formats; object size, parallelism, and decode path matter, with layout and decode paths accounting for the rest. These observations are consistent with H1.3: lower GETs/GiB aligns with lower GM slice latency for Zarr and TileDB, while ROOT violates the monotonic trend by combining few GETs with poor latency due to paging and decode overhead.
+In this experiment, lower request intensity is associated with better client outcomes in both chunked and fragmented stores. Fewer GETs/GiB are associated with lower slice GM and higher full-scan throughput for Zarr and TileDB (Figure \ref{fig:cross_slice_latency_vs_gets}, Figure \ref{fig:cross_full_throughput_vs_gets}, Tables \ref{tab:cross_slice_latency_vs_gets}, \ref{tab:cross_full_throughput_vs_gets}). The pattern is not universal: ROOT/TTree has very low GETs/GiB yet poor latency and throughput because the single-object layout, small pages, and decode costs limit effective parallelism. GETs/GiB is one factor, but does not predict latency across formats; object size, parallelism, and decode path matter, with layout and decode paths accounting for the rest. These observations are consistent with H1.3: lower GETs/GiB aligns with lower GM slice latency for Zarr and TileDB, while ROOT/TTree violates the monotonic trend by combining few GETs with poor latency due to paging and decode overhead.
 
 \subsubsection{Service latencies are not the driver}
 CloudWatch \emph{FirstByteLatency} and \emph{TotalRequestLatency} are stable within sessions (both averages and $p_{95}$) and do not track the large cross–format gaps in client timings. The dominant factors are request pattern and decode path rather than “faster \gls{SThree}.” These metrics provide context, not causal evidence (Figures \ref{fig:cw_firstbyte_grid}, \ref{fig:cw_total_grid}).
@@ -2271,7 +2273,7 @@ Stored size is mostly codec-driven, but \texttt{lz4} shows substantial format va
 
 \textbf{Storage cost proxy.} Stored size is mainly \emph{codec-driven}, where \texttt{zstd} and \texttt{gzip} compress more than \texttt{lz4}. Between-format differences at a fixed codec are small and are consistent with additional layout metadata rather than payload differences. See Figures \ref{fig:stored_bytes}, \ref{fig:compression_rates}.
 
-\textbf{Counterexample.} \textbf{\gls{ROOT}} shows that a few requests do not imply speed or efficiency. It has the lowest \emph{GETs/GiB} yet poor slice latency and scan throughput due to single-object paging and decode overhead. See Tables \ref{tab:cross_slice_latency_vs_gets}, \ref{tab:cross_full_throughput_vs_gets} and the per-codec MBB results (slices: Tables \ref{tab:slice_gzip_mbb}, \ref{tab:slice_lz4_mbb}, \ref{tab:slice_zstd_mbb} and full scans tables \ref{tab:full_gzip_mbb}, \ref{tab:full_lz4_mbb}, \ref{tab:full_zstd_mbb}).
+\textbf{Counterexample.} \textbf{ROOT/TTree} shows that a few requests do not imply speed or efficiency. It has the lowest \emph{GETs/GiB} yet poor slice latency and scan throughput due to single-object paging and decode overhead. See Tables \ref{tab:cross_slice_latency_vs_gets}, \ref{tab:cross_full_throughput_vs_gets} and the per-codec MBB results (slices: Tables \ref{tab:slice_gzip_mbb}, \ref{tab:slice_lz4_mbb}, \ref{tab:slice_zstd_mbb} and full scans tables \ref{tab:full_gzip_mbb}, \ref{tab:full_lz4_mbb}, \ref{tab:full_zstd_mbb}).
 
 
 \section{Threats to validity and limits}
@@ -2322,24 +2324,24 @@ Parquet was piloted only and excluded from timed comparisons. When we scaled to 
 \cleardoublepage
 \chapter{Conclusions and Future Work}
 \label{ch:conclusionsAndFutureWork}
-Zarr yields the lowest slice latency under \texttt{zstd} and \texttt{lz4}, where TileDB wins slices under \texttt{gzip}. TileDB completes full sequential scans $2.2$--$3.2\times$ faster (lower GM scan time) than Zarr across codecs, with stable tails. \Gls{ROOT} remains slow for frame‑random reads despite a few GETs.
+Zarr yields the lowest slice latency under \texttt{zstd} and \texttt{lz4}, where TileDB wins slices under \texttt{gzip}. TileDB completes full sequential scans $2.2$--$3.2\times$ faster (lower GM scan time) than Zarr across codecs, with stable tails. ROOT/TTree remains slow for frame‑random reads despite a few GETs.
 
-Layout and request behavior explain the backend differences. Per-frame objectization (Zarr, \gls{HDFfive} via \gls{HSDS}) and fragment layouts (TileDB) expose client concurrency, whereas a single-object layout (\gls{ROOT}) minimizes GETs but constrains parallelism and incurs paging/decode overhead. Codec choice trades \gls{CPU} for bytes, with \texttt{zstd} and \texttt{gzip} more compact than \texttt{lz4}. In our data \gls{HDFfive} via \gls{HSDS} with \texttt{lz4} stored 19.17\,GiB versus Zarr 10.40\,GiB and TileDB 15.56\,GiB at the same payload size, indicating a storage-heavy configuration.
+Layout and request behavior explain the backend differences. Per-frame objectization (Zarr, \gls{HDFfive} via \gls{HSDS}) and fragment layouts (TileDB) expose client concurrency, whereas a single-object layout (ROOT/TTree) minimizes GETs but constrains parallelism and incurs paging/decode overhead. Codec choice trades \gls{CPU} for bytes, with \texttt{zstd} and \texttt{gzip} more compact than \texttt{lz4}. In our data \gls{HDFfive} via \gls{HSDS} with \texttt{lz4} stored 19.17\,GiB versus Zarr 10.40\,GiB and TileDB 15.56\,GiB at the same payload size, indicating a storage-heavy configuration.
 
-Winners are judged by geometric-mean (GM) latency for slices and GM throughput for full scans with dependence-robust 95\% \glspl{CI} and Harrell–Davis $p_{95}$ for tails. Findings reflect an \gls{AWS}-only \gls{SThree} testbed on one region (eu-north-1) and one client, with no on-prem baseline; claims should be read as within-\gls{SThree} cross-format contrasts. CloudWatch service latencies are used as context, not causal drivers.
+Winners are judged by geometric-mean (GM) latency for slices and by GM scan time for full scans, with GM throughput retained as an operational transferred-byte summary, together with dependence-robust 95\% \glspl{CI} and Harrell–Davis $p_{95}$ for tails. Findings reflect an \gls{AWS}-only \gls{SThree} testbed on one region (eu-north-1) and one client, with no on-prem baseline; claims should be read as within-\gls{SThree} cross-format contrasts. CloudWatch service latencies are used as context, not causal drivers.
 
 The remainder of the chapter provides a closing synthesis, decision-oriented recommendations, backend-specific operational implications, and a prioritized agenda for future work. Conclusions map to RQ1–RQ3 and reference Chapter \ref{ch:resultsAndAnalysis} (sections \ref{sec:rq1-results}, \ref{sec:rq2-results}, \ref{sec:rq3-results}).
 
 \section{Closing synthesis}
-Across single-frame slices and full scans, summaries of central tendency (GM and median) show a consistent, session-conditional ordering. For slices, \textbf{Zarr} is fastest under \texttt{zstd} and \texttt{lz4}, while \textbf{TileDB} wins under \texttt{gzip}. \textbf{\gls{HDFfive}/\gls{HSDS}} is slower than Zarr and TileDB but substantially faster than \textbf{\gls{ROOT}}, which is slowest. For full scans, \textbf{TileDB} delivers the highest throughput across all codecs by a wide margin, with \textbf{Zarr} second and \textbf{\gls{HDFfive}/\gls{HSDS}} and \textbf{\gls{ROOT}} far behind. Mechanisms include objectization/request patterns and decode paths: per-frame objects (Zarr/\gls{HSDS}) and fragments (TileDB) enable client concurrency. In contrast, a single object (\gls{ROOT}) minimizes GETs but limits parallelism and pays paging/decode overhead. In this dataset, \emph{few GETs} therefore does not imply speed, which can be seen in the cross-metric views (\ref{tab:cross_slice_latency_vs_gets}, \ref{tab:cross_full_throughput_vs_gets}). Cost properties follow: request cost tracks GETs/GiB (important for slice-heavy use), while stored GiB is codec-driven in our measurements (\texttt{zstd}$\approx$\texttt{gzip} $<$ \texttt{lz4}). For workloads similar to this detector stack, these results suggest choosing \texttt{zstd} or \texttt{gzip} when storage dominates and \texttt{lz4} when \gls{CPU}/latency dominates. If one backend must serve both interactive slices and bulk scans, start with \emph{Zarr+\texttt{zstd}} for UI latency, accepting lower scan throughput. However, if scans dominate, choose \emph{TileDB+\texttt{zstd}} and keep frame‑aligned tiles.
+Across single-frame slices and full scans, summaries of central tendency (GM and median) show a consistent, session-conditional ordering. For slices, \textbf{Zarr} is fastest under \texttt{zstd} and \texttt{lz4}, while \textbf{TileDB} wins under \texttt{gzip}. \textbf{\gls{HDFfive}/\gls{HSDS}} is slower than Zarr and TileDB but substantially faster than \textbf{ROOT/TTree}, which is slowest. For full scans, \textbf{TileDB} delivers the highest throughput across all codecs by a wide margin, with \textbf{Zarr} second and \textbf{\gls{HDFfive}/\gls{HSDS}} and \textbf{ROOT/TTree} far behind. Mechanisms include objectization/request patterns and decode paths: per-frame objects (Zarr/\gls{HSDS}) and fragments (TileDB) enable client concurrency. In contrast, a single object (ROOT/TTree) minimizes GETs but limits parallelism and pays paging/decode overhead. In this dataset, \emph{few GETs} therefore does not imply speed, which can be seen in the cross-metric views (\ref{tab:cross_slice_latency_vs_gets}, \ref{tab:cross_full_throughput_vs_gets}). Cost properties follow: request cost tracks GETs/GiB (important for slice-heavy use), while stored GiB is codec-driven in our measurements (\texttt{zstd}$\approx$\texttt{gzip} $<$ \texttt{lz4}). For workloads similar to this detector stack, these results suggest choosing \texttt{zstd} or \texttt{gzip} when storage dominates and \texttt{lz4} when \gls{CPU}/latency dominates. If one backend must serve both interactive slices and bulk scans, start with \emph{Zarr+\texttt{zstd}} for UI latency, accepting lower scan throughput. However, if scans dominate, choose \emph{TileDB+\texttt{zstd}} and keep frame‑aligned tiles.
 
 \section{Practitioner choices (decision matrix hook)}
 This section turns the empirical rankings into concrete decisions. Choices are related to the primary objective of each workload. All evidence is descriptive and session–conditional, and ties back to the league tables and per–codec slice/full results.
 
 \subsection{RQ1 — Interactive slice latency (latency–first)}
-For random single-frame reads, the default recommendation is \emph{Zarr + \texttt{zstd}}, which delivers the lowest slice GM with controlled tails in this setting and scales well with client concurrency (Tables \ref{tab:league-slice-zstd}, \ref{tab:slice_zstd_mbb}). If \texttt{gzip} is mandated, \emph{TileDB + \texttt{gzip}} is the better choice because TileDB’s fragment layout offsets \texttt{gzip}’s \gls{CPU} cost and wins on GM with non-overlapping \glspl{CI} versus Zarr (Tables \ref{tab:league-slice-gzip}, \ref{tab:slice_gzip_mbb}). One caution is that \emph{\gls{HSDS}+\texttt{lz4}} becomes unattractive when storage cost matters, since it stored 19.17\,GiB compared with Zarr’s 10.40\,GiB at the same codec (Table \ref{tab:object_counts}). By contrast, \emph{\gls{ROOT}} should be avoided for frame-random reads: few GETs do not translate into low latency when paging and decode dominate (Tables \ref{tab:league-slice-gzip}, \ref{tab:league-slice-lz4}, \ref{tab:league-slice-zstd} and Tables \ref{tab:slice_gzip_mbb}, \ref{tab:slice_lz4_mbb}, \ref{tab:slice_zstd_mbb}).
+For random single-frame reads, the default recommendation is \emph{Zarr + \texttt{zstd}}, which delivers the lowest slice GM with controlled tails in this setting and scales well with client concurrency (Tables \ref{tab:league-slice-zstd}, \ref{tab:slice_zstd_mbb}). If \texttt{gzip} is mandated, \emph{TileDB + \texttt{gzip}} is the better choice because TileDB’s fragment layout offsets \texttt{gzip}’s \gls{CPU} cost and wins on GM with non-overlapping \glspl{CI} versus Zarr (Tables \ref{tab:league-slice-gzip}, \ref{tab:slice_gzip_mbb}). One caution is that \emph{\gls{HSDS}+\texttt{lz4}} becomes unattractive when storage cost matters, since it stored 19.17\,GiB compared with Zarr’s 10.40\,GiB at the same codec (Table \ref{tab:object_counts}). By contrast, \emph{ROOT/TTree} should be avoided for frame-random reads: few GETs do not translate into low latency when paging and decode dominate (Tables \ref{tab:league-slice-gzip}, \ref{tab:league-slice-lz4}, \ref{tab:league-slice-zstd} and Tables \ref{tab:slice_gzip_mbb}, \ref{tab:slice_lz4_mbb}, \ref{tab:slice_zstd_mbb}).
 
-\subsection{RQ2 — Full-dataset throughput (throughput–first)}
+\subsection{RQ2 — Full-dataset scan performance (scan-time–first)}
 For full-dataset scans, the default recommendation is \emph{TileDB + \texttt{zstd}}. TileDB dominates full-scan performance across codecs in this testbed, and \texttt{zstd} provides the best overall scan time while keeping the stored footprint compact. \emph{TileDB + \texttt{lz4}} is worth considering only if the scan becomes CPU-bound in a deployment where the larger stored size and downloaded bytes are acceptable (Tables \ref{tab:league-full-zstd}, \ref{tab:league-full-lz4} and Tables \ref{tab:full_zstd_mbb}, \ref{tab:full_lz4_mbb}). When ecosystem fit matters more than maximizing throughput, \emph{Zarr} remains the second choice across \texttt{zstd}, \texttt{lz4}, and \texttt{gzip}, trading some scan speed for broader tooling while preserving stable streaming behavior (Tables \ref{tab:league-full-gzip}, \ref{tab:league-full-lz4}, \ref{tab:league-full-zstd} and Tables \ref{tab:full_gzip_mbb}, \ref{tab:full_lz4_mbb}, \ref{tab:full_zstd_mbb}).
 
 \subsection{Weight sensitivity}
@@ -2355,7 +2357,7 @@ This section converts the Results into backend-specific operational actions. Rec
 \subsection{TileDB}
 \textbf{Manage fragment counts}: each write produces an immutable fragment, where many small fragments raise metadata work. Schedule \textbf{fragment consolidation} when counts grow to keep open/scan overhead low (Table \ref{tab:object_counts}). \textbf{Align tile extents} to the access unit (frame–aligned tiles for these arrays) to preserve long sequential reads. These practices sustain \textbf{scan dominance} observed across codecs (Figures \ref{fig:full_gzip_gm_mbb}, \ref{fig:full_lz4_gm_mbb}, \ref{fig:full_zstd_gm_mbb}) and the favorable throughput vs GETs/GiB posture (Figure \ref{fig:cross_full_throughput_vs_gets}).
 
-\subsection{HSDS (HDF5)}
+\subsection{HDF5/HSDS}
 \textbf{Account for REST fan–out} and \textbf{many small objects}: chunk and metadata requests add round–trips (Table \ref{tab:object_counts}). Provision and tune \textbf{server–side caches} (dataset/chunk caches) and concurrency to hide latency, and right-size chunks to reduce request pressure where feasible. CloudWatch service latencies are stable across sessions, so speedups must come from reducing fan–out or improving caching, not from “faster \gls{SThree}” (Figures \ref{fig:cw_firstbyte_grid}, \ref{fig:cw_total_grid}).
 
 \subsection{ROOT/TTree}
@@ -2417,7 +2419,7 @@ A particularly valuable next step would be a dedicated comparison between conven
 \subsection{Cloud testbed and storage configuration}
 \label{app:a1-testbed}
 \textbf{Cloud/region.} Single \gls{AWS} region with the \gls{SThree} bucket co-located (\texttt{eu-north-1}).\\
-\textbf{Bucket and prefixes.} Single bucket \texttt{scatterin-thesis} in \texttt{eu-north-1} with per-format prefixes (HDF5/HSDS, Zarr, TileDB, ROOT, Parquet) as summarized in Appendix \ref{app:a6-schemas}.\\
+\textbf{Bucket and prefixes.} Single bucket \texttt{scatterin-thesis} in \texttt{eu-north-1} with per-format prefixes (HDF5/HSDS, Zarr, TileDB, ROOT/TTree, Parquet) as summarized in Appendix \ref{app:a6-schemas}.\\
 \textbf{Networking.} Private \gls{SThree} via Gateway VPC endpoint with no CloudFront, no Transfer Acceleration, no cross-region traffic.\\
 \textbf{Client node.} One \gls{ECtwo} \texttt{c6i.8xlarge} instance for ingestion and reads, running Amazon Linux 2023 (\texttt{al2023-ami-2023.8.20250707.0-kernel-6.1-x86\_64}, \texttt{ami-09278528675a8d54e}) on private IPv4.\\
 \textbf{Connections.} Persistent HTTP keep-alive and connection pooling with default retry policy.\\
@@ -2436,7 +2438,7 @@ A particularly valuable next step would be a dedicated comparison between conven
 
 \subsection{Statistical settings}
 \label{app:a3-stats}
-\textbf{Scale.} Analyze $\ln(\text{time})$; report GM time with 95\% intervals; $p_{95}$ on original scale. Full-scan throughput (GiB/s) derived from bytes/time and analyzed on the log scale.\\
+\textbf{Scale.} Analyze $\ln(\text{time})$; report GM time with 95\% intervals; $p_{95}$ on original scale. For full scans, GM time is the primary completion metric, and transferred-byte throughput (GiB/s) is derived from downloaded bytes/time and analyzed on the log scale.\\
 \textbf{Intervals.} Moving-block bootstrap (MBB) with $\ell\in\{4,6,8\}$, $B{=}10{,}000$; report the widest 95\% CI across $\ell$; sensitivity extends to $\ell{=}10$.\\
 \textbf{Tails.} Main tables report the empirical (sample) $p_{95}$ with MBB CIs (using $\ell\in\{4,6,8\}$). Harrell–Davis $p_{95}$ with MBB CIs over $\ell\in\{4,6,8,10\}$ is reported as a tail-robustness sensitivity check.\\
 \textbf{Contrasts.} Descriptive, session-conditional; ratios reference Zarr within codec$\times$pattern.
@@ -2556,28 +2558,28 @@ This thesis includes Parquet only as a pilot to document one concrete mapping of
     \hline
     Cell (format–codec–pattern) & Shapiro $p$ & $\rho_1$ & $\mathrm{p95}/\mathrm{GM}$ & Spearman $p$ \\
     \hline
-    \gls{HDFfive}–gzip–full    & 3.43e-09 & 0.66  & 1.02 & 0.837 \\
-    \gls{ROOT}–gzip–full    & 0.305    & 0.75  & 1.05 & 8.09e-06 \\
+    HDF5/HSDS–gzip–full    & 3.43e-09 & 0.66  & 1.02 & 0.837 \\
+    ROOT/TTree–gzip–full    & 0.305    & 0.75  & 1.05 & 8.09e-06 \\
     tiledb–gzip–full  & 0.067    & 0.61  & 1.10 & 0.531 \\
     zarr–gzip–full    & 0.0571   & 0.79  & 1.02 & 4.63e-15 \\
-    \gls{HDFfive}–gzip–slice   & 0.00656  & -0.12 & 1.42 & 0.337 \\
-    \gls{ROOT}–gzip–slice   & 0.983    & 0.02  & 1.16 & 0.161 \\
+    HDF5/HSDS–gzip–slice   & 0.00656  & -0.12 & 1.42 & 0.337 \\
+    ROOT/TTree–gzip–slice   & 0.983    & 0.02  & 1.16 & 0.161 \\
     tiledb–gzip–slice & 0.334    & 0.03  & 1.34 & 0.00376 \\
     zarr–gzip–slice   & 0.773    & -0.19 & 1.23 & 0.786 \\
-    \gls{HDFfive}–\gls{LZfour}–full     & 0.249    & 0.34  & 1.01 & 0.831 \\
-    \gls{ROOT}–\gls{LZfour}–full     & 0.0396   & 0.77  & 1.03 & 0.036 \\
+    HDF5/HSDS–\gls{LZfour}–full     & 0.249    & 0.34  & 1.01 & 0.831 \\
+    ROOT/TTree–\gls{LZfour}–full     & 0.0396   & 0.77  & 1.03 & 0.036 \\
     tiledb–\gls{LZfour}–full   & 0.07     & 0.69  & 1.06 & 0.0948 \\
     zarr–\gls{LZfour}–full     & 0.311    & 0.71  & 1.03 & 0.689 \\
-    \gls{HDFfive}–\gls{LZfour}–slice    & 0.481    & 0.07  & 1.23 & 0.509 \\
-    \gls{ROOT}–\gls{LZfour}–slice    & 0.432    & 0.32  & 1.16 & 0.00312 \\
+    HDF5/HSDS–\gls{LZfour}–slice    & 0.481    & 0.07  & 1.23 & 0.509 \\
+    ROOT/TTree–\gls{LZfour}–slice    & 0.432    & 0.32  & 1.16 & 0.00312 \\
     tiledb–\gls{LZfour}–slice  & 0.00033  & 0.05  & 1.28 & 0.178 \\
     zarr–\gls{LZfour}–slice    & 0.0164   & -0.09 & 1.99 & 0.585 \\
-    \gls{HDFfive}–\gls{ZSTD}–full    & 0.000154 & 0.57  & 1.01 & 0.00385 \\
-    \gls{ROOT}–\gls{ZSTD}–full    & 0.556    & 0.60  & 1.17 & 0.395 \\
+    HDF5/HSDS–\gls{ZSTD}–full    & 0.000154 & 0.57  & 1.01 & 0.00385 \\
+    ROOT/TTree–\gls{ZSTD}–full    & 0.556    & 0.60  & 1.17 & 0.395 \\
     tiledb–\gls{ZSTD}–full  & 0.00838  & 0.75  & 1.11 & 0.33 \\
     zarr–\gls{ZSTD}–full    & 0.0821   & 0.57  & 1.02 & 0.00347 \\
-    \gls{HDFfive}–\gls{ZSTD}–slice   & 0.0038   & -0.21 & 1.21 & 0.625 \\
-    \gls{ROOT}–\gls{ZSTD}–slice   & 0.101    & -0.17 & 1.16 & 0.0225 \\
+    HDF5/HSDS–\gls{ZSTD}–slice   & 0.0038   & -0.21 & 1.21 & 0.625 \\
+    ROOT/TTree–\gls{ZSTD}–slice   & 0.101    & -0.17 & 1.16 & 0.0225 \\
     tiledb–\gls{ZSTD}–slice & 0.339    & 0.01  & 1.41 & 0.0662 \\
     zarr–\gls{ZSTD}–slice   & 0.00425  & 0.00  & 1.26 & 0.236 \\
     \hline
@@ -2590,7 +2592,7 @@ This thesis includes Parquet only as a pilot to document one concrete mapping of
   \includegraphics[width=\textwidth]{figures/graphs/appendix_QQ_grid_slice_3x4.pdf}
   \caption{Q–Q plots of $\ln(\text{time})$ for slice workloads. 
            Rows: codecs \{gzip, lz4, zstd\}. 
-           Columns: formats \{HDF5/HSDS, Zarr, TileDB, ROOT\}. 
+           Columns: formats \{HDF5/HSDS, Zarr, TileDB, ROOT/TTree\}.
            Shaded band is a 95\% pointwise envelope; per-panel Shapiro $p$ shown.}
   \label{fig:appendix_qq_grid_slice}
 \end{figure}
@@ -2601,7 +2603,7 @@ This thesis includes Parquet only as a pilot to document one concrete mapping of
   \includegraphics[width=\textwidth]{figures/graphs/appendix_QQ_grid_full_3x4.pdf}
   \caption{Q–Q plots of $\ln(\text{time})$ for full-scan workloads. 
            Rows: codecs \{gzip, lz4, zstd\}. 
-           Columns: formats \{HDF5/HSDS, Zarr, TileDB, ROOT\}. 
+           Columns: formats \{HDF5/HSDS, Zarr, TileDB, ROOT/TTree\}.
            Shaded band is a 95\% pointwise envelope; per-panel Shapiro $p$ shown.}
   \label{fig:appendix_qq_grid_full}
 \end{figure}
@@ -2634,28 +2636,28 @@ This thesis includes Parquet only as a pilot to document one concrete mapping of
         \toprule
         Format & Codec & Pattern & GETs/rep [95\% \gls{CI}] & GETs/GiB [95\% \gls{CI}] & $G$ & Bytes (GiB) & $n$ \\
         \midrule
-\gls{HDFfive}  & gzip & full  & 1561.06 [1550.13, 1572.05] & 137.75 [136.78, 138.72] & 78{,}053 & 566.634 & 50 \\
-\gls{ROOT}  & gzip & full  & 1321.92 [1311.86, 1332.04] & 58.47  [58.03, 58.92]   & 66{,}096 & 1130.349 & 50 \\
+HDF5/HSDS  & gzip & full  & 1561.06 [1550.13, 1572.05] & 137.75 [136.78, 138.72] & 78{,}053 & 566.634 & 50 \\
+ROOT/TTree  & gzip & full  & 1321.92 [1311.86, 1332.04] & 58.47  [58.03, 58.92]   & 66{,}096 & 1130.349 & 50 \\
 tiledb& gzip & full  & 1104.42 [1095.23, 1113.67] & 94.61  [93.82, 95.40]   & 55{,}221 & 583.670  & 50 \\
 zarr  & gzip & full  & 1320.90 [1310.85, 1331.01] & 116.80 [115.91, 117.70] & 66{,}045 & 565.441  & 50 \\
-\gls{HDFfive}  & gzip & slice & 1.98    [1.61, 2.41]        & 482.17 [391.88, 587.02] & 99       & 0.205    & 50 \\
-\gls{ROOT}  & gzip & slice & 1.26    [0.97, 1.61]        & 61.28  [47.09, 78.41]   & 63       & 1.028    & 50 \\
+HDF5/HSDS  & gzip & slice & 1.98    [1.61, 2.41]        & 482.17 [391.88, 587.02] & 99       & 0.205    & 50 \\
+ROOT/TTree  & gzip & slice & 1.26    [0.97, 1.61]        & 61.28  [47.09, 78.41]   & 63       & 1.028    & 50 \\
 tiledb& gzip & slice & 1.20    [0.92, 1.54]        & 113.27 [86.44, 145.80]  & 60       & 0.530    & 50 \\
 zarr  & gzip & slice & 1.30    [1.00, 1.66]        & 126.66 [97.75, 161.43]  & 65       & 0.513    & 50 \\
-\gls{HDFfive}  & \gls{LZfour}  & full  & 1557.22 [1546.30, 1568.20] & 79.64  [79.09, 80.21]   & 77{,}861 & 977.612  & 50 \\
-\gls{ROOT}  & \gls{LZfour}  & full  & 1321.92 [1311.86, 1332.04] & 48.71  [48.34, 49.08]   & 66{,}096 & 1356.963 & 50 \\
+HDF5/HSDS  & \gls{LZfour}  & full  & 1557.22 [1546.30, 1568.20] & 79.64  [79.09, 80.21]   & 77{,}861 & 977.612  & 50 \\
+ROOT/TTree  & \gls{LZfour}  & full  & 1321.92 [1311.86, 1332.04] & 48.71  [48.34, 49.08]   & 66{,}096 & 1356.963 & 50 \\
 tiledb& \gls{LZfour}  & full  & 1486.92 [1476.25, 1497.65] & 93.68  [93.01, 94.36]   & 74{,}346 & 793.618  & 50 \\
 zarr  & \gls{LZfour}  & full  & 1351.58 [1341.41, 1361.81] & 124.53 [123.59, 125.47] & 67{,}579 & 542.664  & 50 \\
-\gls{HDFfive}  & \gls{LZfour}  & slice & 4.80    [4.21, 5.45]        & 270.49 [237.35, 306.96] & 240      & 0.887    & 50 \\
-\gls{ROOT}  & \gls{LZfour}  & slice & 1.26    [0.97, 1.61]        & 51.06  [39.23, 65.32]   & 63       & 1.234    & 50 \\
+HDF5/HSDS  & \gls{LZfour}  & slice & 4.80    [4.21, 5.45]        & 270.49 [237.35, 306.96] & 240      & 0.887    & 50 \\
+ROOT/TTree  & \gls{LZfour}  & slice & 1.26    [0.97, 1.61]        & 51.06  [39.23, 65.32]   & 63       & 1.234    & 50 \\
 tiledb& \gls{LZfour}  & slice & 1.20    [0.92, 1.54]        & 83.21  [63.50, 107.10]  & 60       & 0.721    & 50 \\
 zarr  & \gls{LZfour}  & slice & 1.30    [1.00, 1.66]        & 134.99 [104.18, 172.05] & 65       & 0.482    & 50 \\
-\gls{HDFfive}  & \gls{ZSTD} & full  & 1547.32 [1536.44, 1558.26] & 142.19 [141.19, 143.19] & 77{,}366 & 544.117  & 50 \\
-\gls{ROOT}  & \gls{ZSTD} & full  & 1321.92 [1311.86, 1332.04] & 63.18  [62.70, 63.66]   & 66{,}096 & 1046.131 & 50 \\
+HDF5/HSDS  & \gls{ZSTD} & full  & 1547.32 [1536.44, 1558.26] & 142.19 [141.19, 143.19] & 77{,}366 & 544.117  & 50 \\
+ROOT/TTree  & \gls{ZSTD} & full  & 1321.92 [1311.86, 1332.04] & 63.18  [62.70, 63.66]   & 66{,}096 & 1046.131 & 50 \\
 tiledb& \gls{ZSTD} & full  & 1061.58 [1052.57, 1070.65] & 96.89  [96.06, 97.71]   & 53{,}079 & 547.847  & 50 \\
 zarr  & \gls{ZSTD} & full  & 1320.90 [1310.85, 1331.01] & 123.16 [122.23, 124.11] & 66{,}045 & 536.236  & 50 \\
-\gls{HDFfive}  & \gls{ZSTD} & slice & 4.82    [4.23, 5.47]        & 488.01 [428.33, 553.66] & 241      & 0.494    & 50 \\
-\gls{ROOT}  & \gls{ZSTD} & slice & 1.26    [0.97, 1.61]        & 66.20  [50.87, 84.70]   & 63       & 0.952    & 50 \\
+HDF5/HSDS  & \gls{ZSTD} & slice & 4.82    [4.23, 5.47]        & 488.01 [428.33, 553.66] & 241      & 0.494    & 50 \\
+ROOT/TTree  & \gls{ZSTD} & slice & 1.26    [0.97, 1.61]        & 66.20  [50.87, 84.70]   & 63       & 0.952    & 50 \\
 tiledb& \gls{ZSTD} & slice & 1.20    [0.92, 1.54]        & 120.72 [92.12, 155.39]  & 60       & 0.497    & 50 \\
 zarr  & \gls{ZSTD} & slice & 1.30    [1.00, 1.66]        & 136.61 [105.49, 174.22] & 65       & 0.476    & 50 \\
         \bottomrule
@@ -2674,28 +2676,28 @@ zarr  & \gls{ZSTD} & slice & 1.30    [1.00, 1.66]        & 136.61 [105.49, 174.2
         \toprule
         Format & Codec & Pattern & FirstByte avg & FirstByte $p_{95}$ & Total avg & Total $p_{95}$ \\
         \midrule
-\gls{HDFfive}   & gzip & full  & 46.622 & 66.833 & 102.149 & 132.430 \\
-\gls{ROOT}   & gzip & full  & 63.206 & 80.167 & 204.174 & 245.199 \\
+HDF5/HSDS   & gzip & full  & 46.622 & 66.833 & 102.149 & 132.430 \\
+ROOT/TTree   & gzip & full  & 63.206 & 80.167 & 204.174 & 245.199 \\
 tiledb & gzip & full  & 22.614 & 29.192 & 116.425 & 128.060 \\
 zarr   & gzip & full  & 24.882 & 40.508 & 93.128  & 103.176 \\
-\gls{HDFfive}   & gzip & slice & 75.051 & 105.347 & 89.152  & 135.756 \\
-\gls{ROOT}   & gzip & slice & 117.619& 140.110 & 266.603 & 334.332 \\
+HDF5/HSDS   & gzip & slice & 75.051 & 105.347 & 89.152  & 135.756 \\
+ROOT/TTree   & gzip & slice & 117.619& 140.110 & 266.603 & 334.332 \\
 tiledb & gzip & slice & 62.917 & 89.851  & 89.546  & 239.641 \\
 zarr   & gzip & slice & 87.597 & 132.875 & 118.938 & 181.698 \\
-\gls{HDFfive}   & \gls{LZfour}  & full  & 45.517 & 63.953  & 107.108 & 137.238 \\
-\gls{ROOT}   & \gls{LZfour}  & full  & 75.456 & 95.540  & 245.737 & 293.689 \\
+HDF5/HSDS   & \gls{LZfour}  & full  & 45.517 & 63.953  & 107.108 & 137.238 \\
+ROOT/TTree   & \gls{LZfour}  & full  & 75.456 & 95.540  & 245.737 & 293.689 \\
 tiledb & \gls{LZfour}  & full  & 22.567 & 29.158  & 117.307 & 126.492 \\
 zarr   & \gls{LZfour}  & full  & 24.785 & 34.685  & 89.638  & 96.150  \\
-\gls{HDFfive}   & \gls{LZfour}  & slice & 63.621 & 86.445  & 77.800  & 106.719 \\
-\gls{ROOT}   & \gls{LZfour}  & slice & 120.524& 141.858 & 294.825 & 363.410 \\
+HDF5/HSDS   & \gls{LZfour}  & slice & 63.621 & 86.445  & 77.800  & 106.719 \\
+ROOT/TTree   & \gls{LZfour}  & slice & 120.524& 141.858 & 294.825 & 363.410 \\
 tiledb & \gls{LZfour}  & slice & 57.133 & 77.672  & 97.454  & 259.554 \\
 zarr   & \gls{LZfour}  & slice & 102.016& 171.055 & 161.938 & 330.963 \\
-\gls{HDFfive}   & \gls{ZSTD} & full  & 43.157 & 60.930  & 94.571  & 105.935 \\
-\gls{ROOT}   & \gls{ZSTD} & full  & 60.790 & 79.221  & 205.670 & 272.696 \\
+HDF5/HSDS   & \gls{ZSTD} & full  & 43.157 & 60.930  & 94.571  & 105.935 \\
+ROOT/TTree   & \gls{ZSTD} & full  & 60.790 & 79.221  & 205.670 & 272.696 \\
 tiledb & \gls{ZSTD} & full  & 22.754 & 29.244  & 113.891 & 125.190 \\
 zarr   & \gls{ZSTD} & full  & 23.604 & 32.837  & 88.483  & 96.587  \\
-\gls{HDFfive}   & \gls{ZSTD} & slice & 56.191 & 77.999  & 65.813  & 93.934  \\
-\gls{ROOT}   & \gls{ZSTD} & slice & 68.444 & 85.236  & 189.476 & 250.441 \\
+HDF5/HSDS   & \gls{ZSTD} & slice & 56.191 & 77.999  & 65.813  & 93.934  \\
+ROOT/TTree   & \gls{ZSTD} & slice & 68.444 & 85.236  & 189.476 & 250.441 \\
 tiledb & \gls{ZSTD} & slice & 62.633 & 106.719 & 80.901  & 207.882 \\
 zarr   & \gls{ZSTD} & slice & 83.932 & 94.424 & 133.233 & 182.695 \\
         \bottomrule
@@ -2727,20 +2729,20 @@ zarr   & \gls{ZSTD} & slice & 83.932 & 94.424 & 133.233 & 182.695 \\
     \toprule
     Format & \(\ell\) & $p_{95}$ (ms) & 95\% \gls{CI} lo & 95\% \gls{CI} hi & \gls{CI} width \\
     \midrule
-    \gls{HDFfive} & 4  & 344.70 & 304.34 & 366.43 & 62.09 \\
-    \gls{ROOT} & 4  & 479.58 & 456.47 & 502.96 & 46.50 \\
+    HDF5/HSDS & 4  & 344.70 & 304.34 & 366.43 & 62.09 \\
+    ROOT/TTree & 4  & 479.58 & 456.47 & 502.96 & 46.50 \\
     TileDB & 4 & 274.99 & 240.45 & 330.95 & 90.50 \\
     Zarr & 4  & 293.99 & 268.92 & 313.38 & 44.46 \\
-    \gls{HDFfive} & 6  & 344.70 & 302.51 & 366.57 & 64.06 \\
-    \gls{ROOT} & 6  & 479.58 & 455.17 & 503.84 & 48.67 \\
+    HDF5/HSDS & 6  & 344.70 & 302.51 & 366.57 & 64.06 \\
+    ROOT/TTree & 6  & 479.58 & 455.17 & 503.84 & 48.67 \\
     TileDB & 6 & 274.99 & 239.68 & 330.97 & 91.30 \\
     Zarr & 6  & 293.99 & 268.01 & 313.72 & 45.71 \\
-    \gls{HDFfive} & 8  & 344.70 & 302.25 & 366.59 & 64.34 \\
-    \gls{ROOT} & 8  & 479.58 & 454.89 & 503.95 & 49.06 \\
+    HDF5/HSDS & 8  & 344.70 & 302.25 & 366.59 & 64.34 \\
+    ROOT/TTree & 8  & 479.58 & 454.89 & 503.95 & 49.06 \\
     TileDB & 8 & 274.99 & 240.75 & 330.89 & 90.14 \\
     Zarr & 8  & 293.99 & 267.83 & 314.08 & 46.25 \\
-    \gls{HDFfive} & 10 & 344.70 & 302.48 & 366.70 & 64.22 \\
-    \gls{ROOT} & 10 & 479.58 & 453.33 & 503.94 & 50.61 \\
+    HDF5/HSDS & 10 & 344.70 & 302.48 & 366.70 & 64.22 \\
+    ROOT/TTree & 10 & 479.58 & 453.33 & 503.94 & 50.61 \\
     TileDB & 10& 274.99 & 240.25 & 330.76 & 90.51 \\
     Zarr & 10 & 293.99 & 266.30 & 314.06 & 47.76 \\
     \bottomrule
@@ -2754,20 +2756,20 @@ zarr   & \gls{ZSTD} & slice & 83.932 & 94.424 & 133.233 & 182.695 \\
     \toprule
     Format & \(\ell\) & $p_{95}$ (ms) & 95\% \gls{CI} lo & 95\% \gls{CI} hi & \gls{CI} width \\
     \midrule
-    \gls{HDFfive} & 4  & 274.94 & 256.95 & 280.35 & 23.40 \\
-    \gls{ROOT} & 4  & 393.55 & 373.21 & 439.37 & 66.16 \\
+    HDF5/HSDS & 4  & 274.94 & 256.95 & 280.35 & 23.40 \\
+    ROOT/TTree & 4  & 393.55 & 373.21 & 439.37 & 66.16 \\
     TileDB & 4 & 321.57 & 264.30 & 407.78 & 143.48 \\
     Zarr & 4  & 370.84 & 305.30 & 409.14 & 103.84 \\
-    \gls{HDFfive} & 6  & 274.94 & 257.91 & 280.22 & 22.31 \\
-    \gls{ROOT} & 6  & 393.55 & 373.36 & 438.80 & 65.45 \\
+    HDF5/HSDS & 6  & 274.94 & 257.91 & 280.22 & 22.31 \\
+    ROOT/TTree & 6  & 393.55 & 373.36 & 438.80 & 65.45 \\
     TileDB & 6 & 321.57 & 263.41 & 400.90 & 137.49 \\
     Zarr & 6  & 370.84 & 301.63 & 407.59 & 105.97 \\
-    \gls{HDFfive} & 8  & 274.94 & 258.75 & 280.23 & 21.48 \\
-    \gls{ROOT} & 8  & 393.55 & 374.39 & 438.73 & 64.34 \\
+    HDF5/HSDS & 8  & 274.94 & 258.75 & 280.23 & 21.48 \\
+    ROOT/TTree & 8  & 393.55 & 374.39 & 438.73 & 64.34 \\
     TileDB & 8 & 321.57 & 262.65 & 407.79 & 145.14 \\
     Zarr & 8  & 370.84 & 300.03 & 406.13 & 106.10 \\
-    \gls{HDFfive} & 10 & 274.94 & 261.20 & 280.08 & 18.88 \\
-    \gls{ROOT} & 10 & 393.55 & 375.22 & 438.54 & 63.32 \\
+    HDF5/HSDS & 10 & 274.94 & 261.20 & 280.08 & 18.88 \\
+    ROOT/TTree & 10 & 393.55 & 375.22 & 438.54 & 63.32 \\
     TileDB & 10& 321.57 & 261.70 & 407.99 & 146.29 \\
     Zarr & 10 & 370.84 & 298.23 & 404.56 & 106.33 \\
     \bottomrule
@@ -2781,20 +2783,20 @@ zarr   & \gls{ZSTD} & slice & 83.932 & 94.424 & 133.233 & 182.695 \\
     \toprule
     Format & \(\ell\) & $p_{95}$ (ms) & 95\% \gls{CI} lo & 95\% \gls{CI} hi & \gls{CI} width \\
     \midrule
-    \gls{HDFfive} & 4  & 264.69 & 242.89 & 288.24 & 45.35 \\
-    \gls{ROOT} & 4  & 321.45 & 298.81 & 339.12 & 40.31 \\
+    HDF5/HSDS & 4  & 264.69 & 242.89 & 288.24 & 45.35 \\
+    ROOT/TTree & 4  & 321.45 & 298.81 & 339.12 & 40.31 \\
     TileDB & 4 & 274.79 & 227.79 & 307.66 & 79.87 \\
     Zarr & 4  & 206.34 & 179.83 & 253.80 & 73.97 \\
-    \gls{HDFfive} & 6  & 264.69 & 242.43 & 286.94 & 44.51 \\
-    \gls{ROOT} & 6  & 321.45 & 298.36 & 338.44 & 40.08 \\
+    HDF5/HSDS & 6  & 264.69 & 242.43 & 286.94 & 44.51 \\
+    ROOT/TTree & 6  & 321.45 & 298.36 & 338.44 & 40.08 \\
     TileDB & 6 & 274.79 & 232.27 & 306.35 & 74.08 \\
     Zarr & 6  & 206.34 & 179.64 & 253.85 & 74.21 \\
-    \gls{HDFfive} & 8  & 264.69 & 242.79 & 286.87 & 44.08 \\
-    \gls{ROOT} & 8  & 321.45 & 298.49 & 338.12 & 39.63 \\
+    HDF5/HSDS & 8  & 264.69 & 242.79 & 286.87 & 44.08 \\
+    ROOT/TTree & 8  & 321.45 & 298.49 & 338.12 & 39.63 \\
     TileDB & 8 & 274.79 & 233.38 & 303.42 & 70.04 \\
     Zarr & 8  & 206.34 & 178.68 & 253.85 & 75.18 \\
-    \gls{HDFfive} & 10 & 264.69 & 243.18 & 285.72 & 42.53 \\
-    \gls{ROOT} & 10 & 321.45 & 298.59 & 337.31 & 38.72 \\
+    HDF5/HSDS & 10 & 264.69 & 243.18 & 285.72 & 42.53 \\
+    ROOT/TTree & 10 & 321.45 & 298.59 & 337.31 & 38.72 \\
     TileDB & 10& 274.79 & 235.41 & 302.40 & 66.99 \\
     Zarr & 10 & 206.34 & 178.90 & 253.86 & 74.96 \\
     \bottomrule
@@ -2808,20 +2810,20 @@ zarr   & \gls{ZSTD} & slice & 83.932 & 94.424 & 133.233 & 182.695 \\
     \toprule
     Format & $\ell$ & $p_{95}$ (ms) & 95\% \gls{CI} lo & 95\% \gls{CI} hi & \gls{CI} width \\
     \midrule
-    \gls{HDFfive} & 4  & 160\,558 & 157\,224 & 162\,903 & 5\,679 \\
-    \gls{ROOT} & 4  & 465\,371 & 457\,976 & 469\,618 & 11\,642 \\
+    HDF5/HSDS & 4  & 160\,558 & 157\,224 & 162\,903 & 5\,679 \\
+    ROOT/TTree & 4  & 465\,371 & 457\,976 & 469\,618 & 11\,642 \\
     TileDB & 4 & 12\,528  & 11\,843  & 12\,841  & 998 \\
     Zarr & 4  & 36\,417  & 36\,153  & 36\,444  & 291 \\
-    \gls{HDFfive} & 6  & 160\,558 & 157\,173 & 162\,903 & 5\,729 \\
-    \gls{ROOT} & 6  & 465\,371 & 456\,192 & 469\,620 & 13\,428 \\
+    HDF5/HSDS & 6  & 160\,558 & 157\,173 & 162\,903 & 5\,729 \\
+    ROOT/TTree & 6  & 465\,371 & 456\,192 & 469\,620 & 13\,428 \\
     TileDB & 6 & 12\,528  & 11\,830  & 12\,834  & 1\,004 \\
     Zarr & 6  & 36\,417  & 36\,059  & 36\,443  & 384 \\
-    \gls{HDFfive} & 8  & 160\,558 & 157\,154 & 162\,905 & 5\,751 \\
-    \gls{ROOT} & 8  & 465\,371 & 453\,826 & 469\,620 & 15\,794 \\
+    HDF5/HSDS & 8  & 160\,558 & 157\,154 & 162\,905 & 5\,751 \\
+    ROOT/TTree & 8  & 465\,371 & 453\,826 & 469\,620 & 15\,794 \\
     TileDB & 8 & 12\,528  & 11\,833  & 12\,833  & 1\,000 \\
     Zarr & 8  & 36\,417  & 35\,955  & 36\,444  & 489 \\
-    \gls{HDFfive} & 10 & 160\,558 & 157\,142 & 162\,905 & 5\,763 \\
-    \gls{ROOT} & 10 & 465\,371 & 451\,293 & 469\,620 & 18\,327 \\
+    HDF5/HSDS & 10 & 160\,558 & 157\,142 & 162\,905 & 5\,763 \\
+    ROOT/TTree & 10 & 465\,371 & 451\,293 & 469\,620 & 18\,327 \\
     TileDB & 10& 12\,528  & 11\,844  & 12\,823  & 979 \\
     Zarr & 10 & 36\,417  & 35\,871  & 36\,445  & 574 \\
     \bottomrule
@@ -2835,20 +2837,20 @@ zarr   & \gls{ZSTD} & slice & 83.932 & 94.424 & 133.233 & 182.695 \\
     \toprule
     Format & $\ell$ & $p_{95}$ (ms) & 95\% \gls{CI} lo & 95\% \gls{CI} hi & \gls{CI} width \\
     \midrule
-    \gls{HDFfive} & 4  & 152\,821 & 152\,328 & 153\,067 & 738 \\
-    \gls{ROOT} & 4  & 375\,321 & 371\,899 & 376\,256 & 4\,357 \\
+    HDF5/HSDS & 4  & 152\,821 & 152\,328 & 153\,067 & 738 \\
+    ROOT/TTree & 4  & 375\,321 & 371\,899 & 376\,256 & 4\,357 \\
     TileDB & 4 & 14\,427  & 14\,130  & 14\,572  & 442 \\
     Zarr & 4  & 30\,297  & 29\,811  & 30\,407  & 597 \\
-    \gls{HDFfive} & 6  & 152\,821 & 152\,394 & 153\,060 & 666 \\
-    \gls{ROOT} & 6  & 375\,321 & 370\,722 & 376\,259 & 5\,536 \\
+    HDF5/HSDS & 6  & 152\,821 & 152\,394 & 153\,060 & 666 \\
+    ROOT/TTree & 6  & 375\,321 & 370\,722 & 376\,259 & 5\,536 \\
     TileDB & 6 & 14\,427  & 14\,099  & 14\,579  & 480 \\
     Zarr & 6  & 30\,297  & 29\,755  & 30\,408  & 653 \\
-    \gls{HDFfive} & 8  & 152\,821 & 152\,458 & 153\,053 & 595 \\
-    \gls{ROOT} & 8  & 375\,321 & 369\,906 & 376\,272 & 6\,366 \\
+    HDF5/HSDS & 8  & 152\,821 & 152\,458 & 153\,053 & 595 \\
+    ROOT/TTree & 8  & 375\,321 & 369\,906 & 376\,272 & 6\,366 \\
     TileDB & 8 & 14\,427  & 14\,068  & 14\,582  & 513 \\
     Zarr & 8  & 30\,297  & 29\,749  & 30\,409  & 659 \\
-    \gls{HDFfive} & 10 & 152\,821 & 152\,552 & 153\,041 & 490 \\
-    \gls{ROOT} & 10 & 375\,321 & 369\,349 & 376\,319 & 6\,970 \\
+    HDF5/HSDS & 10 & 152\,821 & 152\,552 & 153\,041 & 490 \\
+    ROOT/TTree & 10 & 375\,321 & 369\,349 & 376\,319 & 6\,970 \\
     TileDB & 10& 14\,427  & 14\,065  & 14\,579  & 513 \\
     Zarr & 10 & 30\,297  & 29\,738  & 30\,409  & 670 \\
     \bottomrule
@@ -2862,20 +2864,20 @@ zarr   & \gls{ZSTD} & slice & 83.932 & 94.424 & 133.233 & 182.695 \\
     \toprule
     Format & $\ell$ & $p_{95}$ (ms) & 95\% \gls{CI} lo & 95\% \gls{CI} hi & \gls{CI} width \\
     \midrule
-    \gls{HDFfive} & 4  & 154\,112 & 152\,199 & 155\,549 & 3\,350 \\
-    \gls{ROOT} & 4  & 441\,405 & 423\,524 & 453\,744 & 30\,219 \\
+    HDF5/HSDS & 4  & 154\,112 & 152\,199 & 155\,549 & 3\,350 \\
+    ROOT/TTree & 4  & 441\,405 & 423\,524 & 453\,744 & 30\,219 \\
     TileDB & 4 & 11\,567  & 10\,956  & 11\,810  & 854 \\
     Zarr & 4  & 31\,207  & 30\,815  & 31\,389  & 573 \\
-    \gls{HDFfive} & 6  & 154\,112 & 152\,193 & 155\,549 & 3\,356 \\
-    \gls{ROOT} & 6  & 441\,405 & 424\,400 & 453\,657 & 29\,257 \\
+    HDF5/HSDS & 6  & 154\,112 & 152\,193 & 155\,549 & 3\,356 \\
+    ROOT/TTree & 6  & 441\,405 & 424\,400 & 453\,657 & 29\,257 \\
     TileDB & 6 & 11\,567  & 10\,831  & 11\,809  & 978 \\
     Zarr & 6  & 31\,207  & 30\,809  & 31\,379  & 570 \\
-    \gls{HDFfive} & 8  & 154\,112 & 152\,178 & 155\,549 & 3\,371 \\
-    \gls{ROOT} & 8  & 441\,405 & 425\,586 & 453\,278 & 27\,692 \\
+    HDF5/HSDS & 8  & 154\,112 & 152\,178 & 155\,549 & 3\,371 \\
+    ROOT/TTree & 8  & 441\,405 & 425\,586 & 453\,278 & 27\,692 \\
     TileDB & 8 & 11\,567  & 10\,800  & 11\,809  & 1\,009 \\
     Zarr & 8  & 31\,207  & 30\,820  & 31\,377  & 557 \\
-    \gls{HDFfive} & 10 & 154\,112 & 152\,192 & 155\,549 & 3\,357 \\
-    \gls{ROOT} & 10 & 441\,405 & 426\,816 & 452\,899 & 26\,083 \\
+    HDF5/HSDS & 10 & 154\,112 & 152\,192 & 155\,549 & 3\,357 \\
+    ROOT/TTree & 10 & 441\,405 & 426\,816 & 452\,899 & 26\,083 \\
     TileDB & 10& 11\,567  & 10\,790  & 11\,809  & 1\,019 \\
     Zarr & 10 & 31\,207  & 30\,847  & 31\,376  & 529 \\
     \bottomrule
@@ -2909,9 +2911,9 @@ zarr   & \gls{ZSTD} & slice & 83.932 & 94.424 & 133.233 & 182.695 \\
     \gls{HSDS}   & gzip & 5{,}183 & 11.11 & 1.80 &   2{,}247.8 & shard \\
     \gls{HSDS}   & \gls{LZfour}  & 5{,}183 & 19.17 & 1.04 &   3{,}878.1 & shard \\
     \gls{HSDS}   & \gls{ZSTD} & 5{,}183 & 10.67 & 1.88 &   2{,}158.4 & shard \\
-    \gls{ROOT}   & gzip &     1    & 11.09 & 1.81 & 11{,}626{,}174.2 & single-object \\
-    \gls{ROOT}   & \gls{LZfour}  &     1    & 13.31 & 1.50 & 13{,}956{,}389.1 & single-object \\
-    \gls{ROOT}   & \gls{ZSTD} &     1    & 10.26 & 1.95 & 10{,}759{,}260.2 & single-object \\
+    ROOT/TTree   & gzip &     1    & 11.09 & 1.81 & 11{,}626{,}174.2 & single-object \\
+    ROOT/TTree   & \gls{LZfour}  &     1    & 13.31 & 1.50 & 13{,}956{,}389.1 & single-object \\
+    ROOT/TTree   & \gls{ZSTD} &     1    & 10.26 & 1.95 & 10{,}759{,}260.2 & single-object \\
     TileDB & gzip &     244  & 11.44 & 1.75 &     49{,}183.8 & fragment \\
     TileDB & \gls{LZfour}  &     244  & 15.56 & 1.29 &     66{,}874.7 & fragment \\
     TileDB & \gls{ZSTD} &     244  & 10.74 & 1.86 &     46{,}165.2 & fragment \\
@@ -3047,8 +3049,8 @@ The main text reports representative league tables for slice \texttt{gzip} and \
     \midrule
     1 & zarr   & 176 \ [159, 195] & 349 \ [281, 414] & 135.0 & 10.40 \\
     2 & tiledb & 214 \ [203, 227] & 274 \ [261, 403] & 83.2  & 15.56 \\
-    3 & \gls{HDFfive}   & 222 \ [215, 230] & 273 \ [251, 281] & 270.5 & 19.17 \\
-    4 & \gls{ROOT}   & 328 \ [314, 344] & 380 \ [369, 429] & 51.1  & 13.31 \\
+    3 & HDF5/HSDS   & 222 \ [215, 230] & 273 \ [251, 281] & 270.5 & 19.17 \\
+    4 & ROOT/TTree   & 328 \ [314, 344] & 380 \ [369, 429] & 51.1  & 13.31 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -3064,8 +3066,8 @@ The main text reports representative league tables for slice \texttt{gzip} and \
     \midrule
     1 & tiledb & \makecell[r]{1.037\\\footnotesize([1.013, 1.062])} & \makecell[r]{11\,254\\\footnotesize([10\,994, 11\,529])} & 94.6  & 11.44 \\
     2 & zarr   & \makecell[r]{0.318\\\footnotesize([0.315, 0.321])} & \makecell[r]{35\,598\\\footnotesize([35\,280, 35\,926])} & 116.8 & 11.09 \\
-    3 & \gls{HDFfive}   & \makecell[r]{0.072\\\footnotesize([0.072, 0.072])} & \makecell[r]{156\,966\\\footnotesize([156\,394, 157\,761])} & 137.7 & 11.11 \\
-    4 & \gls{ROOT}   & \makecell[r]{0.051\\\footnotesize([0.050, 0.052])} & \makecell[r]{442\,484\\\footnotesize([434\,012, 451\,398])} & 58.5  & 11.09 \\
+    3 & HDF5/HSDS   & \makecell[r]{0.072\\\footnotesize([0.072, 0.072])} & \makecell[r]{156\,966\\\footnotesize([156\,394, 157\,761])} & 137.7 & 11.11 \\
+    4 & ROOT/TTree   & \makecell[r]{0.051\\\footnotesize([0.050, 0.052])} & \makecell[r]{442\,484\\\footnotesize([434\,012, 451\,398])} & 58.5  & 11.09 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -3080,8 +3082,8 @@ The main text reports representative league tables for slice \texttt{gzip} and \
     \midrule
     1 & tiledb & \makecell[r]{1.167\\\footnotesize([1.144, 1.197])} & \makecell[r]{13\,602\\\footnotesize([13\,265, 13\,871])} & 93.7  & 15.56 \\
     2 & zarr   & \makecell[r]{0.368\\\footnotesize([0.365, 0.371])} & \makecell[r]{29\,483\\\footnotesize([29\,255, 29\,741])} & 124.5 & 10.40 \\
-    3 & \gls{HDFfive}   & \makecell[r]{0.129\\\footnotesize([0.129, 0.129])} & \makecell[r]{151\,427\\\footnotesize([151\,201, 151\,666])} & 79.6  & 19.17 \\
-    4 & \gls{ROOT}   & \makecell[r]{0.075\\\footnotesize([0.075, 0.076])} & \makecell[r]{363\,490\\\footnotesize([358\,672, 367\,871])} & 48.7  & 13.31 \\
+    3 & HDF5/HSDS   & \makecell[r]{0.129\\\footnotesize([0.129, 0.129])} & \makecell[r]{151\,427\\\footnotesize([151\,201, 151\,666])} & 79.6  & 19.17 \\
+    4 & ROOT/TTree   & \makecell[r]{0.075\\\footnotesize([0.075, 0.076])} & \makecell[r]{363\,490\\\footnotesize([358\,672, 367\,871])} & 48.7  & 13.31 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -3143,9 +3145,9 @@ We aggregate latency, tail behavior, request intensity, and stored size into 0�
     Format & GM & $p_{95}$ & GETs & Stored & Total & \gls{DoM}. /by \\
     \midrule
     tiledb & 100.0 & 100.0 & 87.7 & 0.0  & 88.8 & / \\
-    zarr   & 84.1  & 90.6  & 84.0 & 100.0 & 86.9 & \gls{HDFfive} / \\
-    \gls{HDFfive}   & 77.5  & 59.0  & 0.0  & 93.3  & 67.6 & / zarr \\
-    \gls{ROOT}   & 0.0   & 0.0   & 100.0& 100.0 & 20.0 & / \\
+    zarr   & 84.1  & 90.6  & 84.0 & 100.0 & 86.9 & HDF5/HSDS / \\
+    HDF5/HSDS   & 77.5  & 59.0  & 0.0  & 93.3  & 67.6 & / zarr \\
+    ROOT/TTree   & 0.0   & 0.0   & 100.0& 100.0 & 20.0 & / \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -3160,8 +3162,8 @@ We aggregate latency, tail behavior, request intensity, and stored size into 0�
     \midrule
     zarr   & 100.0 & 25.9 & 59.3 & 100.0 & 81.1 & / \\
     tiledb & 75.0  & 99.0 & 85.9 & 39.4  & 77.3 & / \\
-    \gls{HDFfive}   & 68.8  & 100.0& 0.0  & 0.0   & 61.3 & / \\
-    \gls{ROOT}   & 0.0   & 0.0  & 100.0& 68.3  & 16.8 & / \\
+    HDF5/HSDS   & 68.8  & 100.0& 0.0  & 0.0   & 61.3 & / \\
+    ROOT/TTree   & 0.0   & 0.0  & 100.0& 68.3  & 16.8 & / \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -3174,10 +3176,10 @@ We aggregate latency, tail behavior, request intensity, and stored size into 0�
     \toprule
     Format & GM & $p_{95}$ & GETs & Stored & Total & \gls{DoM}. /by \\
     \midrule
-    zarr   & 100.0 & 100.0 & 83.2 & 50.8 & 93.4 & \gls{HDFfive} / \\
+    zarr   & 100.0 & 100.0 & 83.2 & 50.8 & 93.4 & HDF5/HSDS / \\
     tiledb & 81.9  & 53.1  & 87.2 & 0.0  & 68.4 & / \\
-    \gls{HDFfive}   & 49.3  & 48.1  & 0.0  & 13.8 & 40.6 & / zarr \\
-    \gls{ROOT}   & 0.0   & 0.0   & 100.0& 100.0& 20.0 & / \\
+    HDF5/HSDS   & 49.3  & 48.1  & 0.0  & 13.8 & 40.6 & / zarr \\
+    ROOT/TTree   & 0.0   & 0.0   & 100.0& 100.0& 20.0 & / \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -3193,9 +3195,9 @@ We aggregate latency, tail behavior, request intensity, and stored size into 0�
     Format & Thr & $p_{95}$ & GETs/GiB & Stored & Total & \gls{DoM}. /by \\
     \midrule
     tiledb & 100.0 & 100.0 & 56.6 & 0.0  & 78.5 & / \\
-    zarr   & 30.1  & 94.9  & 25.2 & 100.0& 46.3 & \gls{HDFfive} / \\
-    \gls{ROOT}   & 0.0   & 0.0   & 100.0& 100.0& 30.0 & / \\
-    \gls{HDFfive}   & 2.1   & 64.3  & 0.0  & 93.3 & 21.7 & / zarr \\
+    zarr   & 30.1  & 94.9  & 25.2 & 100.0& 46.3 & HDF5/HSDS / \\
+    ROOT/TTree   & 0.0   & 0.0   & 100.0& 100.0& 30.0 & / \\
+    HDF5/HSDS   & 2.1   & 64.3  & 0.0  & 93.3 & 21.7 & / zarr \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -3210,8 +3212,8 @@ We aggregate latency, tail behavior, request intensity, and stored size into 0�
     \midrule
     tiledb & 100.0 & 100.0 & 39.4 & 39.4 & 81.8 & / \\
     zarr   & 29.6  & 95.8  & 0.0  & 100.0& 42.3 & / \\
-    \gls{ROOT}   & 0.0   & 0.0   & 100.0& 68.3 & 25.2 & / \\
-    \gls{HDFfive}   & 4.8   & 58.1  & 60.5 & 0.0  & 17.8 & / \\
+    ROOT/TTree   & 0.0   & 0.0   & 100.0& 68.3 & 25.2 & / \\
+    HDF5/HSDS   & 4.8   & 58.1  & 60.5 & 0.0  & 17.8 & / \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -3225,9 +3227,9 @@ We aggregate latency, tail behavior, request intensity, and stored size into 0�
     Format & Thr & $p_{95}$ & GETs/GiB & Stored & Total & \gls{DoM}. /by \\
     \midrule
     tiledb & 100.0 & 100.0 & 59.7 & 0.0  & 79.0 & / \\
-    zarr   & 33.1  & 95.6  & 22.7 & 50.8 & 40.4 & \gls{HDFfive} / \\
-    \gls{ROOT}   & 0.0   & 0.0   & 100.0& 100.0& 30.0 & / \\
-    \gls{HDFfive}   & 1.5   & 63.5  & 0.0  & 13.8 & 9.3  & / zarr \\
+    zarr   & 33.1  & 95.6  & 22.7 & 50.8 & 40.4 & HDF5/HSDS / \\
+    ROOT/TTree   & 0.0   & 0.0   & 100.0& 100.0& 30.0 & / \\
+    HDF5/HSDS   & 1.5   & 63.5  & 0.0  & 13.8 & 9.3  & / zarr \\
     \bottomrule
   \end{tabular}
 \end{table}
