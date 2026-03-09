@@ -1160,7 +1160,7 @@ The experiment runs on Amazon Web Services (\gls{AWS}). Storage backends use Ama
 All runs are executed in a single \gls{AWS} region with the \gls{SThree} bucket co-located. No CloudFront, \gls{SThree} Transfer Acceleration, or cross-region traffic was used. Full region and network settings are listed in Appendix \ref{app:a1-testbed}.
 
 \subsection{Data Ingestion and Configuration}
-A single detector dataset of \(\sim\)\SI{20}{\gibi\byte} (\(N{=}1296\approx1{,}300\) frames) was used, derived from 80 real \gls{CBF} seed frames and synthetically expanded (Appendix \ref{app:a7-synthesis}). The \SI{20}{\gibi\byte} figure refers to the uncompressed pixel payload of the logical array, while stored bytes on \gls{SThree} (data+metadata) are reported separately (Appendix Table \ref{tab:object_counts}, Appendix Table \ref{tab:dataset_facts}). For each timed storage format, three datasets were created—one for each codec (\texttt{gzip}, \texttt{lz4}, and \texttt{zstd}); the Parquet pilot used \texttt{gzip} and \texttt{lz4} only (Appendix \ref{app:a8-parquet}). Format-specific schemas are in Appendix \ref{app:a6-schemas}.
+A single detector dataset of \(\sim\)\SI{20}{\gibi\byte} (\(N{=}1296\approx1{,}300\) frames) was used, derived from 80 real \gls{CBF} seed frames and synthetically expanded (Appendix \ref{app:a7-synthesis}). The \SI{20}{\gibi\byte} figure refers to the uncompressed pixel payload of the logical array, while stored bytes on \gls{SThree} (data+metadata) are reported separately (Appendix Table \ref{tab:object_counts}, Appendix Table \ref{tab:dataset_facts}). For each timed storage format, three datasets were created, one for each codec (\texttt{gzip}, \texttt{lz4}, and \texttt{zstd}); the Parquet pilot used \texttt{gzip} and \texttt{lz4} only (Appendix \ref{app:a8-parquet}). Format-specific schemas are in Appendix \ref{app:a6-schemas}.
 
 \subsection{Experimental Parameters and Workloads}
 The experiment compares the four storage formats under two access patterns: small-slice reads and full-dataset sequential scans, reflecting typical beamline workflows. Runs were executed in sessions, one cell (format$\times$codec$\times$pattern) at a time, with within-session run order randomized using a fixed seed.
@@ -1186,10 +1186,7 @@ For slice workloads, the score weights GM latency at 0.60, \(p_{95}\) at 0.20, G
 League tables are ranked by the primary objective (slice: GM latency; full: throughput), with tie-breakers matching those in the Results section.
 
 \subsection{Statistical methods}
-Timings are positive and multiplicative, so we analyze $\ln(\text{time})$ per cell (format$\times$codec$\times$pattern).
-
-Primary estimands are:
-The primary estimands are geometric-mean (GM) time, reported with 95\% intervals on the log scale and back-transformed; tail latency ($p_{95}$), reported with 95\% intervals on the original scale; and full-scan throughput in GiB/s, computed from bytes divided by time and analyzed on the log scale with the same interval procedure. Bootstrap and sensitivity settings are given in Appendix \ref{app:a3-stats}.
+Timings are positive and multiplicative, so we analyze $\ln(\text{time})$ per cell (format$\times$codec$\times$pattern). The primary estimands are geometric-mean (GM) time, reported with 95\% intervals on the log scale and back-transformed; tail latency ($p_{95}$), reported with 95\% intervals on the original scale; and full-scan throughput in GiB/s, computed from bytes divided by time and analyzed on the log scale with the same interval procedure. Bootstrap and sensitivity settings are given in Appendix \ref{app:a3-stats}.
 
 Within each codec$\times$pattern, the appendix ratio plots are reported as GM time \emph{ratios} versus Zarr and are \textbf{descriptive, session-conditional}. For full scans, the main-text performance comparisons are based on GM throughput, with the GM-time ratio plots used only as a supporting view. Diagnostics include Q–Q plots on $\ln(\text{time})$, lag-1 autocorrelation, and a run-order trend test (Appendix \ref{app:a2-run-qc}).
 
@@ -1208,8 +1205,6 @@ Parquet was piloted in a single-object layout but excluded from the timed result
 
 \section{Data Collection and Reproducibility}
 \label{sec:methods-data-reprod}
-This section specifies data sources, sampling, instrumentation, and release artifacts needed to rerun the experiments.
-
 The data‐collection plan for this thesis centers on a single dataset built from 80 real seed frames and synthetically expanded to \(\sim\)\SI{20}{\gibi\byte} (\(\sim\)1{,}300 frames). These frames statistically replicate the size, structure, and access patterns of real synchrotron and neutron experiments. Generating the benchmark dataset from a small seed set reduces data sharing burden, and the synthesis procedure is deterministic given the same seeds and software versions (Appendix \ref{app:a7-synthesis}). We also release the raw timing logs and CloudWatch exports used for all reported statistics (Appendix \ref{app:a5b-availability}).
 Dataset facts and size definitions are summarized in Appendix Table \ref{tab:dataset_facts}.
 
