@@ -1768,7 +1768,6 @@
    \}
 
     % Attach the fordiva.json file
-   \attachfile[description={fordiva.json}]{fordiva.json}
    \end{flushleft}
 \clearpage
 
