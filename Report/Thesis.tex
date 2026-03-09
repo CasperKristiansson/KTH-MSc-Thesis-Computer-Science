@@ -1341,7 +1341,7 @@ This section summarizes how the array was mapped to \gls{SThree} for each format
 \textbf{Layout:}
 \begin{itemize}
   \item Files: one Parquet file per codec under a dedicated prefix.
-  \item Schema: $2880$ columns \texttt{row\_0}\dots\texttt{row\_2879}, each \texttt{list<fixed\_size=2880, uint16>}.
+  \item Schema: $2880$ columns \texttt{row\_0}\dots\texttt{row\_2879}, each \\ \texttt{list<fixed\_size=2880, uint16>}.
   \item Row groups: one appended row per frame (writer defaults).
   \item Compression: \texttt{gzip} or \texttt{lz4}; dictionaries disabled.
   \item Objectization: single Parquet object per codec.
@@ -1352,20 +1352,7 @@ This section summarizes how the array was mapped to \gls{SThree} for each format
   \item For each frame, per-row arrays were assembled into a one-row table and appended to the Parquet file (Appendix \ref{app:a6-schemas}).
 \end{itemize}
 
-Parquet was implemented as a single file with $2880$ list-of-$2880$ \texttt{uint16} columns (\texttt{row\_0}\dots\texttt{row\_2879}), one appended row per frame, with \texttt{gzip} and \texttt{lz4} compression where dictionaries disabled.
-
-\textbf{Observed during pilot:}
-\begin{itemize}
-  \item File size: a single Parquet object of $\sim$\SI{34}{\gibi\byte} for a $\sim$\SI{20}{\gibi\byte} raw stack.
-  \item Metadata open: \SIrange{3}{4}{\minute} to load schema, footer, and column indexes on the \gls{ECtwo} test node; repeated attempts to load the \texttt{gzip} file led to instance crashes.
-  \item Read smoke test: one frame decoded after metadata load; further timing runs were halted.
-\end{itemize}
-
-\textbf{Decision:}
-\begin{itemize}
-  \item Operational stop after an initial write and smoke read. Rationale: metadata load time and object size would make the full benchmark impractical within the experiment budget.
-  \item Consequence: Parquet is omitted from timed latency/throughput results; artifacts are retained for transparency and discussed qualitatively in chapter \ref{ch:discussion}.
-\end{itemize}
+Parquet was implemented as a single file with $2880$ list-of-$2880$ \texttt{uint16} columns (\texttt{row\_0}\dots\texttt{row\_2879}), one appended row per frame, using \texttt{gzip} and \texttt{lz4} compression with dictionaries disabled. In the pilot, this layout produced a single Parquet object of approximately \SI{34}{\gibi\byte} for a raw stack of approximately \SI{20}{\gibi\byte}. Opening the file on the \gls{ECtwo} test node required approximately \SIrange{3}{4}{\minute} to load the schema, footer, and column indexes, and repeated attempts to open the \texttt{gzip} file led to instance crashes. Although one frame could be decoded after the metadata load in an initial smoke test, these behaviors made it impractical to proceed with timed runs. The benchmark was therefore stopped after the initial write and smoke read. The rationale was that the metadata open time and object size made a full benchmark infeasible within the experiment budget. Consequently, Parquet was excluded from the timed latency and throughput results, while the pilot artifacts were retained for transparency and are discussed qualitatively in Chapter \ref{ch:discussion}.
 
 \subsection{TileDB dense array} TileDB stores a dense array with frame-sized tiles and immutable fragments; this records the domain, filters, and fragment layout.
 
