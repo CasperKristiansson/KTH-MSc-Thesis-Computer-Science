@@ -158,11 +158,11 @@ nopostdot]{glossaries}
 \title{From Experiment to Insight: A Comparative Study of Storage Approaches for Large-Scale Synchrotron and Neutron Scattering Data on AWS}
 \subtitle{Benchmarking HDF5/HSDS, Zarr, TileDB, and ROOT/TTree for Random Single-Frame Reads and Full Sequential Scans}
 
-% \alttitle{Från experiment till insikt: En jämförande studie av lagringsmetoder för storskaliga synkrotron- och neutronstrålningsdata på AWS}
-% \altsubtitle{-Undertitle-}
+\alttitle{Från experiment till insikt: en jämförande studie av lagringslösningar för storskaliga synkrotron- och neutronspridningsdata på AWS}
+\altsubtitle{Prestandautvärdering av HDF5/HSDS, Zarr, TileDB och ROOT/TTree för slumpmässig läsning av enskilda bildrutor och sekventiell genomläsning av hela datamängden}
 
 \EnglishKeywords{Synchrotron; Neutron scattering; Object storage; AWS S3; EC2; CloudWatch; Cloud-native; HDF5; HSDS; Zarr; TileDB; ROOT; TTree; Parquet; Partial retrieval; Random reads; Full scans; Chunking; Fragments; Metadata; Compression; zstd; lz4; gzip; Latency; Throughput; Request cost; Decision matrix; Scientific data management; Benchmarking;}
-% \SwedishKeywords{Synkrotrondata; Neutronspridning; Molnlagring; AWS; HDFfive; Zarr; TileDB; ROOT; Parquet; Vetenskapliga arbetsflöden; Komprimering;}
+\SwedishKeywords{Synkrotron; Neutronspridning; Objektlagring; AWS S3; EC2; CloudWatch; Molnnativa lagringsformat; HDF5; HSDS; Zarr; TileDB; ROOT; TTree; Parquet; Partiell dataåtkomst; Slumpmässiga läsningar; Sekventiella genomläsningar; Chunkning; Fragment; Metadata; Komprimering; zstd; lz4; gzip; Latens; Genomströmning; Förfrågningskostnader; Beslutsmatris; Vetenskaplig datahantering; Prestandajämförelse;}
 
 
 \presentationDateAndTimeISO{2022-03-15 13:00}
@@ -312,12 +312,31 @@ The contribution is a reproducible AWS-native benchmarking method and a decision
 \InsertKeywords{english}
 \end{scontents}
 
-% \subsection*{Nyckelord}
-% \begin{scontents}[store-env=keywords,print-env=true]
-% \InsertKeywords{swedish}
-% \end{scontents}
-
 \end{abstract}
+
+\cleardoublepage
+
+\babelpolyLangStart{swedish}
+\begin{abstract}
+ \markboth{\abstractname}{}
+\begin{scontents}[store-env=lang]
+swe
+\end{scontents}
+
+\begin{scontents}[store-env=abstracts,print-env=true]
+Vid moderna synkrotron- och neutronanläggningar genereras dataflöden på flera gigabyte per sekund. Enskilda experiment kan därmed ge upphov till datamängder på flera terabyte, vilket tydliggör latensbegränsningar i parallella filsystem. I denna avhandling jämförs molnnativa lagringsformat på AWS S3 med en detektorstack om cirka 20\,GiB och cirka 1\,300 bildrutor som testfall. Fokus ligger på latens vid läsning av enskilda bildrutor, genomströmning vid sekventiell genomläsning av hela datamängden samt kostnadsdrivande faktorer. Fyra lagringslösningar (HDF5 via HSDS, Zarr v3, TileDB och ROOT/TTree) och tre kodekar (gzip, LZ4 och zstd) utvärderas för två åtkomstmönster: slumpmässig läsning av enskilda bildrutor och sekventiell genomläsning av hela datamängden. Körtider på klientsidan analyseras på logaritmisk skala med beroenderobusta konfidensintervall, och antalet S3-förfrågningar samt lagrad datamängd används som kompletterande mått.
+
+Resultaten är deskriptiva och gäller den studerade datamängden i den aktuella AWS-miljön; de bör därför tolkas som sessionsbundna. För interaktiv läsning av enskilda bildrutor är Zarr snabbast med zstd (GM $\approx$155 ms) och även med LZ4, medan TileDB är snabbast med gzip. Vid sekventiell genomläsning av hela datamängden ger TileDB 2,2--3,2$\times$ högre genomströmning än Zarr för samtliga kodekar (exempelvis zstd $\approx$1,06 GiB/s för 20 GiB). ROOT är långsamt vid slumpmässig läsning av bildrutor trots få GET-förfrågningar, vilket tyder på overhead från paginering och avkodning i en lagringslayout med ett enda objekt. HDF5/HSDS presterar sämre både vad gäller latens vid bildruteläsning och genomströmning vid helavläsning med LZ4, och lagrar 19,17 GiB jämfört med 10,40 GiB för Zarr för samma nyttolast.
+
+Avhandlingens huvudsakliga bidrag är en reproducerbar metod för prestandamätning på AWS samt en beslutsmatris för de studerade användningsfallen: välj Zarr+zstd när latens vid läsning av enskilda bildrutor är viktigast, och välj TileDB+zstd/LZ4 när genomströmning prioriteras.
+\end{scontents}
+
+\subsection*{Nyckelord}
+\begin{scontents}[store-env=keywords,print-env=true]
+\InsertKeywords{swedish}
+\end{scontents}
+\end{abstract}
+\babelpolyLangStop{swedish}
 
 \cleardoublepage
 
