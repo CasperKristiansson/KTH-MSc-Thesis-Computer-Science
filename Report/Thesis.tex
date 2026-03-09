@@ -1029,7 +1029,7 @@ Based on the storage models in Section \ref{sec:cloud-native-storage-models}, th
 
 \subsection{Statistical formulation and evaluation}
 \label{sec:methods-statistical-hypotheses}
-The hypotheses in this section (H1.1--H3.2) are stated in verbal form. Here, we present their statistical analyses and their evaluation using the estimands and procedures in Section \ref{sec:methods-metrics} and Appendix \ref{app:a3-stats}.
+The verbal hypotheses in H1.1--H3.2 do not all reduce to one common pairwise contrast. Instead, they concern four estimand classes: geometric-mean (GM) time for slice latency, GM throughput for full scans, compression ratio, and request intensity (GETs/GiB). We therefore define the relevant estimands separately and evaluate them descriptively using the procedures in Section \ref{sec:methods-metrics} and Appendix \ref{app:a3-stats}.
 
 For each cell defined by \emph{format} $f$, \emph{codec} $c$, and \emph{pattern} $p\in\{\text{slice},\text{full}\}$, let $T_{fcp,1},\dots,T_{fcp,n}$ denote the repeated wall-clock times and
 
@@ -1040,60 +1040,96 @@ Y_{fcp,r} \coloneqq \ln T_{fcp,r}.
 The session-conditional log-scale mean
 
 \[
-\mu_{fcp} \coloneqq \mathbb{E}\bigl[Y_{fcp,r}\mid\text{session}\bigr]
+\mu^{\mathrm{time}}_{fcp} \coloneqq \mathbb{E}\bigl[Y_{fcp,r}\mid\text{session}\bigr]
 \]
 
-defines the geometric-mean (GM) time
+defines the GM time
 
 \[
-\theta_{fcp} \coloneqq \exp(\mu_{fcp}),
+\theta^{\mathrm{time}}_{fcp} \coloneqq \exp\!\bigl(\mu^{\mathrm{time}}_{fcp}\bigr).
 \]
 
-which is the primary estimand for latency and, via bytes/time, for throughput. For any two formats $f$ and $g$ at fixed $(c,p)$ we define the \emph{GM ratio}
+For slice latency, the primary estimand is $\theta^{\mathrm{time}}_{fc,\text{slice}}$. For any two formats $f$ and $g$ at fixed codec $c$, we use the descriptive GM-time ratio
 
 \[
-\rho_{f,g;c,p} \coloneqq \frac{\theta_{fcp}}{\theta_{gcp}}.
+\rho^{\mathrm{time}}_{f,g;c,\text{slice}} \coloneqq
+\frac{\theta^{\mathrm{time}}_{fc,\text{slice}}}{\theta^{\mathrm{time}}_{gc,\text{slice}}}.
 \]
 
-On the original scale, $\rho_{f,g;c,p}<1$ means that $f$ is faster than $g$, and $\rho_{f,g;c,p}>1$ means that $f$ is slower than $g$. Each verbal hypothesis in H1.1--H3.2 can be written as an inequality on these ratios. For example, for RQ1 under a fixed codec $c$:
+Here, $\rho^{\mathrm{time}}_{f,g;c,\text{slice}}<1$ favors $f$ because the numerator has lower GM latency.
 
+For full scans, let $B^{\mathrm{dl}}_{fc}$ denote the session-conditional downloaded GiB per timed repetition, obtained from \texttt{BytesDownloadedSum}/$n$ (Appendix \ref{app:a4-metrics}). The GM throughput estimand is
+
+\[
+\theta^{\mathrm{thr}}_{fc} \coloneqq
+\frac{B^{\mathrm{dl}}_{fc}}{\theta^{\mathrm{time}}_{fc,\text{full}}},
+\]
+
+and for two formats $f$ and $g$ at fixed codec $c$ the corresponding throughput ratio is
+
+\[
+\rho^{\mathrm{thr}}_{f,g;c} \coloneqq
+\frac{\theta^{\mathrm{thr}}_{fc}}{\theta^{\mathrm{thr}}_{gc}}.
+\]
+
+Here, $\rho^{\mathrm{thr}}_{f,g;c}>1$ favors $f$ because the numerator has higher throughput. Because $B^{\mathrm{dl}}_{fc}$ can differ by format and codec, throughput ratios are not, in general, the inverse of GM-time ratios.
+
+For RQ3, compression and request intensity are summarized by
+
+\[
+R_{fc} \coloneqq \frac{B_{\text{raw}}}{B^{\text{stored}}_{fc}},
+\qquad
+\lambda_{fcp} \coloneqq \frac{G_{fcp}\,2^{30}}{B_{fcp}^{\mathrm{dl}}},
+\]
+
+where higher $R_{fc}$ means better compression and lower $\lambda_{fcp}$ means fewer GETs per GiB. When useful, we form descriptive codec-wise or format-wise ratios from these quantities. However, H1.3, H2.3, and H3.2 are primarily association/mechanism statements rather than single pairwise contrasts, and H3.1 contains a ``similar compression'' claim that is interpreted descriptively rather than as a formal equivalence test.
+
+The clearest pairwise translations are therefore:
 \begin{itemize}
-  \item H1.1 (\emph{per-frame layouts faster than ROOT}) corresponds to directional hypotheses of the form
+  \item H1.1 (\emph{per-frame layouts faster than ROOT}): for fixed codec $c$,
   \[
-    H_{0}: \rho_{f,\text{ROOT};c,\text{slice}}\ge 1
-    \quad\text{vs}\quad
-    H_{1}: \rho_{f,\text{ROOT};c,\text{slice}}<1,
+    \rho^{\mathrm{time}}_{f,\text{ROOT};c,\text{slice}} < 1,
   \]
   where $f\in\{\text{HDF5/HSDS},\text{Zarr},\text{TileDB}\}$.
 
-  \item H1.2 (\emph{Zarr fastest for light codecs}) can be written as
+  \item H1.2 (\emph{Zarr fastest for light codecs}): for $c\in\{\texttt{lz4},\texttt{zstd}\}$,
   \[
-    H_{0}: \rho_{\text{Zarr},f;c,\text{slice}}\ge 1
-    \quad\text{vs}\quad
-    H_{1}: \rho_{\text{Zarr},f;c,\text{slice}}<1,
+    \rho^{\mathrm{time}}_{\text{Zarr},f;c,\text{slice}} < 1,
   \]
-  for $c\in\{\texttt{lz4},\texttt{zstd}\}$ and $f\in\{\text{HDF5/HSDS},\text{TileDB},\text{ROOT}\}$.
+  where $f\in\{\text{HDF5/HSDS},\text{TileDB},\text{ROOT}\}$.
+
+  \item H2.1 (\emph{TileDB highest throughput}): for fixed codec $c$,
+  \[
+    \rho^{\mathrm{thr}}_{\text{TileDB},f;c} > 1,
+  \]
+  where $f\in\{\text{Zarr},\text{HDF5/HSDS},\text{ROOT}\}$.
+
+  \item H2.2 (\emph{lz4 and zstd outperform gzip on scans}): for fixed format $f$ and $c\in\{\texttt{lz4},\texttt{zstd}\}$,
+  \[
+    \theta^{\mathrm{thr}}_{fc} \ge \theta^{\mathrm{thr}}_{f,\texttt{gzip}}.
+  \]
 \end{itemize}
 
-Analogous formulations apply to H2.1--H2.3 (full-scan throughput) and H3.1--H3.2 (compression and request intensity), where the estimands are GM throughput, compression ratio, or GETs/GiB, rather than GM latency.
+H1.3, H2.3, H3.1, and H3.2 are evaluated from the joint descriptive patterns in the timing, request-intensity, and storage summaries rather than from a single null/alternative test.
 
-\subsubsection{Inference procedure (\emph{test})}
-Rather than perform classical null-hypothesis significance tests for many pairwise contrasts, we adopt an \emph{estimation} approach:
+\subsubsection{Evaluation procedure (\emph{estimation})}
+Rather than perform classical null-hypothesis significance tests for many contrasts, we adopt an \emph{estimation} approach:
 
 \begin{enumerate}
-  \item Work on the log scale $Y_{fcp,r}=\ln T_{fcp,r}$ and estimate $\mu_{fcp}$ and its uncertainty using a moving-block bootstrap (MBB) that preserves within-session serial dependence (Appendix \ref{app:a3-stats}).
-  \item Back-transform to obtain $\theta_{fcp}$ and dependence-robust 95\% confidence intervals.
-  \item Form GM ratios $\rho_{f,g;c,p}$ and corresponding 95\% confidence intervals by subtracting and re-exponentiating log-scale means.
+  \item Work on the log scale $Y_{fcp,r}=\ln T_{fcp,r}$ and estimate $\mu^{\mathrm{time}}_{fcp}$ and its uncertainty using a moving-block bootstrap (MBB) that preserves within-session serial dependence (Appendix \ref{app:a3-stats}).
+  \item Back-transform to obtain $\theta^{\mathrm{time}}_{fcp}$ and dependence-robust 95\% confidence intervals.
+  \item For full scans, transform GM time to GM throughput using the session-specific $B^{\mathrm{dl}}_{fc}$ and propagate the same bootstrap uncertainty through this monotone transformation.
+  \item Form descriptive time- or throughput-ratio summaries from the corresponding bootstrap draws; request intensity and compression are summarized from session aggregates and inventory totals, with exact count-based intervals reported for GET rates where shown.
 \end{enumerate}
 
-In a fully formal one-sided test of, for example, \emph{$f$ is faster than $g$}, we would reject $H_{0}:\rho_{f,g;c,p}\ge 1$ at the 5\% level whenever the 95\% confidence interval for $\rho_{f,g;c,p}$ lay entirely below~1. In this thesis, we use the same intervals \emph{descriptively}: we report point estimates and confidence intervals for $\theta_{fcp}$ and $\rho_{f,g;c,p}$, and we interpret hypotheses H1.1--H3.2 in terms of which orderings are compatible with these intervals. We do not aggregate these into a single global decision rule, nor do we control a family-wise or false-discovery rate across all contrasts.
+We interpret H1.1--H3.2 by asking whether the observed point estimates and intervals fall on the expected side of the relevant reference value or preserve the expected ordering. We do not aggregate these comparisons into a single global decision rule, and we do not control a family-wise or false-discovery rate across all contrasts.
 
 \subsubsection{Why bootstrap, and why not \texorpdfstring{$t$}{t}-tests or ANOVA?}
 As discussed in Step 2, run-level timings are right-skewed and can exhibit within-session serial dependence due to cache and cloud-variability effects, making independent and identically distributed assumptions fragile. Serial dependence and non-normality in the run-level timing data (Section \ref{sec:results-inventory} and Appendix Table \ref{tab:timing_diag_main}) violate the independence and homoscedastic normal-error assumptions underlying standard $t$-tests and ANOVA. A parametric linear model on $\ln(\text{time})$ could, in principle, be equipped with a dependence structure, but this would require additional modelling choices and diagnostics that are not central to the research questions. The moving-block bootstrap on $\ln(\text{time})$ was chosen because:
 \begin{itemize}
   \item it respects the observed lag-1 autocorrelation and within-session serial dependence by resampling blocks rather than individual runs;
   \item it makes no parametric assumption on the marginal distribution beyond approximate stationarity within the timed window; we diagnose run-order drift separately and treat intervals as descriptive when drift is present;
-  \item it yields confidence intervals for both cell-wise estimands ($\theta_{fcp}$, $p_{95}$) and derived quantities (ratios, throughput) uniformly.
+  \item it yields confidence intervals for both cell-wise time estimands ($\theta^{\mathrm{time}}_{fcp}$, $p_{95}$) and derived quantities such as time ratios and transformed throughput summaries in a uniform way.
 \end{itemize}
 
 Alternative procedures considered but not used include:
@@ -1103,7 +1139,7 @@ Alternative procedures considered but not used include:
   \item global regression models with format and codec as factors (discarded because formats are executed in separate sessions, so cross-format coefficients would still be session-conditional and require strong assumptions about between-session comparability).
 \end{itemize}
 
-In summary, the \emph{statistical hypotheses} behind H1.1--H3.2 are directional statements about GM times, throughputs, and related ratios. They are evaluated descriptively using dependence-robust confidence intervals for these estimands and their ratios. No formal multiple-comparison testing or causal inference is attempted, where all cross-format statements remain descriptive and session-conditional.
+In summary, the formal contrast language in this thesis applies to GM time and GM throughput comparisons, while the mechanism-oriented hypotheses involving GETs/GiB and compression are evaluated from descriptive joint patterns. No formal multiple-comparison testing or causal inference is attempted, and all cross-format statements remain descriptive and session-conditional.
 
 
 
@@ -1135,12 +1171,12 @@ The experiment compares the four storage formats under two access patterns: smal
 
 \section{Metrics, Statistics, and Scoring}
 \label{sec:methods-metrics}
-This section turns measurements into evidence by defining estimands, quantifying uncertainty, and scoring alternatives so the decision matrix reflects speed, reliability, and efficiency. The estimators and uncertainty procedures here apply unchanged to RQ1–RQ3 as specified in \ref{sec:methods-rq-map}.
+This section turns measurements into evidence by defining estimands, quantifying uncertainty, and scoring alternatives so the decision matrix reflects speed, reliability, and efficiency. The log-time and bootstrap machinery applies directly to the timing estimands in RQ1–RQ2, while RQ3 combines those timing summaries with descriptive request and storage metrics as specified in \ref{sec:methods-rq-map}.
 
 \subsection{Performance Metrics and Evaluation Criteria}
 We evaluate each format along four dimensions. \textbf{Latency} is reported for both slice and full-scan workloads as geometric-mean time with dependence-robust 95\% \glspl{CI} on the log scale, together with the 95th percentile and its interval (Appendix \ref{app:a3-stats}). \textbf{Throughput} for full scans is reported as geometric-mean GiB/s derived from bytes divided by time and analyzed on the log scale with MBB 95\% \glspl{CI}. \textbf{Request intensity} is measured as GETs per repetition and GETs per GiB using per-session \gls{SThree} aggregates (Appendix \ref{app:a4-metrics}). \textbf{Compression} is summarized through total stored bytes on \gls{SThree} and compression ratio relative to the raw baseline.
 
-Cross-format contrasts are reported as \emph{descriptive} GM time ratios within each codec$\times$pattern family.
+Cross-format contrast views are reported descriptively. For slice latency, the primary effect-size view is the GM time ratio within each codec family. For full scans, the primary performance contrast is GM throughput, while GM time ratios are retained as a supporting appendix view within each codec family.
 
 \subsection{Decision-matrix scoring (normalization and weights)}
 For downstream selection, we compute normalized 0–100 scores per codec\(\times\)pattern using robust min–max scaling within that family (lower bound = 5th percentile, upper bound = 95th percentile, clipped).
@@ -1155,13 +1191,13 @@ Timings are positive and multiplicative, so we analyze $\ln(\text{time})$ per ce
 Primary estimands are:
 The primary estimands are geometric-mean (GM) time, reported with 95\% intervals on the log scale and back-transformed; tail latency ($p_{95}$), reported with 95\% intervals on the original scale; and full-scan throughput in GiB/s, computed from bytes divided by time and analyzed on the log scale with the same interval procedure. Bootstrap and sensitivity settings are given in Appendix \ref{app:a3-stats}.
 
-Within each codec$\times$pattern, cross-format contrasts are reported as GM time \emph{ratios} versus Zarr and are \textbf{descriptive, session-conditional}. Diagnostics include Q–Q plots on $\ln(\text{time})$, lag-1 autocorrelation, and a run-order trend test (Appendix \ref{app:a2-run-qc}).
+Within each codec$\times$pattern, the appendix ratio plots are reported as GM time \emph{ratios} versus Zarr and are \textbf{descriptive, session-conditional}. For full scans, the main-text performance comparisons are based on GM throughput, with the GM-time ratio plots used only as a supporting view. Diagnostics include Q–Q plots on $\ln(\text{time})$, lag-1 autocorrelation, and a run-order trend test (Appendix \ref{app:a2-run-qc}).
 
 Per-session \gls{SThree} aggregates are used descriptively only; identifiers and statistics are listed in Appendix \ref{app:a4-metrics}. We do not average percentiles across sessions or attach inferential intervals to service metrics. Warm-up and replication policy are defined in Appendix \ref{app:a2-run-qc}.
 
-For all between-format comparisons we treat the \emph{ratio of geometric means} as the primary effect size. For latency, this is the ratio of GM times between two formats on the original scale (for example, GM$_\text{ROOT}$/GM$_\text{Zarr}$), where values below~1 indicate that the numerator is faster. Because we analyse $\ln(\text{time})$, these ratios correspond to differences of means on the log scale. Empirically, response‑time distributions in computer systems are right‑skewed and often close to lognormal, so working on the log scale and reporting geometric means is standard in performance evaluation. For full scans, we use the ratio of GM throughputs in GiB/s (for example, GM$_\text{TileDB}$/GM$_\text{Zarr}$). Nonparametric effect sizes are reported as \emph{median ratios} in the robustness tables.
+For all between-format comparisons we treat \emph{ratios of geometric means} as the primary effect size for time-based outcomes. For latency, this is the ratio of GM times between two formats on the original scale (for example, GM$_\text{ROOT}$/GM$_\text{Zarr}$), where values below~1 indicate that the numerator is faster. Because we analyse $\ln(\text{time})$, these ratios correspond to differences of means on the log scale. Empirically, response‑time distributions in computer systems are right‑skewed and often close to lognormal, so working on the log scale and reporting geometric means is standard in performance evaluation. For full scans, the primary reported performance estimand is GM throughput in GiB/s, obtained by dividing session-specific downloaded GiB by GM time. Because downloaded bytes can differ across formats, descriptive GM-time ratios and GM-throughput contrasts need not coincide; the appendix ratio plots therefore show GM time ratios versus Zarr, while throughput values are reported directly in the tables. Nonparametric effect sizes are reported as \emph{median ratios} in the robustness tables.
 
-For each pair of formats within a codec $\times$ pattern, the statistical null is that their log‑scale means are equal (ratio of GMs = 1). The alternative is that the ratio differs from 1. Rather than performing formal tests, we present 95\% confidence intervals for the ratio and interpret them descriptively.
+For pairwise time-ratio contrasts within a codec $\times$ pattern family, the descriptive reference value is 1. Rather than performing formal tests, we present 95\% confidence intervals for the ratio and interpret them descriptively.
 
 \subsection{Uncertainty in AWS}
 \Gls{AWS} introduces time-varying latency and variance that cannot be fully controlled. We mitigated this issue by using a single region with the \gls{SThree} bucket co-located, a Gateway VPC endpoint, and fixed client settings. Operational controls and randomization are documented in Appendix \ref{app:a2-run-qc}. Formats were executed in \emph{separate sessions} with no cross-format overlap. Consequently, cross-format contrasts are \textbf{descriptive, session-conditional}. Inference is limited to within-cell estimands (GM, \gls{Pninetyfive}, throughput) with dependence-robust bootstrap \glspl{CI}. CloudWatch aggregates are per-session and reported descriptively (no inference, no cross-session averaging of percentiles).
@@ -1516,7 +1552,7 @@ Figure \ref{fig:object_counts} summarizes how each backend maps the logical arra
 \end{figure}
 
 \subsection{Request intensity and S3 service latencies}
-We next summarize \gls{SThree} request behavior and service-side latencies to provide context for client timings. We report the number of GETs per session, per repetition, and per GiB. CloudWatch FirstByte/TotalRequest averages and $p_{95}$ are considered descriptive because they are aggregated, session-conditional metrics. Because these are session aggregates, we report \emph{point estimates only}.
+We next summarize \gls{SThree} request behavior and service-side latencies to provide context for client timings. We report the number of GETs per session, per repetition, and per GiB. CloudWatch FirstByte/TotalRequest averages and $p_{95}$ are considered descriptive because they are aggregated, session-conditional metrics and are reported as point estimates only. Request-count summaries are also session aggregates; where shown in Table \ref{tab:req_intensity}, we accompany them with exact Poisson intervals as descriptive uncertainty summaries.
 
 \subsubsection{GETs per repetition and per GiB}
 We summarize request intensity from CloudWatch \emph{session} aggregates. All $n$ timed runs in a cell (format$\times$codec$\times$pattern) contribute to one set of counts. Let $G$ be \texttt{GetRequestsSum} and $B$ be \texttt{BytesDownloadedSum}. Counts include \gls{SThree} \texttt{GET} only where \texttt{HEAD}/\texttt{LIST}/\texttt{PUT} are excluded. Warm-ups are excluded and separated temporally from the timed window.
@@ -1535,7 +1571,7 @@ We summarize request intensity from CloudWatch \emph{session} aggregates. All $n
 
 Here $n$ is the number of timed repetitions in the cell, and $\widehat{\lambda}_{\mathrm{GiB}}$ is measured in GETs per GiB.
 
-Rates are descriptive and session-conditional. Table \ref{tab:req_intensity} lists $\widehat{\lambda}_{\mathrm{rep}}$ and $\widehat{\lambda}_{\mathrm{GiB}}$ for all \{format, codec, pattern\} cells. Figure \ref{fig:reqintensity_box_by_format} summarizes \gls{SThree} request intensity by format, showing the distributions of GETs per repetition and GETs per GiB aggregated across codecs and access patterns. For this workload, Zarr and TileDB cluster toward lower GETs/GiB than HDF5/HSDS, indicating fewer requests for the same volume of data, while ROOT consistently has very low GETs/GiB because it serves from a single object. These differences are used as descriptive context for later latency and throughput patterns, together with layout and codec effects. Detailed per-cell point estimates by codec and pattern are provided in Appendix Figures \ref{fig:reqintensity_perRep_grid} and \ref{fig:reqintensity_perGiB_grid}.
+Rates are descriptive and session-conditional. Table \ref{tab:req_intensity} lists $\widehat{\lambda}_{\mathrm{rep}}$ and $\widehat{\lambda}_{\mathrm{GiB}}$ for all \{format, codec, pattern\} cells, together with exact Poisson intervals for the count-based rates. Figure \ref{fig:reqintensity_box_by_format} summarizes \gls{SThree} request intensity by format, showing the distributions of GETs per repetition and GETs per GiB aggregated across codecs and access patterns. For this workload, Zarr and TileDB cluster toward lower GETs/GiB than HDF5/HSDS, indicating fewer requests for the same volume of data, while ROOT consistently has very low GETs/GiB because it serves from a single object. These differences are used as descriptive context for later latency and throughput patterns, together with layout and codec effects. Detailed per-cell point estimates by codec and pattern are provided in Appendix Figures \ref{fig:reqintensity_perRep_grid} and \ref{fig:reqintensity_perGiB_grid}.
 
 \begin{figure}[H]
   \centering
@@ -1624,10 +1660,10 @@ For \texttt{zstd}/slice, Table \ref{tab:slice_zstd_mbb} shows that Zarr is faste
 
 \subsection{RQ2 — Full-dataset throughput}
 \label{sec:rq2-results}
-Throughput (GiB/s) is derived from GM time on the log scale with the same dependence-robust bootstrap (Appendix \ref{app:a3-stats}) and where summary values appear alongside times in Table \ref{tab:cross_full_throughput_vs_gets}.
+Throughput (GiB/s) is computed as session-specific downloaded GiB per timed repetition divided by GM time, with uncertainty obtained by the same dependence-robust bootstrap transformation on the log scale (Appendix \ref{app:a3-stats}); summary values appear alongside times in Table \ref{tab:cross_full_throughput_vs_gets}.
 
 \subsubsection{gzip}
-Table \ref{tab:full_gzip_mbb} reports GM full-scan latencies and $p_{95}$ for each format under \texttt{gzip}. TileDB is clearly fastest, with a GM time of about 11.3~s (corresponding to $\approx 1.04$~GiB/s), followed by Zarr at $\approx 35.6$~s (0.32~GiB/s). HDF5/HSDS and \gls{ROOT} are substantially slower: in GM time, TileDB is $\approx 0.32\times$ Zarr (about $3.2\times$ faster), HDF5/HSDS is $\approx 4.4\times$ Zarr, and \gls{ROOT} is $\approx 12.4\times$ Zarr. The $p_{95}$ point estimates follow the same ordering. The CIs are narrow relative to the gap between TileDB and \gls{ROOT}, suggesting that a few extreme runs do not drive the substantial throughput differences; however, all tail summaries are interpreted descriptively. These patterns are consistent with the throughput–versus–GETs/GiB view in Table \ref{tab:cross_full_throughput_vs_gets} and Figure \ref{fig:cross_full_throughput_vs_gets}. Detailed dependence-robust CI and GM-ratio curves for \texttt{gzip}/full scans are provided in Appendix Figures \ref{fig:full_gzip_gm_mbb}–\ref{fig:full_gzip_ratios_point}.
+Table \ref{tab:full_gzip_mbb} reports GM full-scan latencies and $p_{95}$ for each format under \texttt{gzip}. TileDB has both the lowest GM time and the highest reported GM throughput, at about 11.3~s and $\approx 1.04$~GiB/s, followed by Zarr at $\approx 35.6$~s (0.32~GiB/s). HDF5/HSDS and \gls{ROOT} are substantially slower. In the supporting GM-time ratio view versus Zarr, TileDB’s GM time is $\approx 0.32\times$ Zarr, HDF5/HSDS is $\approx 4.4\times$ Zarr, and \gls{ROOT} is $\approx 12.4\times$ Zarr. The $p_{95}$ point estimates follow the same ordering. The CIs are narrow relative to the gap between TileDB and \gls{ROOT}, suggesting that a few extreme runs do not drive the substantial throughput differences; however, all tail summaries are interpreted descriptively. These patterns are consistent with the throughput–versus–GETs/GiB view in Table \ref{tab:cross_full_throughput_vs_gets} and Figure \ref{fig:cross_full_throughput_vs_gets}. Detailed dependence-robust CI and GM-time-ratio curves for \texttt{gzip}/full scans are provided in Appendix Figures \ref{fig:full_gzip_gm_mbb}–\ref{fig:full_gzip_ratios_point}.
 
 \begin{table}[H]
   \centering
@@ -1648,7 +1684,7 @@ Table \ref{tab:full_gzip_mbb} reports GM full-scan latencies and $p_{95}$ for ea
 
 
 \subsubsection{LZ4}
-For \texttt{lz4}/full scans, Table \ref{tab:full_lz4_mbb} shows that TileDB again achieves the highest throughput, with a GM time of about 13.6~s (1.17~GiB/s). Zarr follows at $\approx 29.5$~s (0.37~GiB/s), so TileDB’s GM time is $\approx 0.46\times$ Zarr (about $2.2\times$ faster), while HDF5/HSDS and \gls{ROOT} remain much slower, at $\approx 5.1\times$ and $\approx 12.3\times$ Zarr, respectively. The $p_{95}$ point estimates mirror this ranking, and CIs are comparatively tight for TileDB and Zarr, which supports the qualitative picture of TileDB as the highest-throughput format for this workload. These effect sizes agree with the codec-level ratios reported in Section \ref{sec:ans-rq2}. The full set of CI curves and GM-ratio plots for \texttt{lz4}/full scans is shown in Appendix Figures \ref{fig:full_lz4_gm_mbb}–\ref{fig:full_lz4_ratios_point}.
+For \texttt{lz4}/full scans, Table \ref{tab:full_lz4_mbb} shows that TileDB again achieves the highest reported GM throughput, with a GM time of about 13.6~s (1.17~GiB/s). Zarr follows at $\approx 29.5$~s (0.37~GiB/s). In the supporting GM-time ratio view versus Zarr, TileDB’s GM time is $\approx 0.46\times$ Zarr, while HDF5/HSDS and \gls{ROOT} are much slower at $\approx 5.1\times$ and $\approx 12.3\times$ Zarr, respectively. The $p_{95}$ point estimates mirror this ranking, and CIs are comparatively tight for TileDB and Zarr, which supports the qualitative picture of TileDB as the highest-throughput format for this workload. These supporting GM-time ratios agree with the codec-level summary in Section \ref{sec:ans-rq2}. The full set of CI curves and GM-time-ratio plots for \texttt{lz4}/full scans is shown in Appendix Figures \ref{fig:full_lz4_gm_mbb}–\ref{fig:full_lz4_ratios_point}.
 
 \begin{table}[H]
   \centering
@@ -1669,7 +1705,7 @@ For \texttt{lz4}/full scans, Table \ref{tab:full_lz4_mbb} shows that TileDB agai
 
 
 \subsubsection{zstd}
-Under \texttt{zstd}, Table \ref{tab:full_zstd_mbb} shows that TileDB has the lowest GM full-scan time at about 10.4~s ($\approx 1.06$~GiB/s). Zarr is roughly three times slower ($\approx 30.4$~s, 0.35~GiB/s), while HDF5/HSDS and \gls{ROOT} are about $5.0\times$ and $12.3\times$ slower than Zarr, respectively. In ratio terms vs.\ Zarr, TileDB’s GM time is $\approx 0.34\times$ (about $2.9\times$ faster), HDF5/HSDS is $\approx 5.0\times$, and \gls{ROOT} is $\approx 12.3\times$. The $p_{95}$ statistics follow the same ordering and are numerically far apart, particularly between TileDB/Zarr and \gls{ROOT}. For Zarr versus TileDB/HDF5, the CIs overlap, so tail contrasts among those three remain descriptive, but all three exhibit substantially lower tails than \gls{ROOT}. These results are consistent with the cross-metric view in Table \ref{tab:cross_full_throughput_vs_gets} and Figure \ref{fig:cross_full_throughput_vs_gets}. Appendix Figures \ref{fig:full_zstd_gm_mbb}–\ref{fig:full_zstd_ratios_point} and Figures \ref{fig:tail-full-p95-hd-ci-vs-L} and Table \ref{tab:tail-full-zstd-p95-selected} provide the corresponding CI and tail-sensitivity plots.
+Under \texttt{zstd}, Table \ref{tab:full_zstd_mbb} shows that TileDB has the lowest GM full-scan time and the highest reported GM throughput, at about 10.4~s ($\approx 1.06$~GiB/s). Zarr follows at $\approx 30.4$~s (0.35~GiB/s), while HDF5/HSDS and \gls{ROOT} have much longer scan times and much lower throughput. In the supporting GM-time ratio view versus Zarr, TileDB’s GM time is $\approx 0.34\times$, HDF5/HSDS is $\approx 5.0\times$, and \gls{ROOT} is $\approx 12.3\times$. The $p_{95}$ statistics follow the same ordering and are numerically far apart, particularly between TileDB/Zarr and \gls{ROOT}. For Zarr versus TileDB/HDF5, the CIs overlap, so tail contrasts among those three remain descriptive, but all three exhibit substantially lower tails than \gls{ROOT}. These results are consistent with the cross-metric view in Table \ref{tab:cross_full_throughput_vs_gets} and Figure \ref{fig:cross_full_throughput_vs_gets}. Appendix Figures \ref{fig:full_zstd_gm_mbb}–\ref{fig:full_zstd_ratios_point} and Figures \ref{fig:tail-full-p95-hd-ci-vs-L} and Table \ref{tab:tail-full-zstd-p95-selected} provide the corresponding CI and tail-sensitivity plots.
 
 \begin{table}[H]
   \centering
@@ -2214,9 +2250,9 @@ Nonparametric summaries reproduce the same slice rankings by codec, and Harrell�
 
 \subsection{Answer to RQ2 — Full-dataset throughput}
 \label{sec:ans-rq2}
-Full–dataset reads test sustained sequential delivery and decode under continuous concurrency. RQ2 and hypotheses H2.1–H2.3 (Section \ref{sec:methods-hypotheses}) focus on GM throughput (GiB/s) with dependence–robust 95\% \glspl{CI} derived from GM time on the log scale, and use $p_{95}$ times to check stability. All cross–format contrasts are \emph{descriptive} and \emph{session–conditional}. Across \texttt{zstd}, \texttt{lz4}, and \texttt{gzip}, \textbf{TileDB leads by a wide margin}, \textbf{Zarr is consistently second}, and \textbf{\gls{HDFfive}/\gls{HSDS} and \gls{ROOT} come last}.
+Full–dataset reads test sustained sequential delivery and decode under continuous concurrency. RQ2 and hypotheses H2.1–H2.3 (Section \ref{sec:methods-hypotheses}) focus on GM throughput (GiB/s), computed from session-specific downloaded GiB per repetition and GM time with dependence–robust 95\% \glspl{CI}; $p_{95}$ times are used to check stability. All cross–format contrasts are \emph{descriptive} and \emph{session–conditional}. Across \texttt{zstd}, \texttt{lz4}, and \texttt{gzip}, \textbf{TileDB leads by a wide margin}, \textbf{Zarr is consistently second}, and \textbf{\gls{HDFfive}/\gls{HSDS} and \gls{ROOT} come last}.
 
-Effect sizes vs Zarr show that TileDB is $\approx$3.16$\times$ faster under \texttt{gzip} (11{,}254 ms vs 35{,}598 ms), $\approx$2.17$\times$ under \texttt{lz4} (13{,}602 ms vs 29{,}483 ms), and $\approx$2.92$\times$ under \texttt{zstd} (10{,}384 ms vs 30{,}365 ms), see Table \ref{tab:full_gzip_mbb}, \ref{tab:full_lz4_mbb}, \ref{tab:full_zstd_mbb}.
+Supporting GM-time ratios versus Zarr show that TileDB’s full-scan GM time is $\approx 0.32\times$ under \texttt{gzip}, $\approx 0.46\times$ under \texttt{lz4}, and $\approx 0.34\times$ under \texttt{zstd}; see Tables \ref{tab:full_gzip_mbb}, \ref{tab:full_lz4_mbb}, and \ref{tab:full_zstd_mbb}.
 
 Under \texttt{zstd}, \textbf{TileDB is the clear throughput leader.} Zarr is a distant second, and \gls{HDFfive}/\gls{HSDS} and \gls{ROOT} are far behind. GM time and its \gls{CI} show clean separation, and the ratio view reinforces TileDB’s advantage. $p_{95}$ times follow the same ordering and are far apart in magnitude, particularly between TileDB/Zarr and \gls{ROOT}, which supports the same qualitative throughput ordering for both center and tail in this dataset. See Table \ref{tab:full_zstd_mbb} and Figures \ref{fig:full_zstd_gm_mbb}, \ref{fig:full_zstd_p95_mbb}, \ref{fig:full_zstd_ratios_point}. These full-scan results across codecs support H2.1 (TileDB $>$ Zarr $>$ HDF5/HSDS $>$ ROOT on GM throughput) and H2.2 (both \texttt{lz4} and \texttt{zstd} improve throughput relative to \texttt{gzip} for our throughput metric (downloaded bytes/time)).
 
