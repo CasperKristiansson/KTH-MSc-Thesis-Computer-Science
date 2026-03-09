@@ -1282,26 +1282,21 @@ Random choices used fixed Python and NumPy seeds (Appendix \ref{app:a7-synthesis
 \section{Infrastructure and software}
 All experiments ran in a single \gls{AWS} region (\texttt{eu-north-1}) on one \gls{ECtwo} node, with all artifacts stored in one \gls{SThree} bucket. \gls{HDFfive} used a local \gls{HSDS} service; Zarr, TileDB, \gls{ROOT}, and the Parquet pilot wrote directly to \gls{SThree} via client libraries. \gls{SThree} bucket analytics and CloudWatch request metrics captured request counts, bytes, and service latencies per session.
 
-\subsection{Region and bucket}
-The benchmark used a single \gls{SThree} bucket in \texttt{eu-north-1}, with distinct prefixes for inputs, intermediate artifacts, and final format stores (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}, Parquet). The exact bucket name and prefixes are listed in Appendix \ref{app:a1-testbed}.
+\textbf{Region and bucket.} The benchmark used a single \gls{SThree} bucket in \texttt{eu-north-1}, with distinct prefixes for inputs, intermediate artifacts, and final format stores (\gls{HDFfive}/\gls{HSDS}, Zarr, TileDB, \gls{ROOT}, Parquet). The exact bucket name and prefixes are listed in Appendix \ref{app:a1-testbed}.
 
-\subsection{Monitoring and metrics}
-Bucket analytics were enabled to track object counts and byte growth over time. In addition, CloudWatch \gls{SThree} request metrics were enabled at 1-minute resolution and exported per session (request counts, bytes, and service-side latency summaries). Metric identifiers and statistics are listed in Appendix \ref{app:a4-metrics}.
+\textbf{Monitoring and metrics.} Bucket analytics were enabled to track object counts and byte growth over time. In addition, CloudWatch \gls{SThree} request metrics were enabled at 1-minute resolution and exported per session (request counts, bytes, and service-side latency summaries). Metric identifiers and statistics are listed in Appendix \ref{app:a4-metrics}.
 
-\subsection{HSDS service (HDF5 over \texorpdfstring{\gls{SThree}}{S3})}
-\gls{HDFfive} access was provided by \gls{HSDS} running via Docker on the \gls{ECtwo} node, following the vendor’s \gls{AWS} instructions \cite{hdfgroup-hsds-aws-docker}. The service wrote to the benchmark \gls{SThree} bucket and exposed a local HTTP endpoint where environment variables and configuration are listed in Appendix \ref{app:a1-testbed}.
+\textbf{HSDS service.} \gls{HDFfive} access was provided by \gls{HSDS} running via Docker on the \gls{ECtwo} node, following the vendor’s \gls{AWS} instructions \cite{hdfgroup-hsds-aws-docker}. The service wrote to the benchmark \gls{SThree} bucket and exposed a local HTTP endpoint where environment variables and configuration are listed in Appendix \ref{app:a1-testbed}.
 
-\subsection{Other backends (no server)}
-Zarr, TileDB, \gls{ROOT}/\gls{TTree}, and Parquet required no separate service. They used client libraries to write directly to \gls{SThree} with the instance role.
+\textbf{Other backends.} Zarr, TileDB, \gls{ROOT}/\gls{TTree}, and Parquet required no separate service. They used client libraries to write directly to \gls{SThree} with the instance role.
 
-\subsection{Client software stack}
-The client environment used standard Python scientific and storage libraries where package versions are listed in Appendix \ref{app:a5-libraries}.
+\textbf{Client software stack.} The client environment used standard Python scientific and storage libraries where package versions are listed in Appendix \ref{app:a5-libraries}.
 
 
 \section{Storage layouts, codecs, and objectization}
 This section summarizes how the array was mapped to \gls{SThree} for each format.
 
-\subsection{Common design and parity}
+\subsection{Common design}
 \begin{itemize}
   \item Logical array for all stores: $(N,2880,2880)$, $N{=}1296$, \texttt{uint16}.
   \item One frame per chunk/tile: $(1,2880,2880)$ to keep read units comparable.
@@ -1311,8 +1306,7 @@ This section summarizes how the array was mapped to \gls{SThree} for each format
 \end{itemize}
 
 
-\subsection{HDF5 via HSDS}
-\gls{HSDS} serves \gls{HDFfive} on the \gls{ECtwo} node, where we record domain paths, dataset geometry, chunking, and codec settings. \gls{HSDS} manages \gls{SThree} keys and metadata with one frame per chunk, preserving parity with other stores.
+\subsection{HDF5 via HSDS} \gls{HSDS} serves \gls{HDFfive} on the \gls{ECtwo} node, where we record domain paths, dataset geometry, chunking, and codec settings. \gls{HSDS} manages \gls{SThree} keys and metadata with one frame per chunk, preserving parity with other stores.
 
 \textbf{Layout:}
 \begin{itemize}
@@ -1327,8 +1321,7 @@ This section summarizes how the array was mapped to \gls{SThree} for each format
   \item Host-level threading parallelized frame decoding and I/O (implementation details in Appendix \ref{app:a6-schemas}).
 \end{itemize}
 
-\subsection{Zarr on \texorpdfstring{\gls{SThree}}{S3}}
-Zarr uses one chunk per frame where we record store paths, array geometry, chunking parity, codecs, and the write procedure.
+\subsection{Zarr on \texorpdfstring{\gls{SThree}}{S3}} Zarr uses one chunk per frame where we record store paths, array geometry, chunking parity, codecs, and the write procedure.
 
 \textbf{Layout:}
 \begin{itemize}
@@ -1343,8 +1336,7 @@ Zarr uses one chunk per frame where we record store paths, array geometry, chunk
   \item Frames were written in batches of $16$ as contiguous slices, with threaded frame loading.
 \end{itemize}
 
-\subsection{Apache Parquet on \texorpdfstring{\gls{SThree}}{S3} (single-object pilot)}
-Frames were tabularized as rows with 2D rows as fixed-size lists. \textit{Note:} Parquet was piloted only in a single-object layout and is excluded from timed results due to an operational stop; see Appendix \ref{app:a8-parquet}.
+\subsection{Apache Parquet on \texorpdfstring{\gls{SThree}}{S3} (single-object pilot)} Frames were tabularized as rows with 2D rows as fixed-size lists. \textit{Note:} Parquet was piloted only in a single-object layout and is excluded from timed results due to an operational stop; see Appendix \ref{app:a8-parquet}.
 
 \textbf{Layout:}
 \begin{itemize}
@@ -1375,8 +1367,7 @@ Parquet was implemented as a single file with $2880$ list-of-$2880$ \texttt{uint
   \item Consequence: Parquet is omitted from timed latency/throughput results; artifacts are retained for transparency and discussed qualitatively in chapter \ref{ch:discussion}.
 \end{itemize}
 
-\subsection{TileDB dense array}
-TileDB stores a dense array with frame-sized tiles and immutable fragments; this records the domain, filters, and fragment layout.
+\subsection{TileDB dense array} TileDB stores a dense array with frame-sized tiles and immutable fragments; this records the domain, filters, and fragment layout.
 
 \begin{itemize}
   \item URIs: one TileDB array per codec under a dedicated prefix.
@@ -1396,8 +1387,7 @@ TileDB stores a dense array with frame-sized tiles and immutable fragments; this
   \item Each fragment contributes internal files (data, metadata, footers) under the array URI.
 \end{itemize}
 
-\subsection{ROOT / TTree}
-\gls{ROOT} encodes all frames into a single file per codec; this notes the tree layout, compression, and access pattern.
+\subsection{ROOT / TTree} \gls{ROOT} encodes all frames into a single file per codec; this notes the tree layout, compression, and access pattern.
 
 \textbf{Tree layout:}
 \begin{itemize}
@@ -1415,7 +1405,7 @@ TileDB stores a dense array with frame-sized tiles and immutable fragments; this
   \item Single \gls{ROOT} object per codec. Selective reads use \gls{HTTP}/\gls{SThree} range-GETs into baskets/pages.
 \end{itemize}
 
-\subsection{RQ hooks (layouts)}
+\subsection{RQ links from the layout choices}
 \begin{itemize}
   \item \textbf{RQ1 (interactive slices):} Frame-aligned chunks/tiles $(1,2880,2880)$ to match the slice unit.
   \item \textbf{RQ2 (full scans):} Fragmenting and page/cluster settings that enable long sequential reads.
@@ -1434,30 +1424,16 @@ Each \emph{session} targeted one cell (format, codec, pattern) and consisted of 
 
 Per run, we measured wall-clock time using a high-resolution timer around a single read call. The timer includes network transfer, decompression, and client decode, while log serialization is outside the timer. \gls{SThree} bucket request metrics were enabled and exported per session for request counts, bytes, and service-side latency summaries. Metric identifiers/statistics and the export schema are listed in Appendix \ref{app:a4-metrics}; timing windows, separation from warm-ups, inclusion and retry rules, cache-control assumptions, and repetition policy are specified in Appendix \ref{app:a2-run-qc}. Each session emitted a monotonic \texttt{run\_id}, and timed samples and CloudWatch aggregates were stored as \gls{JSON} with format/codec/pattern identifiers (log schema in Appendix \ref{app:a4-metrics}).
 
-\textbf{RQ hooks (protocol \& logging).}
-\begin{itemize}
-  \item \textbf{RQ1:} Timer scope per slice; log per-run times.
-  \item \textbf{RQ2:} Timer scope per full scan; derive throughput from bytes/time; log per-run times.
-  \item \textbf{RQ3:} Per-session CloudWatch exports and \gls{SThree} inventory for request intensity and storage footprint (Appendix \ref{app:a4-metrics}).
-\end{itemize}
-
 \subsection{Quality control, exclusions, and deviations}
-Runs followed the fixed warm-up and timing protocol where integrity checks verified shapes and dtypes, and only successful timed reads were included.
+Runs followed the fixed warm-up and timing protocol where integrity checks verified shapes and dtypes, and only successful timed reads were included. Exclusion and retry rules are specified in Appendix \ref{app:a2-run-qc}. The following quality control checks was performed:
 
-\textbf{Quality control:}
 \begin{itemize}
   \item Protocol details (warm-ups, repetitions, timing windows, isolation) are specified in Appendix \ref{app:a2-run-qc}.
   \item Integrity checks: spot decode of returned arrays; shape \(=(2880,2880)\), dtype \texttt{uint16}.
   \item Logs: per-cell client timing logs and CloudWatch exports saved as \gls{JSON} (Appendix \ref{app:a4-metrics}).
 \end{itemize}
 
-\textbf{Exclusion rules:}
-Exclusion and retry rules are specified in Appendix \ref{app:a2-run-qc}.
-
-\textbf{Deviations from plan:}
-\begin{itemize}
-  \item \textbf{Parquet pilot-only (single-object)} Writing and a smoke read revealed impractical metadata open times for the single-file layout and a single huge object; Parquet was omitted from timed results and kept for qualitative discussion (Appendix \ref{app:a8-parquet}).
-\end{itemize}
+\textbf{Deviations from plan:} Parquet was pilot-only due to writing and a smoke read revealed impractical metadata open times for the single-file layout and a single huge object; Parquet was omitted from timed results and kept for qualitative discussion (Appendix \ref{app:a8-parquet}).
 
 
 
