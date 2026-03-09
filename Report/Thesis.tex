@@ -1444,7 +1444,7 @@ Runs followed the fixed warm-up and timing protocol where integrity checks verif
 \label{ch:resultsAndAnalysis}
 This chapter reports the empirical results of benchmarking four storage backends on Amazon \gls{SThree}, \gls{HDFfive} via \gls{HSDS}, Zarr, TileDB, and \gls{ROOT}/\gls{TTree} under two workload patterns on a single $\sim$20 GiB detector stack ($\sim$1{,}300 frames, \texttt{uint16}). Parquet is included as a pilot-only storage engine (no timed results). Each timed backend is evaluated with three codecs (\texttt{gzip}, \texttt{lz4}, \texttt{zstd}). We present outcomes for (i) partial retrieval of a single frame ($\sim$15.82 MiB), and (ii) full sequential scans of the dataset.
 
-Metrics encompass client-observed timing, service-side behavior, and storage footprint, with timings analyzed on a log scale. For each {format$\times$codec$\times$pattern} cell, we report geometric-mean (GM) time with dependence-robust 95\% \glspl{CI} via a moving-block bootstrap (MBB; settings in Appendix \ref{app:a3-stats}). Tail behavior is summarized by $p_{95}$ with the same procedure. For full scans, we also report throughput (GiB/s) derived from bytes/time. Storage footprint is reported as stored bytes and compression ratio relative to the raw array. Request intensity (GETs/rep, GETs/GiB) is derived from CloudWatch session aggregates.
+Metrics include client-observed timing, service-side behavior, and storage footprint, with timings analyzed on a log scale. For each {format$\times$codec$\times$pattern} cell, we report geometric-mean (GM) time with dependence-robust 95\% \glspl{CI} via a moving-block bootstrap (MBB; settings in Appendix \ref{app:a3-stats}). Tail behavior is summarized by $p_{95}$ with the same procedure. For full scans, we also report throughput (GiB/s) derived from bytes/time. Storage footprint is reported as stored bytes and compression ratio relative to the raw array. Request intensity (GETs/rep, GETs/GiB) is derived from CloudWatch session aggregates.
 
 Cross-format contrasts are \textbf{descriptive, session-conditional} because formats run in separate sessions. Warm-ups are excluded; $n=50$ timed repetitions per cell are analyzed. All comparisons should therefore be read as associations in this specific dataset and testbed; the design does not support general causal claims about the formats beyond this setting.
 
@@ -1454,11 +1454,9 @@ This chapter is organized by \emph{RQ1} (interactive slice latency, section \ref
 \label{sec:results-inventory}
 This section verifies run coverage and summarizes timing diagnostics that motivate the log-scale, dependence-robust analysis used in the main results.
 
-\subsection{Run inclusion and coverage}
 \label{sec:run-inclusion-and-coverage}
 All planned timed runs completed successfully: $n=50$ timed runs per \{format $\times$ codec $\times$ pattern\} cell (24 cells; $1{,}200$ total), with $n=0$ retries and $n=0$ failures; warm-ups ($5$ per cell) were excluded by design. No \gls{SThree}, \gls{HSDS}, or client errors were observed during execution.
 
-\subsection{Timing diagnostics (distributional shape and drift)}
 Run-level times are right-skewed and exhibit within-session serial dependence, so we analyze $\ln(\text{time})$ and report dependence-robust intervals via a moving-block bootstrap. Appendix Table \ref{tab:timing_diag_main} summarizes per-cell diagnostic flags (Shapiro $p$ on $\ln(\text{time})$, lag-1 autocorrelation, $\mathrm{p95}/\mathrm{GM}$, Spearman drift), and Appendix Figures \ref{fig:appendix_qq_grid_slice}–\ref{fig:appendix_drift_grid_full} provide the Q–Q and drift plots. Because runs are serially dependent, these $p$-values are used only as heuristics rather than formally calibrated tests. Overall, the diagnostics support the log-scale, dependence-robust analysis used in the main results.
 
 \section{Footprint and service behavior — RQ3 context}
