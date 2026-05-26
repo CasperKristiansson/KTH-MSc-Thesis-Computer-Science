@@ -4,9 +4,29 @@
 
 # From Experiment to Insight
 
-> A KTH MSc thesis repository for benchmarking cloud-native storage approaches for large-scale synchrotron and neutron scattering data.
+> KTH MSc Thesis in Computer Science: benchmarking cloud-native storage formats for large-scale synchrotron and neutron scattering data on AWS S3.
 
-This repository contains the thesis report, experiment notebooks, generated figures, benchmark tables, and presentation material for a comparative study of storage formats on AWS S3. The work evaluates how storage layout and codec choice affect interactive single-frame reads, full sequential scans, request intensity, and stored size for a synthetic detector stack derived from real beamline frames.
+This repository contains the final thesis PDF, LaTeX source, experiment notebooks, generated figures, benchmark tables, and presentation material for a comparative study of scientific storage formats on AWS S3. The work evaluates how storage layout and codec choice affect interactive single-frame reads, full sequential scans, request intensity, and stored size for a synthetic detector stack derived from real beamline frames.
+
+**Full thesis PDF:** [KTH_MSc_Thesis_Cloud_Native_Storage_Benchmarking_Casper_Kristiansson.pdf](KTH_MSc_Thesis_Cloud_Native_Storage_Benchmarking_Casper_Kristiansson.pdf)
+
+## Abstract
+
+Modern synchrotron and neutron beamlines can stream at gigabytes per second, turning single experiments into multi-terabyte datasets and exposing latency limits of parallel file systems. This thesis benchmarks cloud-native storage layouts on AWS S3 using a single synthetic approximately 20 GiB, approximately 1,300-frame detector stack generated from 80 real CBF seed frames, focusing on slice-level latency, scan throughput, and cost drivers. Four backends (HDF5 via HSDS, Zarr v3, TileDB, ROOT/TTree) and three codecs (gzip, LZ4, zstd) are evaluated under two workloads: random single-frame reads and full sequential scans. Client timings are analyzed on a log scale with dependence-robust confidence intervals, with S3 request counts and stored size providing context.
+
+Results are descriptive and session-conditional for this dataset and AWS setup. For interactive slices, Zarr is fastest with zstd (GM approximately 155 ms) and with LZ4; TileDB is fastest with gzip. For full scans, TileDB completes the same logical dataset in 2.2-3.2x lower GM scan time than Zarr across codecs; the transferred-byte throughput summaries follow the same ordering (for example, zstd approximately 1.06 GiB/s for 20 GiB). ROOT/TTree is slow for frame-random reads despite a few GETs, indicating single-object paging and decode overheads. HDF5/HSDS trails on slice latency and scan throughput with LZ4, storing 19.17 GiB versus Zarr 10.40 GiB for the same payload.
+
+The contribution is a reproducible AWS-native benchmarking method and a decision matrix for the tested synthetic detector stack and workloads: choose Zarr+zstd when slice latency dominates, and choose TileDB+zstd/LZ4 when throughput dominates.
+
+## Keywords
+
+KTH master thesis, MSc thesis computer science, cloud-native storage, scientific data management, AWS S3 benchmarking, object storage, synchrotron data, neutron scattering data, detector data, HDF5, HSDS, Zarr, TileDB, ROOT, TTree, Parquet, compression codecs, gzip, LZ4, zstd, random reads, full scans, latency, throughput, request cost, GETs per GiB, storage footprint, decision matrix.
+
+## Why This Repository Exists
+
+Large-scale scattering experiments increasingly need cloud-accessible storage without losing interactive performance. This repository documents a reproducible benchmark for researchers, beamline scientists, facility operators, and data engineers who need to choose between HDF5/HSDS, Zarr, TileDB, and ROOT/TTree for object-store-based scientific workflows.
+
+The central question is practical: which storage layout and compression codec should be used when a dataset must support both low-latency frame reads and high-throughput full-dataset scans on AWS S3?
 
 ## What This Compares
 
@@ -47,10 +67,19 @@ Stored size is mostly codec-driven, but the evaluated HSDS + `lz4` path is a sto
 
 The thesis treats these results as descriptive and session-conditional: they are evidence for this dataset, client, AWS region, implementation stack, and measurement window.
 
+## Main Takeaways
+
+- **Latency-first interactive analysis:** Zarr with `zstd` is the strongest default for random single-frame reads in this benchmark.
+- **Throughput-first batch processing:** TileDB with `zstd` is the strongest default for full sequential scans.
+- **Storage footprint:** Stored size is mostly codec-driven, but implementation details matter; the evaluated HSDS + `lz4` path stores substantially more data than Zarr + `lz4`.
+- **Request behavior:** Low GET counts alone do not guarantee good performance; ROOT/TTree has few GETs but poor frame-random latency because paging and decode overhead dominate.
+- **Interpretation:** Results are descriptive, session-conditional, and scoped to one AWS region, one client setup, and one detector-style dataset.
+
 ## Repository Map
 
 ```text
 .
+|-- KTH_MSc_Thesis_Cloud_Native_Storage_Benchmarking_Casper_Kristiansson.pdf
 |-- Experiment/
 |   |-- data_generation.ipynb      # Data ingestion and format construction
 |   |-- data_reader.ipynb          # Read workload execution
@@ -105,12 +134,13 @@ cd Report
 latexmk -pdf Thesis.tex
 ```
 
-The document uses bibliography, glossaries, nomenclature, and many generated figures, so a complete TeX distribution is recommended. The repository also includes a built snapshot at `Report/Report.pdf`.
+The document uses bibliography, glossaries, nomenclature, and many generated figures, so a complete TeX distribution is recommended. The repository also includes the final thesis PDF in the repository root and a built snapshot at `Report/Report.pdf`.
 
 ## Key Artifacts
 
 | Artifact | Path |
 | --- | --- |
+| Final thesis PDF | `KTH_MSc_Thesis_Cloud_Native_Storage_Benchmarking_Casper_Kristiansson.pdf` |
 | Thesis source | `Report/Thesis.tex` |
 | Thesis PDF snapshot | `Report/Report.pdf` |
 | Main plotting notebook | `Experiment/plots.ipynb` |
