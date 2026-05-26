@@ -8,7 +8,7 @@
 
 This repository contains the final thesis PDF, LaTeX source, experiment notebooks, generated figures, benchmark tables, and presentation material for a comparative study of scientific storage formats on AWS S3. The work evaluates how storage layout and codec choice affect interactive single-frame reads, full sequential scans, request intensity, and stored size for a synthetic detector stack derived from real beamline frames.
 
-**Full thesis PDF:** [KTH_MSc_Thesis_Cloud_Native_Storage_Benchmarking_Casper_Kristiansson.pdf](KTH_MSc_Thesis_Cloud_Native_Storage_Benchmarking_Casper_Kristiansson.pdf)
+**Full thesis PDF:** [From Experiment to Insight - A Comparative Study of Storage Approaches for Large-Scale Synchrotron and Neutron Scattering Data on AWS.pdf](<From Experiment to Insight - A Comparative Study of Storage Approaches for Large-Scale Synchrotron and Neutron Scattering Data on AWS.pdf>)
 
 ## Abstract
 
@@ -79,7 +79,7 @@ The thesis treats these results as descriptive and session-conditional: they are
 
 ```text
 .
-|-- KTH_MSc_Thesis_Cloud_Native_Storage_Benchmarking_Casper_Kristiansson.pdf
+|-- From Experiment to Insight - A Comparative Study of Storage Approaches for Large-Scale Synchrotron and Neutron Scattering Data on AWS.pdf
 |-- Experiment/
 |   |-- data_generation.ipynb      # Data ingestion and format construction
 |   |-- data_reader.ipynb          # Read workload execution
@@ -140,7 +140,7 @@ The document uses bibliography, glossaries, nomenclature, and many generated fig
 
 | Artifact | Path |
 | --- | --- |
-| Final thesis PDF | `KTH_MSc_Thesis_Cloud_Native_Storage_Benchmarking_Casper_Kristiansson.pdf` |
+| Final thesis PDF | `From Experiment to Insight - A Comparative Study of Storage Approaches for Large-Scale Synchrotron and Neutron Scattering Data on AWS.pdf` |
 | Thesis source | `Report/Thesis.tex` |
 | Thesis PDF snapshot | `Report/Report.pdf` |
 | Main plotting notebook | `Experiment/plots.ipynb` |
