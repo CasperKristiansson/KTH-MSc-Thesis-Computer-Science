@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/readme-assets/thesis-cloud-storage-banner.png" alt="Synchrotron detector data flowing into cloud storage and benchmark visualizations" width="100%">
+  <img src="docs/readme-assets/thesis-cloud-storage-banner-v2.png" alt="Synchrotron detector data flowing into storage benchmark visualizations" width="100%">
 </p>
 
 # From Experiment to Insight

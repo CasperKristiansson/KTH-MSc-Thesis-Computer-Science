@@ -1,48 +1,48 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="980" height="430" viewBox="0 0 980 430" role="img" aria-label="Stored footprint by format and codec">
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="540" viewBox="0 0 980 540" role="img" aria-label="Stored footprint by format and codec">
 <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f8fafc"/><stop offset="1" stop-color="#e0f2fe"/></linearGradient></defs>
-<rect width="980" height="430" rx="18" fill="url(#bg)"/>
-<text x="28" y="38" font-family="Inter,Arial,sans-serif" font-size="22" font-weight="700" fill="#0f172a">Stored footprint by format and codec</text>
-<text x="28" y="63" font-family="Inter,Arial,sans-serif" font-size="13" fill="#475569">Metadata-inclusive GiB stored on S3 for the 20 GiB raw detector stack.</text>
-<line x1="70" y1="355.0" x2="920" y2="355.0" stroke="#cbd5e1" stroke-width="1"/>
-<text x="58" y="359.0" text-anchor="end" font-family="Inter,Arial,sans-serif" font-size="11" fill="#64748b">0</text>
-<line x1="70" y1="293.8" x2="920" y2="293.8" stroke="#cbd5e1" stroke-width="1"/>
-<text x="58" y="297.8" text-anchor="end" font-family="Inter,Arial,sans-serif" font-size="11" fill="#64748b">5</text>
-<line x1="70" y1="232.5" x2="920" y2="232.5" stroke="#cbd5e1" stroke-width="1"/>
-<text x="58" y="236.5" text-anchor="end" font-family="Inter,Arial,sans-serif" font-size="11" fill="#64748b">10</text>
-<line x1="70" y1="171.2" x2="920" y2="171.2" stroke="#cbd5e1" stroke-width="1"/>
-<text x="58" y="175.2" text-anchor="end" font-family="Inter,Arial,sans-serif" font-size="11" fill="#64748b">14</text>
-<line x1="70" y1="110.0" x2="920" y2="110.0" stroke="#cbd5e1" stroke-width="1"/>
-<text x="58" y="114.0" text-anchor="end" font-family="Inter,Arial,sans-serif" font-size="11" fill="#64748b">19</text>
-<rect x="112.0" y="213.3" width="34" height="141.7" rx="5" fill="#64748b" opacity="0.9"/>
-<text x="129.0" y="207.3" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="10" fill="#334155">11.1</text>
-<rect x="154.0" y="222.1" width="34" height="132.9" rx="5" fill="#ef4444" opacity="0.9"/>
-<text x="171.0" y="216.1" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="10" fill="#334155">10.4</text>
-<rect x="196.0" y="220.7" width="34" height="134.3" rx="5" fill="#2563eb" opacity="0.9"/>
-<text x="213.0" y="214.7" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="10" fill="#334155">10.5</text>
-<text x="166.0" y="383" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="14" font-weight="700" fill="#0f172a">Zarr</text>
-<rect x="324.5" y="208.8" width="34" height="146.2" rx="5" fill="#64748b" opacity="0.9"/>
-<text x="341.5" y="202.8" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="10" fill="#334155">11.4</text>
-<rect x="366.5" y="156.1" width="34" height="198.9" rx="5" fill="#ef4444" opacity="0.9"/>
-<text x="383.5" y="150.1" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="10" fill="#334155">15.6</text>
-<rect x="408.5" y="217.7" width="34" height="137.3" rx="5" fill="#2563eb" opacity="0.9"/>
-<text x="425.5" y="211.7" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="10" fill="#334155">10.7</text>
-<text x="378.5" y="383" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="14" font-weight="700" fill="#0f172a">TileDB</text>
-<rect x="537.0" y="213.0" width="34" height="142.0" rx="5" fill="#64748b" opacity="0.9"/>
-<text x="554.0" y="207.0" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="10" fill="#334155">11.1</text>
-<rect x="579.0" y="110.0" width="34" height="245.0" rx="5" fill="#ef4444" opacity="0.9"/>
-<text x="596.0" y="104.0" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="10" fill="#334155">19.2</text>
-<rect x="621.0" y="218.6" width="34" height="136.4" rx="5" fill="#2563eb" opacity="0.9"/>
-<text x="638.0" y="212.6" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="10" fill="#334155">10.7</text>
-<text x="591.0" y="383" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="14" font-weight="700" fill="#0f172a">HDF5/HSDS</text>
-<rect x="749.5" y="213.3" width="34" height="141.7" rx="5" fill="#64748b" opacity="0.9"/>
-<text x="766.5" y="207.3" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="10" fill="#334155">11.1</text>
-<rect x="791.5" y="184.9" width="34" height="170.1" rx="5" fill="#ef4444" opacity="0.9"/>
-<text x="808.5" y="178.9" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="10" fill="#334155">13.3</text>
-<rect x="833.5" y="223.9" width="34" height="131.1" rx="5" fill="#2563eb" opacity="0.9"/>
-<text x="850.5" y="217.9" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="10" fill="#334155">10.3</text>
-<text x="803.5" y="383" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="14" font-weight="700" fill="#0f172a">ROOT</text>
-<rect x="350" y="384" width="14" height="14" rx="3" fill="#64748b"/><text x="372" y="396" font-family="Inter,Arial,sans-serif" font-size="12" fill="#475569">gzip</text>
-<rect x="445" y="384" width="14" height="14" rx="3" fill="#ef4444"/><text x="467" y="396" font-family="Inter,Arial,sans-serif" font-size="12" fill="#475569">lz4</text>
-<rect x="540" y="384" width="14" height="14" rx="3" fill="#2563eb"/><text x="562" y="396" font-family="Inter,Arial,sans-serif" font-size="12" fill="#475569">zstd</text>
-<text x="34" y="235" transform="rotate(-90 34 235)" font-family="Inter,Arial,sans-serif" font-size="12" fill="#64748b">Stored GiB</text>
+<rect width="980" height="540" rx="18" fill="url(#bg)"/>
+<text x="30" y="42" font-family="Inter,Arial,sans-serif" font-size="24" font-weight="700" fill="#0f172a">Stored footprint by format and codec</text>
+<text x="30" y="70" font-family="Inter,Arial,sans-serif" font-size="14" fill="#475569">Metadata-inclusive GiB stored on S3 for the 20 GiB raw detector stack.</text>
+<line x1="82" y1="393.0" x2="922" y2="393.0" stroke="#cbd5e1" stroke-width="1"/>
+<text x="70" y="397.0" text-anchor="end" font-family="Inter,Arial,sans-serif" font-size="11" fill="#64748b">0</text>
+<line x1="82" y1="324.2" x2="922" y2="324.2" stroke="#cbd5e1" stroke-width="1"/>
+<text x="70" y="328.2" text-anchor="end" font-family="Inter,Arial,sans-serif" font-size="11" fill="#64748b">5</text>
+<line x1="82" y1="255.5" x2="922" y2="255.5" stroke="#cbd5e1" stroke-width="1"/>
+<text x="70" y="259.5" text-anchor="end" font-family="Inter,Arial,sans-serif" font-size="11" fill="#64748b">10</text>
+<line x1="82" y1="186.8" x2="922" y2="186.8" stroke="#cbd5e1" stroke-width="1"/>
+<text x="70" y="190.8" text-anchor="end" font-family="Inter,Arial,sans-serif" font-size="11" fill="#64748b">14</text>
+<line x1="82" y1="118.0" x2="922" y2="118.0" stroke="#cbd5e1" stroke-width="1"/>
+<text x="70" y="122.0" text-anchor="end" font-family="Inter,Arial,sans-serif" font-size="11" fill="#64748b">19</text>
+<rect x="127.0" y="233.9" width="34" height="159.1" rx="6" fill="#64748b" opacity="0.9"/>
+<text x="144.0" y="226.9" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="10" font-weight="700" fill="#334155">11.1</text>
+<rect x="170.0" y="243.8" width="34" height="149.2" rx="6" fill="#ef4444" opacity="0.9"/>
+<text x="187.0" y="236.8" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="10" font-weight="700" fill="#334155">10.4</text>
+<rect x="213.0" y="242.2" width="34" height="150.8" rx="6" fill="#2563eb" opacity="0.9"/>
+<text x="230.0" y="235.2" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="10" font-weight="700" fill="#334155">10.5</text>
+<text x="187.0" y="427" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="14" font-weight="700" fill="#0f172a">Zarr</text>
+<rect x="337.0" y="228.9" width="34" height="164.1" rx="6" fill="#64748b" opacity="0.9"/>
+<text x="354.0" y="221.9" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="10" font-weight="700" fill="#334155">11.4</text>
+<rect x="380.0" y="169.8" width="34" height="223.2" rx="6" fill="#ef4444" opacity="0.9"/>
+<text x="397.0" y="162.8" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="10" font-weight="700" fill="#334155">15.6</text>
+<rect x="423.0" y="238.9" width="34" height="154.1" rx="6" fill="#2563eb" opacity="0.9"/>
+<text x="440.0" y="231.9" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="10" font-weight="700" fill="#334155">10.7</text>
+<text x="397.0" y="427" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="14" font-weight="700" fill="#0f172a">TileDB</text>
+<rect x="547.0" y="233.6" width="34" height="159.4" rx="6" fill="#64748b" opacity="0.9"/>
+<text x="564.0" y="226.6" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="10" font-weight="700" fill="#334155">11.1</text>
+<rect x="590.0" y="118.0" width="34" height="275.0" rx="6" fill="#ef4444" opacity="0.9"/>
+<text x="607.0" y="130.0" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="10" font-weight="700" fill="#334155">19.2</text>
+<rect x="633.0" y="239.9" width="34" height="153.1" rx="6" fill="#2563eb" opacity="0.9"/>
+<text x="650.0" y="232.9" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="10" font-weight="700" fill="#334155">10.7</text>
+<text x="607.0" y="427" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="14" font-weight="700" fill="#0f172a">HDF5/HSDS</text>
+<rect x="757.0" y="233.9" width="34" height="159.1" rx="6" fill="#64748b" opacity="0.9"/>
+<text x="774.0" y="226.9" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="10" font-weight="700" fill="#334155">11.1</text>
+<rect x="800.0" y="202.1" width="34" height="190.9" rx="6" fill="#ef4444" opacity="0.9"/>
+<text x="817.0" y="195.1" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="10" font-weight="700" fill="#334155">13.3</text>
+<rect x="843.0" y="245.8" width="34" height="147.2" rx="6" fill="#2563eb" opacity="0.9"/>
+<text x="860.0" y="238.8" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="10" font-weight="700" fill="#334155">10.3</text>
+<text x="817.0" y="427" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="14" font-weight="700" fill="#0f172a">ROOT</text>
+<rect x="350" y="492" width="15" height="15" rx="3" fill="#64748b"/><text x="374" y="505" font-family="Inter,Arial,sans-serif" font-size="13" fill="#475569">gzip</text>
+<rect x="450" y="492" width="15" height="15" rx="3" fill="#ef4444"/><text x="474" y="505" font-family="Inter,Arial,sans-serif" font-size="13" fill="#475569">lz4</text>
+<rect x="550" y="492" width="15" height="15" rx="3" fill="#2563eb"/><text x="574" y="505" font-family="Inter,Arial,sans-serif" font-size="13" fill="#475569">zstd</text>
+<text x="34" y="255.5" transform="rotate(-90 34 255.5)" font-family="Inter,Arial,sans-serif" font-size="12" fill="#64748b">Stored GiB</text>
 </svg>
