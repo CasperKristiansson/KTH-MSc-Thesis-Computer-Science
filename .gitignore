@@ -8,7 +8,8 @@ Presentation/Summary/node_modules
 **node_modules**
 Presentation/Summary/screenshots
 details
-Presentation/**
-!Presentation/Internal.pptx
+Presentation/Internal
+Presentation/Defence
+Presentation/Summary
 .env
 .pnpm-store/v10/projects/63d864db799ab91e693d7043a968aae4
