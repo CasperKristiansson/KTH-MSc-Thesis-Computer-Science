@@ -1750,7 +1750,7 @@ Figure \ref{fig:cross_slice_latency_vs_gets} links slice latency to request inte
 \end{table}
 
 \subsubsection{Scan: transferred-byte throughput vs GETs per GiB}
-Relate full-scan transferred-byte throughput to request intensity. Throughput is derived from session-specific downloaded bytes and GM time; GETs/GiB are session aggregates. \textbf{Descriptive only}.
+Relate full-scan transferred-byte throughput to request intensity. Throughput is derived from session-specific downloaded bytes and GM time; GETs/GiB are session aggregates.
 
 \begin{figure}[H]
   \centering
@@ -2116,53 +2116,90 @@ We show representative league tables for \texttt{gzip} and \texttt{zstd} in the 
 
 \begin{table}[H]
   \centering
-  \caption{Slice — \texttt{gzip}: league table.}
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \caption{Slice --- \texttt{gzip}: league table.}
   \label{tab:league-slice-gzip}
-  \begin{tabular}{rlllll}
+  \begin{tabular}{@{}r l
+                  >{\raggedleft\arraybackslash}p{2.2cm}
+                  >{\raggedleft\arraybackslash}p{2.4cm}
+                  r r@{}}
     \toprule
-    Rank & Format & GM (ms) [\gls{CI}] & $p_{95}$ (ms) [\gls{CI}] & GETs/GiB & Stored GiB \\
+    Rank & Format &
+    \makecell[r]{GM\\(ms) [\gls{CI}]} &
+    \makecell[r]{$p_{95}$\\(ms) [\gls{CI}]} &
+    GETs/GiB & Stored GiB \\
     \midrule
-    1 & tiledb & 195 \ [181, 210] & 262 \ [232, 318] & 113.3 & 11.44 \\
-    2 & zarr   & 229 \ [223, 236] & 283 \ [262, 314] & 126.7 & 11.09 \\
-    3 & HDF5/HSDS   & 241 \ [232, 252] & 342 \ [295, 364] & 482.2 & 11.11 \\
-    4 & ROOT/TTree   & 406 \ [397, 416] & 471 \ [451, 501] & 61.3  & 11.09 \\
+    1 & TileDB     & 195 [181, 210] & 262 [232, 318] & 113.3 & 11.44 \\
+    2 & Zarr       & 229 [223, 236] & 283 [262, 314] & 126.7 & 11.09 \\
+    3 & HDF5/HSDS  & 241 [232, 252] & 342 [295, 364] & 482.2 & 11.11 \\
+    4 & ROOT/TTree & 406 [397, 416] & 471 [451, 501] & 61.3  & 11.09 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
 \begin{table}[H]
   \centering
-  \caption{Slice — \texttt{zstd}: league table.}
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \caption{Slice --- \texttt{zstd}: league table.}
   \label{tab:league-slice-zstd}
-  \begin{tabular}{rlllll}
+  \begin{tabular}{@{}r l
+                  >{\raggedleft\arraybackslash}p{2.2cm}
+                  >{\raggedleft\arraybackslash}p{2.4cm}
+                  r r@{}}
     \toprule
-    Rank & Format & GM (ms) [\gls{CI}] & $p_{95}$ (ms) [\gls{CI}] & GETs/GiB & Stored GiB \\
+    Rank & Format &
+    \makecell[r]{GM\\(ms) [\gls{CI}]} &
+    \makecell[r]{$p_{95}$\\(ms) [\gls{CI}]} &
+    GETs/GiB & Stored GiB \\
     \midrule
-    1 & zarr   & 155 \ [149, 162] & 195 \ [177, 243] & 136.6 & 10.51 \\
-    2 & tiledb & 177 \ [165, 190] & 250 \ [205, 312] & 120.7 & 10.74 \\
-    3 & HDF5/HSDS   & 210 \ [205, 215] & 255 \ [236, 286] & 488.0 & 10.67 \\
-    4 & ROOT/TTree   & 269 \ [264, 275] & 311 \ [292, 341] & 66.2  & 10.26 \\
+    1 & Zarr       & 155 [149, 162] & 195 [177, 243] & 136.6 & 10.51 \\
+    2 & TileDB     & 177 [165, 190] & 250 [205, 312] & 120.7 & 10.74 \\
+    3 & HDF5/HSDS  & 210 [205, 215] & 255 [236, 286] & 488.0 & 10.67 \\
+    4 & ROOT/TTree & 269 [264, 275] & 311 [292, 341] & 66.2  & 10.26 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
 \paragraph{Full Scan}
-Rankings use higher GM throughput (tie-break GM time $\!\rightarrow$ GETs/GiB $\rightarrow$ stored GiB), which are descriptive and session-conditional.
-
-We show the \texttt{zstd} full-scan league table in the main text; the corresponding \texttt{gzip} and \texttt{lz4} tables are reported in Appendix Tables \ref{tab:league-full-gzip} and \ref{tab:league-full-lz4}.
+Rankings use higher GM throughput (tie-break GM time $\!\rightarrow$ GETs/GiB $\rightarrow$ stored GiB), which are descriptive and session-conditional. We show the \texttt{zstd} full-scan league table in the main text; the corresponding \texttt{gzip} and \texttt{lz4} tables are reported in Appendix Tables \ref{tab:league-full-gzip} and \ref{tab:league-full-lz4}.
 
 \begin{table}[H]
   \centering
-  \caption{Full — \texttt{zstd}: league table.}
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \caption{Full --- \texttt{zstd}: league table.}
   \label{tab:league-full-zstd}
-  \begin{tabular}{rlllll}
+  \begin{tabular}{@{}r l
+                  >{\raggedleft\arraybackslash}p{2.7cm}
+                  >{\raggedleft\arraybackslash}p{3.0cm}
+                  r r@{}}
     \toprule
-    Rank & Format & GM thr (GiB/s) [\gls{CI}] & GM time (ms) [\gls{CI}] & GETs/GiB & Stored GiB \\
+    Rank & Format &
+    \makecell[r]{GM thr\\(GiB/s) [\gls{CI}]} &
+    \makecell[r]{GM time\\(ms) [\gls{CI}]} &
+    GETs/GiB & Stored GiB \\
     \midrule
-    1 & tiledb & \makecell[r]{1.055\\\footnotesize([1.025, 1.082])} & \makecell[r]{10\,384\\\footnotesize([10\,123, 10\,687])} & 96.9  & 10.74 \\
-    2 & zarr   & \makecell[r]{0.353\\\footnotesize([0.351, 0.356])} & \makecell[r]{30\,365\\\footnotesize([30\,167, 30\,555])} & 123.2 & 10.51 \\
-    3 & HDF5/HSDS   & \makecell[r]{0.072\\\footnotesize([0.072, 0.072])} & \makecell[r]{151\,497\\\footnotesize([151\,071, 151\,996])} & 142.2 & 10.67 \\
-    4 & ROOT/TTree   & \makecell[r]{0.056\\\footnotesize([0.054, 0.059])} & \makecell[r]{373\,589\\\footnotesize([357\,497, 390\,216])} & 63.2  & 10.26 \\
+    1 & TileDB &
+    \makecell[rt]{1.055\\\footnotesize([1.025, 1.082])} &
+    \makecell[rt]{10\,384\\\footnotesize([10\,123, 10\,687])} &
+    96.9 & 10.74 \\
+
+    2 & Zarr &
+    \makecell[rt]{0.353\\\footnotesize([0.351, 0.356])} &
+    \makecell[rt]{30\,365\\\footnotesize([30\,167, 30\,555])} &
+    123.2 & 10.51 \\
+
+    3 & HDF5/HSDS &
+    \makecell[rt]{0.072\\\footnotesize([0.072, 0.072])} &
+    \makecell[rt]{151\,497\\\footnotesize([151\,071, 151\,996])} &
+    142.2 & 10.67 \\
+
+    4 & ROOT/TTree &
+    \makecell[rt]{0.056\\\footnotesize([0.054, 0.059])} &
+    \makecell[rt]{373\,589\\\footnotesize([357\,497, 390\,216])} &
+    63.2 & 10.26 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -2410,7 +2447,6 @@ A particularly valuable next step would be a dedicated comparison between conven
 \renewcommand{\chaptermark}[1]{\markboth{Appendix \thechapter\relax:\thinspace\relax#1}{}}
 \chapter{Supporting materials}
 \label{sec:supportingMaterial}
-\attachfile[description={references.bib}]{references.bib}
 
 
 \section{Methodological details and statistical settings}
@@ -2487,8 +2523,8 @@ Client stack: \texttt{numpy}, \texttt{boto3/botocore}, \texttt{fsspec/s3fs}, \te
 \subsection{Reproducibility and data availability}
 \label{app:a5b-availability}
 \textbf{Repository.} The project repository is hosted at \url{https://github.com/CasperKristiansson/KTH-MSc-Thesis-Computer-Science}.\\
-\textbf{Public artifacts.} Code/notebooks (\texttt{Experiment/}, \texttt{Report/}); seed frames (\texttt{Experiment/Base Data/}); run logs and CloudWatch exports (\texttt{Experiment/Experiment Result/}); derived tables (\texttt{Experiment/tables/}).\\
-\textbf{Entry points.} Dataset synthesis: \texttt{Experiment/base\_data\_generation.ipynb}. Ingestion to backends: \texttt{Experiment/data\_generation.ipynb}. Analysis/plots: \texttt{Experiment/plots.ipynb} and tables under \texttt{Experiment/tables/}.\\
+\textbf{Public artifacts.} Code/notebooks (\texttt{Experiment/}, \texttt{Report/}); seed frames (\texttt{Experiment/Base Data/}); run logs and CloudWatch exports (\texttt{Experiment/Experiment Result/}); derived tables \\(\texttt{Experiment/tables/}).\\
+\textbf{Entry points.} Dataset synthesis: \\ \texttt{Experiment/base\_data\_generation.ipynb}. Ingestion to backends: \texttt{Experiment/data\_generation.ipynb}. Analysis/plots: \texttt{Experiment/plots.ipynb} and tables under \texttt{Experiment/tables/}.\\
 \textbf{Not publicly hosted.} The expanded synthetic dataset (\(\sim\)\SI{20}{\gibi\byte}) and the ingested \gls{SThree} prefixes are not distributed; rerunning timed experiments requires generating and ingesting the dataset into a user-controlled bucket under comparable provisioning (Appendix \ref{app:a1-testbed}).\\
 \textbf{Reproducibility scope.} Reported tables/figures are exactly reproducible from the published run logs, while timed end-to-end performance on \gls{AWS} is session-conditional and will vary across reruns due to cloud variability, cache state, and provisioning details.
 
@@ -2511,7 +2547,7 @@ Common logical shape $(N,2880,2880)$, $N{=}1296$, \texttt{uint16}; one frame per
     \toprule
     Item & Value \\
     \midrule
-    Seed source (raw) & 80 proprietary \gls{CBF} 1.5 seed frames from one detector acquisition (header convention \texttt{PILATUS\_1.2}; detector: Varex XRD-4343CT). The \gls{CBF} binary section uses byte-offset encoding (\texttt{x-CBF\_BYTE\_OFFSET}). Seed files are versioned under \texttt{Experiment/Base Data/} in the project repository (\url{https://github.com/CasperKristiansson/KTH-MSc-Thesis-Computer-Science}); the upstream acquisition dataset beyond the seed set is not redistributed. \\
+    Seed source (raw) & 80 proprietary \gls{CBF} 1.5 seed frames from one detector acquisition (header convention \texttt{PILATUS\_1.2}; detector: Varex XRD-4343CT). The \gls{CBF} binary section uses byte-offset encoding (\texttt{x-CBF\_BYTE\_OFFSET}). Seed files are versioned under \texttt{Experiment/Base Data/} in the project repository; the upstream acquisition dataset beyond the seed set is not redistributed. \\
     Sample/feature definition & One frame is one sample; each sample contains $2880\times2880=8{,}294{,}400$ pixel features (\texttt{uint16}, little-endian). \\
     Synthetic expansion & Frames are sampled from the seed set and perturbed with deterministic RNG (below) until \(N{=}1296\approx1{,}300\) frames. Outputs are named \texttt{slice\_\{index\}.cbf} (zero-based indexing). \\
     Per-frame raw size & \(B_{\text{frame}} = 2880\times2880\times2 = 16{,}588{,}800\) bytes \(=\)\SI{15.82}{\mebi\byte}. \\
@@ -2534,7 +2570,7 @@ This thesis includes Parquet only as a pilot to document one concrete mapping of
 \textbf{Tested layout (single-object pilot).}
 \begin{itemize}
   \item One Parquet file per codec (one \gls{SThree} object); codecs: \texttt{gzip} and \texttt{lz4} only.
-  \item Schema: $2880$ columns \texttt{row\_0}\dots\texttt{row\_2879}, each \texttt{list<fixed\_size=2880, uint16>}; one appended row per frame (\(N{=}1296\)).
+  \item Schema: $2880$ columns \texttt{row\_0}\dots\texttt{row\_2879}, each \\ \texttt{list<fixed\_size=2880, uint16>}; one appended row per frame (\(N{=}1296\)).
   \item Row groups: effectively one row group per frame because each write call appended a one-row table (PyArrow defaults).
 \end{itemize}
 
@@ -3328,35 +3364,7 @@ We aggregate latency, tail behavior, request intensity, and stored size into 0�
 
 
 
-\cleardoublepage
-% \subfile{README_author}
 
-\cleardoublepage
-% \input{README_notes/README_notes}
-
-\begin{comment}
-% information for examiners
-\ifxeorlua
-\cleardoublepage
-\input{README_notes/README_examiner_notes}
-\fi
-\end{comment}
-
-\begin{comment}
-% Information for administrators
-\ifxeorlua
-\cleardoublepage
-\input{README_notes/README_for_administrators.tex}
-\fi
-\end{comment}
-
-\begin{comment}
-% Information for Course Coordinators
-\ifxeorlua
-\cleardoublepage
-\input{README_notes/README_for_course_coordinators}
-\fi
-\end{comment}
 
 \label{pg:lastPageofMainmatter}
 
