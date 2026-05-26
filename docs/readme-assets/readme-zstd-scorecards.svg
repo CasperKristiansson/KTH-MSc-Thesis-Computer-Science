@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="360" viewBox="0 0 980 360" role="img" aria-label="Decision scorecards under zstd">
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f8fafc"/><stop offset="1" stop-color="#e0f2fe"/></linearGradient></defs>
+<rect width="980" height="360" rx="18" fill="url(#bg)"/>
+<text x="28" y="38" font-family="Inter,Arial,sans-serif" font-size="22" font-weight="700" fill="#0f172a">Decision scorecards under zstd</text>
+<text x="28" y="63" font-family="Inter,Arial,sans-serif" font-size="13" fill="#475569">Normalized 0-100 multi-metric scores from the thesis decision matrix.</text>
+<text x="70" y="106" font-family="Inter,Arial,sans-serif" font-size="16" font-weight="700" fill="#0f172a">Slice-latency objective</text>
+<text x="70" y="150" font-family="Inter,Arial,sans-serif" font-size="14" fill="#334155">Zarr</text>
+<rect x="188" y="132" width="330" height="24" rx="7" fill="#e2e8f0"/>
+<rect x="188" y="132" width="308.2" height="24" rx="7" fill="#2f80ed" opacity="0.9"/>
+<text x="532" y="149" text-anchor="end" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="700" fill="#0f172a">93.4</text>
+<text x="70" y="192" font-family="Inter,Arial,sans-serif" font-size="14" fill="#334155">TileDB</text>
+<rect x="188" y="174" width="330" height="24" rx="7" fill="#e2e8f0"/>
+<rect x="188" y="174" width="225.9" height="24" rx="7" fill="#00a676" opacity="0.9"/>
+<text x="532" y="191" text-anchor="end" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="700" fill="#0f172a">68.4</text>
+<text x="70" y="234" font-family="Inter,Arial,sans-serif" font-size="14" fill="#334155">HDF5/HSDS</text>
+<rect x="188" y="216" width="330" height="24" rx="7" fill="#e2e8f0"/>
+<rect x="188" y="216" width="133.9" height="24" rx="7" fill="#f59e0b" opacity="0.9"/>
+<text x="532" y="233" text-anchor="end" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="700" fill="#0f172a">40.6</text>
+<text x="70" y="276" font-family="Inter,Arial,sans-serif" font-size="14" fill="#334155">ROOT/TTree</text>
+<rect x="188" y="258" width="330" height="24" rx="7" fill="#e2e8f0"/>
+<rect x="188" y="258" width="66.0" height="24" rx="7" fill="#8b5cf6" opacity="0.9"/>
+<text x="532" y="275" text-anchor="end" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="700" fill="#0f172a">20.0</text>
+<text x="525" y="106" font-family="Inter,Arial,sans-serif" font-size="16" font-weight="700" fill="#0f172a">Full-scan objective</text>
+<text x="525" y="150" font-family="Inter,Arial,sans-serif" font-size="14" fill="#334155">TileDB</text>
+<rect x="643" y="132" width="330" height="24" rx="7" fill="#e2e8f0"/>
+<rect x="643" y="132" width="260.6" height="24" rx="7" fill="#00a676" opacity="0.9"/>
+<text x="987" y="149" text-anchor="end" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="700" fill="#0f172a">79.0</text>
+<text x="525" y="192" font-family="Inter,Arial,sans-serif" font-size="14" fill="#334155">Zarr</text>
+<rect x="643" y="174" width="330" height="24" rx="7" fill="#e2e8f0"/>
+<rect x="643" y="174" width="133.4" height="24" rx="7" fill="#2f80ed" opacity="0.9"/>
+<text x="987" y="191" text-anchor="end" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="700" fill="#0f172a">40.4</text>
+<text x="525" y="234" font-family="Inter,Arial,sans-serif" font-size="14" fill="#334155">ROOT/TTree</text>
+<rect x="643" y="216" width="330" height="24" rx="7" fill="#e2e8f0"/>
+<rect x="643" y="216" width="99.0" height="24" rx="7" fill="#8b5cf6" opacity="0.9"/>
+<text x="987" y="233" text-anchor="end" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="700" fill="#0f172a">30.0</text>
+<text x="525" y="276" font-family="Inter,Arial,sans-serif" font-size="14" fill="#334155">HDF5/HSDS</text>
+<rect x="643" y="258" width="330" height="24" rx="7" fill="#e2e8f0"/>
+<rect x="643" y="258" width="30.8" height="24" rx="7" fill="#f59e0b" opacity="0.9"/>
+<text x="987" y="275" text-anchor="end" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="700" fill="#0f172a">9.3</text>
+</svg>

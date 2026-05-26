@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="420" viewBox="0 0 980 420" role="img" aria-label="zstd: latency winner vs throughput winner">
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f8fafc"/><stop offset="1" stop-color="#e0f2fe"/></linearGradient></defs>
+<rect width="980" height="420" rx="18" fill="url(#bg)"/>
+<text x="28" y="38" font-family="Inter,Arial,sans-serif" font-size="22" font-weight="700" fill="#0f172a">zstd: latency winner vs throughput winner</text>
+<text x="28" y="63" font-family="Inter,Arial,sans-serif" font-size="13" fill="#475569">Same dataset, same codec: Zarr leads interactive slices; TileDB leads full scans.</text>
+<text x="70" y="104" font-family="Inter,Arial,sans-serif" font-size="16" font-weight="700" fill="#0f172a">Slice GM latency (ms, lower is better)</text>
+<text x="560" y="104" font-family="Inter,Arial,sans-serif" font-size="16" font-weight="700" fill="#0f172a">Full-scan throughput (GiB/s, higher is better)</text>
+<text x="70" y="153" font-family="Inter,Arial,sans-serif" font-size="14" fill="#334155">Zarr</text>
+<rect x="185" y="135" width="190.1" height="26" rx="6" fill="#2f80ed" opacity="0.88"/>
+<text x="380.1" y="153" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="700" fill="#0f172a">155</text>
+<text x="70" y="205" font-family="Inter,Arial,sans-serif" font-size="14" fill="#334155">TileDB</text>
+<rect x="185" y="187" width="217.1" height="26" rx="6" fill="#00a676" opacity="0.88"/>
+<text x="407.1" y="205" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="700" fill="#0f172a">177</text>
+<text x="70" y="257" font-family="Inter,Arial,sans-serif" font-size="14" fill="#334155">HDF5/HSDS</text>
+<rect x="185" y="239" width="257.6" height="26" rx="6" fill="#f59e0b" opacity="0.88"/>
+<text x="447.6" y="257" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="700" fill="#0f172a">210</text>
+<text x="70" y="309" font-family="Inter,Arial,sans-serif" font-size="14" fill="#334155">ROOT/TTree</text>
+<rect x="185" y="291" width="330.0" height="26" rx="6" fill="#8b5cf6" opacity="0.88"/>
+<text x="520.0" y="309" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="700" fill="#0f172a">269</text>
+<text x="560" y="153" font-family="Inter,Arial,sans-serif" font-size="14" fill="#334155">TileDB</text>
+<rect x="675" y="135" width="330.0" height="26" rx="6" fill="#00a676" opacity="0.88"/>
+<text x="1010.0" y="153" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="700" fill="#0f172a">1.055</text>
+<text x="560" y="205" font-family="Inter,Arial,sans-serif" font-size="14" fill="#334155">Zarr</text>
+<rect x="675" y="187" width="110.4" height="26" rx="6" fill="#2f80ed" opacity="0.88"/>
+<text x="790.4" y="205" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="700" fill="#0f172a">0.353</text>
+<text x="560" y="257" font-family="Inter,Arial,sans-serif" font-size="14" fill="#334155">HDF5/HSDS</text>
+<rect x="675" y="239" width="22.5" height="26" rx="6" fill="#f59e0b" opacity="0.88"/>
+<text x="702.5" y="257" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="700" fill="#0f172a">0.072</text>
+<text x="560" y="309" font-family="Inter,Arial,sans-serif" font-size="14" fill="#334155">ROOT/TTree</text>
+<rect x="675" y="291" width="17.5" height="26" rx="6" fill="#8b5cf6" opacity="0.88"/>
+<text x="697.5" y="309" font-family="Inter,Arial,sans-serif" font-size="13" font-weight="700" fill="#0f172a">0.056</text>
+<rect x="72" y="374" width="14" height="14" rx="3" fill="#2f80ed"/><text x="94" y="386" font-family="Inter,Arial,sans-serif" font-size="12" fill="#475569">Zarr</text>
+<rect x="148" y="374" width="14" height="14" rx="3" fill="#00a676"/><text x="170" y="386" font-family="Inter,Arial,sans-serif" font-size="12" fill="#475569">TileDB</text>
+</svg>
